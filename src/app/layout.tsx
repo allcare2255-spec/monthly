@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "SKY MATE - 월간 학습코칭 레포트",
-  description: "SKY MATE 학습코칭 월간 레포트 생성기",
+  title: "SKY MATE 코칭 대시보드",
+  description: "SKY MATE 1:1 밀착 코칭 멘토 및 레포트 관리 시스템",
 };
 
 export default function RootLayout({
@@ -19,9 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={`${geistSans.variable} antialiased`}>
-        {children}
-      </body>
+      <body className="min-h-screen antialiased">{children}</body>
     </html>
   );
 }

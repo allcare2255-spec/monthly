@@ -1,78 +1,145 @@
 @import "tailwindcss";
 
+@theme {
+  --color-ink: #0B1020;
+  --color-ink-soft: #1B2240;
+  --color-navy: #002D62;
+  --color-navy-dark: #001A40;
+  --color-cream: #F3F0DF;
+  --color-cream-light: #FAF8EE;
+
+  /* 트렌디 액센트 (인디고 - 바이올렛 - 핑크) */
+  --color-indigo: #4F46E5;
+  --color-violet: #8B5CF6;
+  --color-fuchsia: #D946EF;
+  --color-rose: #F43F5E;
+  --color-sunset: #FB923C;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F7F5FF;
+  --foreground: #0B1020;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-body {
+html, body {
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "ss02";
 }
 
-.editable-hint {
+@font-face {
+  font-family: "Pretendard";
+  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css");
+  font-display: swap;
+}
+
+/* ───────────────────────────────────────
+   메쉬 그라데이션 풀스크린 배경
+─────────────────────────────────────── */
+.mesh-bg {
   position: relative;
-  cursor: text;
-  transition: background-color 0.15s;
+  background:
+    radial-gradient(at 18% 12%, rgba(79, 70, 229, 0.55) 0px, transparent 50%),
+    radial-gradient(at 82% 18%, rgba(217, 70, 239, 0.45) 0px, transparent 50%),
+    radial-gradient(at 50% 88%, rgba(251, 146, 60, 0.35) 0px, transparent 55%),
+    radial-gradient(at 12% 78%, rgba(139, 92, 246, 0.5) 0px, transparent 55%),
+    linear-gradient(180deg, #1B1238 0%, #0B0F2A 100%);
 }
 
-.editable-hint:hover {
-  background-color: rgba(56, 189, 248, 0.06);
+.mesh-bg-soft {
+  background:
+    radial-gradient(at 8% 0%, rgba(79, 70, 229, 0.18) 0px, transparent 45%),
+    radial-gradient(at 100% 0%, rgba(217, 70, 239, 0.16) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(251, 146, 60, 0.10) 0px, transparent 50%),
+    #FAF8FF;
 }
 
-.editable-hint:focus {
-  background-color: rgba(56, 189, 248, 0.08);
+/* ───────────────────────────────────────
+   글래스 카드
+─────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-/* ===== 인쇄 스타일 ===== */
+.glass-dark {
+  background: rgba(11, 16, 32, 0.55);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ───────────────────────────────────────
+   그라데이션 텍스트 / 보더
+─────────────────────────────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, #4F46E5 0%, #8B5CF6 45%, #D946EF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-warm {
+  background: linear-gradient(135deg, #F43F5E 0%, #FB923C 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.btn-gradient {
+  background: linear-gradient(135deg, #4F46E5 0%, #8B5CF6 50%, #D946EF 100%);
+  color: #FFFFFF;
+  transition: filter 0.2s, transform 0.1s;
+  box-shadow: 0 8px 24px -8px rgba(139, 92, 246, 0.45);
+}
+.btn-gradient:hover {
+  filter: brightness(1.08);
+}
+.btn-gradient:active {
+  transform: translateY(1px);
+}
+.btn-gradient:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.ring-gradient {
+  position: relative;
+}
+.ring-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #4F46E5, #8B5CF6, #D946EF);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ───────────────────────────────────────
+   인쇄 (PDF)
+─────────────────────────────────────── */
 @media print {
-  @page {
-    margin: 0;
+  .no-print { display: none !important; }
+  body { background: #FFFFFF !important; }
+  .mesh-bg, .mesh-bg-soft { background: #FFFFFF !important; }
+  .glass, .glass-dark {
+    background: #FFFFFF !important;
+    backdrop-filter: none !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
   }
-
-  body * {
-    visibility: hidden;
-  }
-
-  #report-content,
-  #report-content * {
-    visibility: visible;
-  }
-
-  #report-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    max-width: 100% !important;
-  }
-
-  .print-hide {
-    display: none !important;
-  }
-
-  .editable-hint {
-    background-color: transparent !important;
-    outline: none !important;
-    box-shadow: none !important;
-  }
-
-  /* 배경색 인쇄 보장 */
+  @page { size: A4; margin: 14mm; }
+  .print-page-break { page-break-before: always; }
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    color-adjust: exact !important;
   }
 }

@@ -1,63 +1,60 @@
-export interface DailyEntry {
-  wakeTime: string;   // "06:35"
-  studyTime: string;  // "10:23"
-  wakeNotSubmitted?: boolean;
-  studyNotSubmitted?: boolean;
-}
+export type Mentor = {
+  id: string;
+  name: string;
+  mentor_code: string;
+  created_at: string;
+};
 
-export interface DailyRecord {
-  date: string;       // "2026.02.16"
-  wakeTime: string;
-  studyTime: string;
-  planRate: number;
-  wakeNotSubmitted?: boolean;
-  studyNotSubmitted?: boolean;
-}
+export type Student = {
+  id: string;
+  name: string;
+  age: number | null;
+  phone: string | null;
+  parent_phone: string | null;
+  high_school: string | null;
+  mentor_id: string | null;
+  coaching_start_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
-export interface ReportInput {
-  studentName: string;
-  year: number;
-  month: number;
-  coachingMonth: number;
-  mentorName: string;
-  taskCompletionRate: number;
-  taskCompletionDelta: number;
-  weeklyRates: [number, number, number, number];
-  studentFeedback: string;
-  mentorSummary: string;
-  directions: string;
-  parentMessage: string;
-  rawText: string;
-  // 일별 데이터
-  startDate: string;  // "2026-02-16" (input date 형식)
-  dailyEntries: DailyEntry[];
-}
+export type DayStatus = "submitted" | "missed" | "paused";
 
-export interface GeneratedContent {
-  student_feedback: string;
-  mentor_summary: string;
-  directions: string[];
-  parent_message: string;
-}
+export type DayData = {
+  date: string;                  // "2026-05-27"
+  wake_up_time: string | null;   // "06:30"
+  study_minutes: number | null;
+  memo: string | null;
+  status: DayStatus;
+};
 
-export interface ReportData {
-  studentName: string;
-  year: number;
-  month: number;
-  coachingMonth: number;
-  mentorName: string;
-  taskCompletionRate: number;
-  taskCompletionDelta: number;
-  weeklyRates: [number, number, number, number];
-  studentFeedback: string;
-  mentorSummary: string;
-  directions: string[];
-  parentMessage: string;
-  dailyRecords: DailyRecord[];
-  periodStart: string;
-  periodEnd: string;
-  avgWakeTime: string;
-  avgStudyTime: string;
-  avgStudyMinutes: number;
-  avgPlanRate: number;
-}
+export type WeeklyReport = {
+  id: string;
+  student_id: string;
+  cycle_number: number;
+  week_number: number;           // 1~4
+  start_date: string;
+  end_date: string;
+  day_data: DayData[];           // 7개
+  good_points: string | null;
+  improvement_points: string | null;
+  next_week_actions: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MonthlyReport = {
+  id: string;
+  student_id: string;
+  cycle_number: number;
+  month_summary: string | null;
+  next_month_direction: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Session = {
+  role: "admin" | "mentor";
+  mentorId?: string;
+  mentorName?: string;
+};

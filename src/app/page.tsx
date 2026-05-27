@@ -1,112 +1,47 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
+import { GatewayForm } from "./gateway-form";
+import SkyMateLogo from "@/components/SkyMateLogo";
 
-import { useState } from "react";
-import InputPanel from "@/components/InputPanel";
-import ReportPreview from "@/components/ReportPreview";
-import { ReportInput, ReportData, GeneratedContent } from "@/types";
-import { buildRecords, calcStats, createEmptyEntries } from "@/lib/parseDaily";
+export const dynamic = "force-dynamic";
 
-const now = new Date();
-
-const defaultInput: ReportInput = {
-  studentName: "",
-  year: now.getFullYear(),
-  month: now.getMonth() + 1,
-  coachingMonth: 1,
-  mentorName: "",
-  taskCompletionRate: 0,
-  taskCompletionDelta: 0,
-  weeklyRates: [0, 0, 0, 0],
-  studentFeedback: "",
-  mentorSummary: "",
-  directions: "",
-  parentMessage: "",
-  rawText: "",
-  startDate: "",
-  dailyEntries: createEmptyEntries(),
-};
-
-export default function Home() {
-  const [input, setInput] = useState<ReportInput>(defaultInput);
-  const [report, setReport] = useState<ReportData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handlePreview = () => {
-    const directions = input.directions
-      .split("\n")
-      .map((d) => d.trim())
-      .filter(Boolean);
-
-    const dailyRecords = buildRecords(input.startDate, input.dailyEntries);
-    const stats = calcStats(dailyRecords);
-
-    setReport({
-      studentName: input.studentName,
-      year: input.year,
-      month: input.month,
-      coachingMonth: input.coachingMonth,
-      mentorName: input.mentorName,
-      taskCompletionRate: input.taskCompletionRate,
-      taskCompletionDelta: input.taskCompletionDelta,
-      weeklyRates: input.weeklyRates,
-      studentFeedback: input.studentFeedback,
-      mentorSummary: input.mentorSummary,
-      directions,
-      parentMessage: input.parentMessage,
-      dailyRecords,
-      ...stats,
-    });
-  };
-
-  const handleGenerate = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "AI 생성에 실패했습니다.");
-      }
-      const generated: GeneratedContent = await res.json();
-      setInput((prev) => ({
-        ...prev,
-        studentFeedback: generated.student_feedback,
-        mentorSummary: generated.mentor_summary,
-        directions: generated.directions.join("\n"),
-        parentMessage: generated.parent_message,
-      }));
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "알 수 없는 오류";
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+export default async function Home() {
+  const session = await getSession();
+  if (session?.role === "admin") redirect("/admin");
+  if (session?.role === "mentor") redirect("/mentor");
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <div className="w-[420px] min-w-[420px] flex-shrink-0 relative">
-        <InputPanel
-          data={input}
-          onChange={setInput}
-          onGenerate={handleGenerate}
-          onPreview={handlePreview}
-          loading={loading}
-        />
-        {error && (
-          <div className="absolute bottom-4 left-5 right-5 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600">
-            {error}
+    <main className="mesh-bg min-h-screen relative overflow-hidden">
+      {/* 노이즈 / 별빛 느낌 */}
+      <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{
+        backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)",
+        backgroundSize: "32px 32px",
+      }} />
+
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <div className="flex flex-col items-center mb-10">
+            <div className="mb-5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 p-3 shadow-2xl shadow-violet/20">
+              <SkyMateLogo size={56} />
+            </div>
+            <div className="text-[11px] uppercase tracking-[0.3em] text-white/60 mb-2">
+              Premium Coaching
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-violet-200 to-fuchsia-300 bg-clip-text text-transparent">
+              SKY MATE
+            </h1>
+            <p className="mt-3 text-sm text-white/70">관리자 또는 멘토 코드를 입력해주세요</p>
           </div>
-        )}
+
+          <div className="glass rounded-3xl shadow-2xl shadow-indigo/20 p-7 ring-1 ring-white/30">
+            <GatewayForm />
+          </div>
+
+          <p className="mt-8 text-center text-[11px] text-white/40 tracking-wider">
+            INTERNAL · 외부 공유 금지
+          </p>
+        </div>
       </div>
-      <div className="flex-1 overflow-hidden">
-        <ReportPreview data={report} />
-      </div>
-    </div>
+    </main>
   );
 }
