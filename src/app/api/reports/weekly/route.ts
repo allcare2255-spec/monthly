@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays, weekRange } from "@/lib/dates";
+import { addDays, weekRange, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
 import type { DayData } from "@/types";
 
 async function ensureCanAccess(studentId: string) {
@@ -49,8 +49,16 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "코칭 시작일이 설정되지 않음" }, { status: 400 });
   }
 
-  // 사이클 시작일 = 시작일 + (cycle-1)*28
-  const cycleStart = addDays(student.coaching_start_date, (cycle - 1) * 28);
+  // [변경 3] 재시작 앵커 반영한 사이클 시작일
+  const { data: restarts } = await supabase
+    .from("coaching_restarts")
+    .select("cycle_number, start_date")
+    .eq("student_id", studentId);
+  const anchors: CycleAnchor[] = (restarts || []).map((r) => ({
+    cycle: r.cycle_number,
+    start_date: r.start_date,
+  }));
+  const cycleStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
   const { start, end } = weekRange(cycleStart, week);
   const dates = Array.from({ length: 7 }, (_, i) => addDays(start, i));
 

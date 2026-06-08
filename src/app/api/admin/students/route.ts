@@ -6,14 +6,14 @@ export async function POST(req: Request) {
   const session = await getSession();
   if (session?.role !== "admin") return NextResponse.json({ error: "권한 없음" }, { status: 403 });
   const body = await req.json();
-  const { name, age, phone, parent_phone, high_school, mentor_id, coaching_start_date } = body;
+  const { name, grade, phone, parent_phone, high_school, mentor_id, coaching_start_date } = body;
   if (!name?.trim()) return NextResponse.json({ error: "이름을 입력해주세요" }, { status: 400 });
   const supabase = getServiceClient();
   const { data, error } = await supabase
     .from("coaching_students")
     .insert({
       name: name.trim(),
-      age: age ? Number(age) : null,
+      grade: grade || null,
       phone: phone || null,
       parent_phone: parent_phone || null,
       high_school: high_school || null,

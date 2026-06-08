@@ -25,6 +25,29 @@ export function cumulativeWeek(cycle: number, week: number): number {
   return (cycle - 1) * 4 + week;
 }
 
+/**
+ * [변경 3] 재시작 앵커를 반영한 사이클 시작일 계산.
+ * 기본 앵커는 cycle 1 = coachingStart. 추가 앵커(재시작)는 해당 cycle부터 새 기준일.
+ * 주어진 cycle 이하의 가장 큰 앵커를 골라 (cycle - 앵커cycle)*28 만큼 더한다.
+ */
+export type CycleAnchor = { cycle: number; start_date: string };
+
+export function resolveCycleStart(
+  coachingStart: string,
+  cycle: number,
+  anchors: CycleAnchor[] = [],
+): string {
+  const all: CycleAnchor[] = [{ cycle: 1, start_date: coachingStart }, ...anchors]
+    .filter((a) => !!a.start_date)
+    .sort((a, b) => a.cycle - b.cycle);
+  let chosen = all[0];
+  for (const a of all) {
+    if (a.cycle <= cycle) chosen = a;
+    else break;
+  }
+  return addDays(chosen.start_date, (cycle - chosen.cycle) * 28);
+}
+
 // "10:23" 같은 시간 문자열 → 분
 export function hmToMinutes(s: string | null | undefined): number | null {
   if (!s) return null;

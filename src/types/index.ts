@@ -9,6 +9,7 @@ export type Student = {
   id: string;
   name: string;
   age: number | null;
+  grade: string | null;
   phone: string | null;
   parent_phone: string | null;
   high_school: string | null;

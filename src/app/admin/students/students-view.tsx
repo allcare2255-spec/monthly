@@ -8,6 +8,7 @@ type Student = {
   id: string;
   name: string;
   age: number | null;
+  grade: string | null;
   phone: string | null;
   parent_phone: string | null;
   high_school: string | null;
@@ -19,9 +20,12 @@ type Student = {
 
 type MentorOpt = { id: string; name: string };
 
+// [변경 1] 학년 옵션
+const GRADE_OPTIONS = ["고1", "고2", "고3", "재수생", "N수생"];
+
 const EMPTY_FORM = {
   name: "",
-  age: "",
+  grade: "",
   phone: "",
   parent_phone: "",
   high_school: "",
@@ -44,6 +48,9 @@ export function StudentsView({
 
   // [수정 6-3] 수정 모달
   const [editing, setEditing] = useState<Student | null>(null);
+
+  // [변경 3] 재시작 모달
+  const [restarting, setRestarting] = useState<Student | null>(null);
 
   // [수정 6-2] 엑셀 업로드
   const fileRef = useRef<HTMLInputElement>(null);
@@ -106,6 +113,20 @@ export function StudentsView({
     router.refresh();
   }
 
+  // [변경 3] 코칭 재시작
+  async function restart(id: string, restart_date: string) {
+    const res = await fetch("/api/admin/students/restart", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id, restart_date }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(data.error || "재시작 실패");
+    setRestarting(null);
+    router.refresh();
+    location.reload();
+  }
+
   async function remove(id: string) {
     if (!confirm("학생과 관련된 모든 레포트가 삭제됩니다. 계속하시겠습니까?")) return;
     const res = await fetch("/api/admin/students", {
@@ -129,7 +150,7 @@ export function StudentsView({
       body: JSON.stringify({
         id: updated.id,
         name: updated.name,
-        age: updated.age,
+        grade: updated.grade,
         phone: updated.phone,
         parent_phone: updated.parent_phone,
         high_school: updated.high_school,
@@ -149,14 +170,14 @@ export function StudentsView({
     const XLSX = await import("xlsx");
     const header = [
       "이름",
-      "나이",
+      "학년",
       "학생 전화번호",
       "학부모 전화번호",
       "출신 고등학교",
       "담당 멘토",
       "첫 코칭 시작일",
     ];
-    const example = ["김예시", 19, "010-1234-5678", "010-8765-4321", "예시고등학교", mentors[0]?.name || "", "2026-06-09"];
+    const example = ["김예시", "고3", "010-1234-5678", "010-8765-4321", "예시고등학교", mentors[0]?.name || "", "2026-06-09"];
     const ws = XLSX.utils.aoa_to_sheet([header, example]);
     ws["!cols"] = header.map(() => ({ wch: 16 }));
     const wb = XLSX.utils.book_new();
@@ -201,10 +222,10 @@ export function StudentsView({
         const mentorName = String(row["담당 멘토"] ?? "").trim();
         const mentor_id = mentorName ? mentorByName.get(mentorName) ?? null : null;
         if (mentorName && !mentor_id) fails.push(`${name}: 멘토 "${mentorName}" 미발견 → 미배정 처리`);
-        const ageRaw = row["나이"];
+        const gradeRaw = String(row["학년"] ?? "").trim();
         const payload = {
           name,
-          age: ageRaw === "" || ageRaw == null ? null : Number(ageRaw),
+          grade: gradeRaw || null,
           phone: String(row["학생 전화번호"] ?? "").trim() || null,
           parent_phone: String(row["학부모 전화번호"] ?? "").trim() || null,
           high_school: String(row["출신 고등학교"] ?? "").trim() || null,
@@ -252,13 +273,21 @@ export function StudentsView({
           <Field label="이름 *">
             <input value={form.name} onChange={(e) => setField("name", e.target.value)} className={inputCls} />
           </Field>
-          <Field label="나이">
-            <input
-              type="number"
-              value={form.age}
-              onChange={(e) => setField("age", e.target.value)}
+          <Field label="학년">
+            <select
+              value={form.grade}
+              onChange={(e) => setField("grade", e.target.value)}
               className={inputCls}
-            />
+            >
+              <option value="" disabled>
+                학년 선택
+              </option>
+              {GRADE_OPTIONS.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="학생 전화번호">
             <input
@@ -383,7 +412,7 @@ export function StudentsView({
               <thead className="bg-ink/5 text-ink/50 text-[11px] uppercase tracking-[0.15em]">
                 <tr>
                   <th className="text-left px-4 py-3">학생</th>
-                  <th className="text-left px-4 py-3">학교 / 나이</th>
+                  <th className="text-left px-4 py-3">학교 / 학년</th>
                   <th className="text-left px-4 py-3">코칭 시작</th>
                   <th className="text-left px-4 py-3">담당 멘토</th>
                   <th className="text-right px-4 py-3"></th>
@@ -398,13 +427,16 @@ export function StudentsView({
                     </td>
                     <td className="px-4 py-3">
                       <div>{s.high_school || "-"}</div>
-                      <div className="text-xs text-ink/40">{s.age ? `${s.age}세` : ""}</div>
+                      <div className="text-xs text-ink/40">{s.grade || ""}</div>
                     </td>
                     <td className="px-4 py-3">{s.coaching_start_date || "-"}</td>
                     <td className="px-4 py-3">{s.mentor?.name || "미배정"}</td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <button onClick={() => setEnded(s.id, false)} className="text-xs text-indigo hover:underline mr-3">
-                        코칭 재개
+                      <button
+                        onClick={() => setRestarting(s)}
+                        className="text-xs rounded-full px-2.5 py-1 font-semibold bg-gradient-to-r from-indigo/10 to-violet/10 text-indigo border border-indigo/15 hover:from-indigo/20 hover:to-violet/20 transition mr-3"
+                      >
+                        재시작
                       </button>
                       <button onClick={() => remove(s.id)} className="text-xs text-rose hover:underline">
                         삭제
@@ -426,6 +458,73 @@ export function StudentsView({
           onSave={saveEdit}
         />
       )}
+
+      {restarting && (
+        <RestartModal
+          student={restarting}
+          onClose={() => setRestarting(null)}
+          onConfirm={(date) => restart(restarting.id, date)}
+        />
+      )}
+    </div>
+  );
+}
+
+// [변경 3] 코칭 재시작 모달
+function RestartModal({
+  student,
+  onClose,
+  onConfirm,
+}: {
+  student: Student;
+  onClose: () => void;
+  onConfirm: (date: string) => void;
+}) {
+  const today = (() => {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${m}-${day}`;
+  })();
+  const [date, setDate] = useState(today);
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-lg font-bold text-ink">코칭 재시작</h3>
+        <p className="text-sm text-ink/60 mt-1">
+          <span className="font-semibold text-ink">{student.name}</span> 학생의 코칭을 다시 시작합니다.
+        </p>
+        <p className="text-xs text-ink/45 mt-2 leading-relaxed">
+          기존 코칭 이력은 유지되며, 선택한 날짜를 기준으로 이어지는 월차의 주간 레포트가 새로 생성됩니다.
+        </p>
+        <div className="mt-4">
+          <label className="text-xs text-ink/55 font-medium">재시작일</label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className={inputCls}
+          />
+        </div>
+        <div className="flex justify-end gap-2 mt-5">
+          <button onClick={onClose} className="rounded-xl border border-ink/15 px-4 py-2 text-sm font-medium text-ink/60 hover:bg-ink/5">
+            취소
+          </button>
+          <button
+            onClick={() => {
+              if (!date) return;
+              setBusy(true);
+              onConfirm(date);
+            }}
+            disabled={busy || !date}
+            className="btn-gradient rounded-xl font-semibold px-6 py-2 text-sm"
+          >
+            {busy ? "처리 중..." : "확인"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -451,7 +550,7 @@ function StudentTable({
         <thead className="bg-gradient-to-r from-indigo/5 to-fuchsia/5 text-ink/60 text-[11px] uppercase tracking-[0.15em]">
           <tr>
             <th className="text-left px-4 py-3">학생</th>
-            <th className="text-left px-4 py-3">학교 / 나이</th>
+            <th className="text-left px-4 py-3">학교 / 학년</th>
             <th className="text-left px-4 py-3">학부모 전화</th>
             <th className="text-left px-4 py-3">코칭 시작</th>
             <th className="text-left px-4 py-3">담당 멘토</th>
@@ -468,7 +567,7 @@ function StudentTable({
               </td>
               <td className="px-4 py-3">
                 <div>{s.high_school || "-"}</div>
-                <div className="text-xs text-ink/50">{s.age ? `${s.age}세` : ""}</div>
+                <div className="text-xs text-ink/50">{s.grade || ""}</div>
               </td>
               <td className="px-4 py-3 text-ink/70">{s.parent_phone || "-"}</td>
               <td className="px-4 py-3 text-ink/70">{s.coaching_start_date || "-"}</td>
@@ -559,13 +658,21 @@ function EditModal({
           <Field label="이름 *">
             <input value={draft.name} onChange={(e) => set("name", e.target.value)} className={inputCls} />
           </Field>
-          <Field label="나이">
-            <input
-              type="number"
-              value={draft.age ?? ""}
-              onChange={(e) => set("age", e.target.value === "" ? null : Number(e.target.value))}
+          <Field label="학년">
+            <select
+              value={draft.grade ?? ""}
+              onChange={(e) => set("grade", e.target.value || null)}
               className={inputCls}
-            />
+            >
+              <option value="" disabled>
+                학년 선택
+              </option>
+              {GRADE_OPTIONS.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="학생 전화번호">
             <input value={draft.phone ?? ""} onChange={(e) => set("phone", e.target.value || null)} className={inputCls} />

@@ -50,6 +50,8 @@ export async function PATCH(req: Request) {
   for (const k of ["start_date", "end_date", "memo"]) {
     if (k in rest) patch[k] = rest[k] === "" ? null : rest[k];
   }
+  // [변경 2-2] 관리자 메모 목록 (jsonb 배열)
+  if ("notes" in rest) patch.notes = Array.isArray(rest.notes) ? rest.notes : [];
 
   const supabase = getServiceClient();
   const { data, error } = await supabase

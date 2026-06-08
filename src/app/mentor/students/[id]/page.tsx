@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays } from "@/lib/dates";
+import { addDays, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
 import { NewCycleButton } from "./new-cycle-button";
 import { CycleCards, type CycleInfo } from "./cycle-cards";
 
@@ -15,7 +15,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
   const supabase = getServiceClient();
   const { data: student } = await supabase
     .from("coaching_students")
-    .select("id, name, age, high_school, phone, parent_phone, coaching_start_date, mentor_id, mentor:coaching_mentors(name)")
+    .select("id, name, grade, high_school, phone, parent_phone, coaching_start_date, mentor_id, mentor:coaching_mentors(name)")
     .eq("id", id)
     .maybeSingle();
   if (!student) return notFound();
@@ -43,6 +43,16 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
     overrides[r.cycle_number] = { start_date: r.start_date, end_date: r.end_date, memo: r.memo };
   });
 
+  // [변경 3] 재시작 앵커
+  const { data: restartRows } = await supabase
+    .from("coaching_restarts")
+    .select("cycle_number, start_date")
+    .eq("student_id", id);
+  const anchors: CycleAnchor[] = (restartRows || []).map((r) => ({
+    cycle: r.cycle_number,
+    start_date: r.start_date,
+  }));
+
   const cycleSet = new Set<number>();
   (weeklyRows || []).forEach((r) => cycleSet.add(r.cycle_number));
   (monthlyRows || []).forEach((r) => cycleSet.add(r.cycle_number));
@@ -67,7 +77,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
         <h1 className="text-4xl font-extrabold text-gradient mt-2">{student.name}</h1>
         <p className="text-ink/55 mt-2 text-sm">
           {student.high_school || "학교 미입력"}
-          {student.age ? ` · ${student.age}세` : ""}
+          {student.grade ? ` · ${student.grade}` : ""}
           {isAdmin && (student as any).mentor?.name ? ` · 담당 ${(student as any).mentor.name} 멘토` : ""}
         </p>
       </div>
@@ -113,7 +123,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
             studentId={id}
             studentName={student.name}
             cycles={cycles.map<CycleInfo>((cyc) => {
-              const cycleStart = addDays(start, (cyc - 1) * 28);
+              const cycleStart = resolveCycleStart(start, cyc, anchors);
               return {
                 cycle: cyc,
                 defaultStart: cycleStart,

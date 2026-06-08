@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays, cumulativeWeek } from "@/lib/dates";
+import { addDays, cumulativeWeek, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
 import { MonthlyReportView } from "./monthly-view";
+import { EditableCycleDate, AdminMemoPanel, type CycleNote } from "../report-extras";
 import type { DayData, WeeklyReport } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -48,8 +49,26 @@ export default async function MonthlyReportPage({
     .eq("cycle_number", cycle)
     .maybeSingle();
 
-  const cycleStart = addDays(student.coaching_start_date, (cycle - 1) * 28);
+  // [변경 3] 재시작 앵커 / [변경 2] 월차 오버라이드·메모
+  const { data: restarts } = await supabase
+    .from("coaching_restarts")
+    .select("cycle_number, start_date")
+    .eq("student_id", id);
+  const anchors: CycleAnchor[] = (restarts || []).map((r) => ({
+    cycle: r.cycle_number,
+    start_date: r.start_date,
+  }));
+
+  const { data: cycleRow } = await supabase
+    .from("coaching_cycles")
+    .select("start_date, end_date, notes")
+    .eq("student_id", id)
+    .eq("cycle_number", cycle)
+    .maybeSingle();
+
+  const cycleStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
   const cycleEnd = addDays(cycleStart, 27);
+  const notes = (cycleRow?.notes as CycleNote[]) || [];
 
   return (
     <div className="space-y-6">
@@ -64,7 +83,14 @@ export default async function MonthlyReportPage({
           {student.name} <span className="text-ink/30 font-bold">·</span> 코칭 {cycle}개월차
         </h1>
         <p className="text-ink/55 mt-2 text-sm">
-          {cycleStart} ~ {cycleEnd}
+          <EditableCycleDate
+            studentId={id}
+            cycle={cycle}
+            defaultStart={cycleStart}
+            defaultEnd={cycleEnd}
+            overrideStart={cycleRow?.start_date ?? null}
+            overrideEnd={cycleRow?.end_date ?? null}
+          />
           {session.role === "admin" && (
             <span className="ml-2 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-fuchsia to-rose text-white">
               ADMIN
@@ -72,6 +98,8 @@ export default async function MonthlyReportPage({
           )}
         </p>
       </div>
+
+      <AdminMemoPanel studentId={id} cycle={cycle} initialNotes={notes} />
 
       <div className="flex gap-1 bg-white border border-ink/5 p-1 rounded-xl w-fit shadow-sm no-print">
         {[1, 2, 3, 4].map((w) => (
