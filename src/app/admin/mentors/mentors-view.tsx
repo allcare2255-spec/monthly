@@ -12,6 +12,31 @@ export function MentorsView({ initial }: { initial: Mentor[] }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // [수정 5] 멘토 인라인 수정
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editCode, setEditCode] = useState("");
+
+  function startEdit(m: Mentor) {
+    setEditId(m.id);
+    setEditName(m.name);
+    setEditCode(m.mentor_code);
+  }
+
+  async function saveEdit() {
+    if (!editId || !editName.trim() || !editCode.trim()) return;
+    const res = await fetch("/api/admin/mentors", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: editId, name: editName, mentor_code: editCode }),
+    });
+    const data = await res.json();
+    if (!res.ok) return alert(data.error);
+    setMentors((m) => m.map((x) => (x.id === editId ? data.mentor : x)));
+    setEditId(null);
+    router.refresh();
+  }
+
   async function add() {
     if (!name.trim() || !code.trim()) return;
     setSaving(true);
@@ -108,25 +133,59 @@ export function MentorsView({ initial }: { initial: Mentor[] }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-ink/5">
-              {mentors.map((m) => (
-                <tr key={m.id} className="hover:bg-indigo/[0.02] transition">
-                  <td className="px-4 py-3 font-medium">{m.name}</td>
-                  <td className="px-4 py-3">
-                    <code className="text-xs px-2 py-1 rounded-md font-mono font-semibold bg-gradient-to-r from-indigo/10 to-fuchsia/10 text-indigo border border-indigo/15">
-                      {m.mentor_code}
-                    </code>
-                  </td>
-                  <td className="px-4 py-3 text-ink/50">{m.created_at?.slice(0, 10)}</td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => remove(m.id)}
-                      className="text-xs text-rose hover:underline"
-                    >
-                      삭제
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {mentors.map((m) =>
+                editId === m.id ? (
+                  <tr key={m.id} className="bg-indigo/[0.03]">
+                    <td className="px-4 py-3">
+                      <input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="w-full rounded-lg border border-ink/15 px-2 py-1 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <input
+                        value={editCode}
+                        onChange={(e) => setEditCode(e.target.value)}
+                        className="w-full rounded-lg border border-ink/15 px-2 py-1 font-mono outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-ink/50">{m.created_at?.slice(0, 10)}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <button onClick={saveEdit} className="text-xs font-semibold text-indigo hover:underline mr-3">
+                        저장
+                      </button>
+                      <button onClick={() => setEditId(null)} className="text-xs text-ink/50 hover:underline">
+                        취소
+                      </button>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={m.id} className="hover:bg-indigo/[0.02] transition">
+                    <td className="px-4 py-3 font-medium">{m.name}</td>
+                    <td className="px-4 py-3">
+                      <code className="text-xs px-2 py-1 rounded-md font-mono font-semibold bg-gradient-to-r from-indigo/10 to-fuchsia/10 text-indigo border border-indigo/15">
+                        {m.mentor_code}
+                      </code>
+                    </td>
+                    <td className="px-4 py-3 text-ink/50">{m.created_at?.slice(0, 10)}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => startEdit(m)}
+                        className="text-xs text-indigo hover:underline mr-3"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => remove(m.id)}
+                        className="text-xs text-rose hover:underline"
+                      >
+                        삭제
+                      </button>
+                    </td>
+                  </tr>
+                ),
+              )}
               {mentors.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-4 py-12 text-center text-ink/40 text-sm">

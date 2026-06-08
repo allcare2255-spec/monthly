@@ -29,6 +29,28 @@ export function WeeklyReportEditor({
       });
   }, [studentId, cycle, week]);
 
+  // [수정 4-3] PDF 저장 시 textarea 내용이 잘리지 않도록 높이를 자동 확장
+  useEffect(() => {
+    function expand() {
+      document.querySelectorAll<HTMLTextAreaElement>("textarea").forEach((t) => {
+        t.setAttribute("data-prev-h", t.style.height);
+        t.style.height = "auto";
+        t.style.height = `${t.scrollHeight + 2}px`;
+      });
+    }
+    function restore() {
+      document.querySelectorAll<HTMLTextAreaElement>("textarea").forEach((t) => {
+        t.style.height = t.getAttribute("data-prev-h") || "";
+      });
+    }
+    window.addEventListener("beforeprint", expand);
+    window.addEventListener("afterprint", restore);
+    return () => {
+      window.removeEventListener("beforeprint", expand);
+      window.removeEventListener("afterprint", restore);
+    };
+  }, []);
+
   async function patch(patchObj: Partial<WeeklyReport>, fieldKey: string) {
     if (!report) return;
     setSavingField(fieldKey);
@@ -103,12 +125,11 @@ export function WeeklyReportEditor({
         </button>
       </div>
 
-      {/* 통계 요약 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* [수정 1] 통계 요약 — 3분할 (일시 정지 카드 제거) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
         <StatCard label="평균 순공" value={minutesToHm(stats?.avgStudy)} />
         <StatCard label="평균 기상" value={stats?.avgWake || "-"} />
-        <StatCard label="일시 정지" value={`${report.day_data.filter((d) => d.status === "paused").length}일`} tone="muted" />
       </div>
 
       {/* 일별 카드 */}
@@ -193,6 +214,13 @@ const STATUS_LABEL: Record<DayStatus, string> = {
   paused: "일시 정지",
 };
 
+// [수정 2] 상태 순환: 제출 완료 → 미제출 → 일시 정지 → 제출 완료 …
+const STATUS_CYCLE: DayStatus[] = ["submitted", "missed", "paused"];
+function nextStatus(s: DayStatus): DayStatus {
+  const i = STATUS_CYCLE.indexOf(s);
+  return STATUS_CYCLE[(i + 1) % STATUS_CYCLE.length];
+}
+
 function DayCard({
   day,
   weekday,
@@ -228,36 +256,26 @@ function DayCard({
           </div>
           <div>
             <div className="text-xs text-ink/55">{day.date}</div>
-            <div className={`text-xs inline-block mt-0.5 px-2 py-0.5 rounded-full border font-medium ${STATUS_STYLES[day.status]}`}>
-              {STATUS_LABEL[day.status]}
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-1">
-          {(["submitted", "missed", "paused"] as DayStatus[]).map((s) => (
+            {/* [수정 2] 배지 클릭 시 상태 순환 (오른쪽 버튼 3개 제거) */}
             <button
-              key={s}
-              onClick={() => onChange({ status: s })}
-              className={`text-xs px-2 py-1 rounded-lg border transition ${
-                day.status === s
-                  ? STATUS_STYLES[s] + " font-semibold"
-                  : "text-ink/55 border-ink/10 hover:bg-indigo/5"
-              }`}
+              type="button"
+              onClick={() => onChange({ status: nextStatus(day.status) })}
+              title="클릭하면 상태가 바뀝니다 (제출 완료 → 미제출 → 일시 정지)"
+              className={`text-xs inline-block mt-0.5 px-2 py-0.5 rounded-full border font-medium cursor-pointer transition hover:brightness-95 ${STATUS_STYLES[day.status]}`}
             >
-              {STATUS_LABEL[s]}
+              {STATUS_LABEL[day.status]}
             </button>
-          ))}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-ink/55 font-medium">기상 시간</label>
-          <input
-            type="time"
-            value={day.wake_up_time || ""}
-            onChange={(e) => onChange({ wake_up_time: e.target.value || null })}
-            className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-1.5 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
+          {/* [수정 3] 오전 기본값 + 기상 인증 X */}
+          <WakeTimeInput
+            value={day.wake_up_time}
+            onChange={(v) => onChange({ wake_up_time: v })}
           />
         </div>
         <div>
@@ -288,7 +306,9 @@ function DayCard({
       </div>
 
       <div className="mt-3">
-        <label className="text-xs text-ink/55 font-medium">일별 피드백 (카톡 복사·붙여넣기)</label>
+        <label className="text-xs text-ink/55 font-medium">
+          일별 피드백 <span className="no-print">(카톡 복사·붙여넣기)</span>
+        </label>
         <textarea
           rows={2}
           value={day.memo || ""}
@@ -297,6 +317,111 @@ function DayCard({
         />
       </div>
       {saving && <p className="text-[10px] text-ink/40 mt-1">저장 중...</p>}
+    </div>
+  );
+}
+
+// [수정 3] 기상 시간 입력 — 오전/오후 토글(기본 오전) + 시/분 + 기상 인증 X
+function parseHM(value: string | null) {
+  const min = hmToMinutes(value);
+  if (min == null) return null;
+  const h24 = Math.floor(min / 60);
+  const m = min % 60;
+  const ampm: "오전" | "오후" = h24 < 12 ? "오전" : "오후";
+  let h12 = h24 % 12;
+  if (h12 === 0) h12 = 12;
+  return { ampm, h12, m };
+}
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, i) => i * 5); // 0,5,...,55
+
+function WakeTimeInput({
+  value,
+  onChange,
+}: {
+  value: string | null;
+  onChange: (v: string | null) => void;
+}) {
+  const parsed = parseHM(value);
+  const [ampm, setAmpm] = useState<"오전" | "오후">(parsed?.ampm ?? "오전");
+  const [h12, setH12] = useState<string>(parsed ? String(parsed.h12) : "");
+  const [mm, setMm] = useState<string>(parsed ? pad2(parsed.m) : "");
+
+  useEffect(() => {
+    const p = parseHM(value);
+    setAmpm(p?.ampm ?? "오전");
+    setH12(p ? String(p.h12) : "");
+    setMm(p ? pad2(p.m) : "");
+  }, [value]);
+
+  function commit(nAmpm: "오전" | "오후", nH12: string, nMm: string) {
+    if (nH12 === "") return; // 시(時)가 선택되어야 인증으로 처리
+    const minute = nMm === "" ? "00" : nMm;
+    let h = Number(nH12) % 12;
+    if (nAmpm === "오후") h += 12;
+    onChange(`${pad2(h)}:${minute}`);
+  }
+
+  const minuteOptions = parsed && !MINUTE_OPTIONS.includes(parsed.m)
+    ? [parsed.m, ...MINUTE_OPTIONS].sort((a, b) => a - b)
+    : MINUTE_OPTIONS;
+
+  const selCls =
+    "rounded-xl border border-ink/10 px-2 py-1.5 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition bg-white";
+
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-2">
+      <select
+        value={ampm}
+        onChange={(e) => {
+          const v = e.target.value as "오전" | "오후";
+          setAmpm(v);
+          commit(v, h12, mm);
+        }}
+        className={selCls}
+      >
+        <option value="오전">오전</option>
+        <option value="오후">오후</option>
+      </select>
+      <select
+        value={h12}
+        onChange={(e) => {
+          setH12(e.target.value);
+          commit(ampm, e.target.value, mm === "" ? "00" : mm);
+        }}
+        className={selCls}
+      >
+        <option value="">시</option>
+        {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+          <option key={h} value={h}>{h}시</option>
+        ))}
+      </select>
+      <select
+        value={mm}
+        onChange={(e) => {
+          setMm(e.target.value);
+          commit(ampm, h12, e.target.value);
+        }}
+        className={selCls}
+      >
+        {minuteOptions.map((m) => (
+          <option key={m} value={pad2(m)}>{pad2(m)}분</option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={() => onChange(null)}
+        className={`text-xs px-2.5 py-1.5 rounded-xl border font-medium transition ${
+          value == null
+            ? "bg-slate-100 text-slate-600 border-slate-300"
+            : "text-ink/55 border-ink/15 hover:bg-rose/5 hover:text-rose hover:border-rose/30"
+        }`}
+      >
+        기상 인증 X
+      </button>
+      {value == null && (
+        <span className="text-[11px] text-ink/40">미인증</span>
+      )}
     </div>
   );
 }

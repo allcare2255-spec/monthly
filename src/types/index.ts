@@ -14,6 +14,18 @@ export type Student = {
   high_school: string | null;
   mentor_id: string | null;
   coaching_start_date: string | null;
+  coaching_ended: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CoachingCycle = {
+  id: string;
+  student_id: string;
+  cycle_number: number;
+  start_date: string | null;
+  end_date: string | null;
+  memo: string | null;
   created_at: string;
   updated_at: string;
 };

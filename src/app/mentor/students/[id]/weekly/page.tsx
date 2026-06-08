@@ -40,7 +40,7 @@ export default async function WeeklyReportPage({
       <div>
         <Link
           href={`/mentor/students/${id}`}
-          className="text-sm text-ink/55 hover:text-indigo"
+          className="text-sm text-ink/55 hover:text-indigo no-print"
         >
           ← {student.name}
         </Link>

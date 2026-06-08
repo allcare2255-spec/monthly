@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays, cumulativeWeek } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import { NewCycleButton } from "./new-cycle-button";
+import { CycleCards, type CycleInfo } from "./cycle-cards";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,16 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
     .from("coaching_monthly_reports")
     .select("cycle_number")
     .eq("student_id", id);
+
+  // [수정 9] 월차별 날짜 오버라이드 / 메모
+  const { data: cycleRows } = await supabase
+    .from("coaching_cycles")
+    .select("cycle_number, start_date, end_date, memo")
+    .eq("student_id", id);
+  const overrides: Record<number, { start_date: string | null; end_date: string | null; memo: string | null }> = {};
+  (cycleRows || []).forEach((r) => {
+    overrides[r.cycle_number] = { start_date: r.start_date, end_date: r.end_date, memo: r.memo };
+  });
 
   const cycleSet = new Set<number>();
   (weeklyRows || []).forEach((r) => cycleSet.add(r.cycle_number));
@@ -64,9 +75,11 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
       <section className="rounded-2xl bg-white border border-ink/5 p-6 shadow-sm">
         <h2 className="text-base font-bold text-ink mb-4">학생 정보</h2>
         <div className="grid grid-cols-2 gap-4 text-sm">
-          <Info label="본인 연락처" value={student.phone} />
-          <Info label="학부모 연락처" value={student.parent_phone} />
-          <Info label="코칭 시작일" value={student.coaching_start_date} />
+          {/* [수정 8-1] 라벨 변경 */}
+          <Info label="학생 전화번호" value={student.phone} />
+          {/* [수정 8-2] 학부모 연락처는 관리자 화면에서만 표시 */}
+          {isAdmin && <Info label="학부모 연락처" value={student.parent_phone} />}
+          <Info label="첫 코칭 시작일" value={student.coaching_start_date} />
         </div>
       </section>
 
@@ -96,62 +109,20 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
             </div>
           )}
 
-          <div className="space-y-3">
-            {cycles.map((cyc) => {
+          <CycleCards
+            studentId={id}
+            studentName={student.name}
+            cycles={cycles.map<CycleInfo>((cyc) => {
               const cycleStart = addDays(start, (cyc - 1) * 28);
-              const cycleEnd = addDays(cycleStart, 27);
-              const weekProgress = weekCountByCycle[cyc] || 0;
-              return (
-                <div
-                  key={cyc}
-                  className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-5 shadow-sm hover:shadow-md transition"
-                >
-                  <div className={`absolute -right-12 -top-12 w-44 h-44 rounded-full bg-gradient-to-br ${
-                    cyc % 2 === 1
-                      ? "from-indigo/12 via-violet/10 to-fuchsia/12"
-                      : "from-fuchsia/12 via-rose/10 to-sunset/12"
-                  } blur-2xl pointer-events-none`} />
-                  <div className="relative flex items-center justify-between flex-wrap gap-3">
-                    <div>
-                      <div className="text-[11px] uppercase tracking-[0.2em] text-indigo font-semibold">
-                        Coaching Month {cyc}
-                      </div>
-                      <div className="text-xl font-extrabold text-ink mt-1">
-                        코칭 {cyc}개월차
-                      </div>
-                      <div className="text-xs text-ink/55 mt-0.5">
-                        {cycleStart} ~ {cycleEnd}
-                        <span className="ml-2 inline-block px-1.5 py-0.5 rounded-full bg-ink/5 text-ink/60 text-[10px]">
-                          {weekProgress}/4 주차 진행
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {[1, 2, 3, 4].map((w) => (
-                        <Link
-                          key={w}
-                          href={`/mentor/students/${id}/weekly?cycle=${cyc}&week=${w}`}
-                          className={`text-xs rounded-full px-2.5 py-1 font-semibold border transition ${
-                            w <= weekProgress
-                              ? "bg-gradient-to-r from-indigo/15 to-violet/15 text-indigo border-indigo/25 hover:from-indigo/25 hover:to-violet/25"
-                              : "text-ink/50 border-ink/10 hover:bg-indigo/5"
-                          }`}
-                        >
-                          {cumulativeWeek(cyc, w)}주차
-                        </Link>
-                      ))}
-                      <Link
-                        href={`/mentor/students/${id}/monthly?cycle=${cyc}`}
-                        className="text-xs rounded-full px-3 py-1 font-semibold bg-gradient-to-r from-fuchsia to-rose text-white border border-transparent hover:brightness-110 transition shadow-sm shadow-fuchsia/30"
-                      >
-                        월간 →
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              );
+              return {
+                cycle: cyc,
+                defaultStart: cycleStart,
+                defaultEnd: addDays(cycleStart, 27),
+                weekProgress: weekCountByCycle[cyc] || 0,
+              };
             })}
-          </div>
+            initialOverrides={overrides}
+          />
         </section>
       )}
     </div>
