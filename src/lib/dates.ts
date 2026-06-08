@@ -7,6 +7,26 @@ export function addDays(yyyymmdd: string, days: number): string {
   return dt.toISOString().slice(0, 10);
 }
 
+/**
+ * 주어진 날짜(yyyy-mm-dd)를 월요일로 보정한다. 코칭은 항상 월요일에 시작한다.
+ * - 월요일: 그대로
+ * - 화~토: 그 주의 월요일(직전 월요일)
+ * - 일요일: 다음 날 월요일(코칭 주가 곧 시작한다고 보는 게 자연스러움)
+ * 예) 2026-06-09(화)→2026-06-08(월), 2026-06-07(일)→2026-06-08(월).
+ * 형식이 잘못되면 입력을 그대로 돌려준다.
+ */
+export function mondayOf(yyyymmdd: string): string {
+  const parts = yyyymmdd.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return yyyymmdd;
+  const [y, m, d] = parts;
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const dow = dt.getUTCDay(); // 0=일, 1=월, … 6=토
+  // 일요일(0)은 +1 → 다음 날 월요일, 그 외는 직전 월요일까지 되돌림
+  const shift = dow === 0 ? 1 : -(dow - 1);
+  dt.setUTCDate(dt.getUTCDate() + shift);
+  return dt.toISOString().slice(0, 10);
+}
+
 export function weekRange(start: string, week: number) {
   // week: 1~4
   const startOfWeek = addDays(start, (week - 1) * 7);

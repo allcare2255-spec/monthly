@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { mondayOf } from "@/lib/dates";
 
 type Student = {
   id: string;
@@ -175,9 +176,10 @@ export function StudentsView({
       "학부모 전화번호",
       "출신 고등학교",
       "담당 멘토",
-      "첫 코칭 시작일",
+      "첫 코칭 시작일 (월요일)",
     ];
-    const example = ["김예시", "고3", "010-1234-5678", "010-8765-4321", "예시고등학교", mentors[0]?.name || "", "2026-06-09"];
+    // 예시 시작일은 반드시 월요일로 안내 (2026-06-08 = 월). 월요일이 아니어도 업로드 시 자동 보정됨
+    const example = ["김예시", "고3", "010-1234-5678", "010-8765-4321", "예시고등학교", mentors[0]?.name || "", "2026-06-08"];
     const ws = XLSX.utils.aoa_to_sheet([header, example]);
     ws["!cols"] = header.map(() => ({ wch: 16 }));
     const wb = XLSX.utils.book_new();
@@ -216,6 +218,12 @@ export function StudentsView({
       let ok = 0;
       const fails: string[] = [];
 
+      // "첫 코칭 시작일" 또는 "첫 코칭 시작일 (월요일)" 등 접두사로 시작하는 열을 모두 인식
+      const startDateOf = (row: Record<string, unknown>) => {
+        const key = Object.keys(row).find((k) => k.startsWith("첫 코칭 시작일"));
+        return key ? row[key] : undefined;
+      };
+
       for (const row of rows) {
         const name = String(row["이름"] ?? "").trim();
         if (!name) continue;
@@ -230,7 +238,7 @@ export function StudentsView({
           parent_phone: String(row["학부모 전화번호"] ?? "").trim() || null,
           high_school: String(row["출신 고등학교"] ?? "").trim() || null,
           mentor_id,
-          coaching_start_date: normDate(row["첫 코칭 시작일"]),
+          coaching_start_date: normDate(startDateOf(row)),
         };
         const res = await fetch("/api/admin/students", {
           method: "POST",
@@ -326,13 +334,18 @@ export function StudentsView({
               ))}
             </select>
           </Field>
-          <Field label="첫 코칭 시작일">
+          <Field label="첫 코칭 시작일 (월요일 기준)">
             <input
               type="date"
               value={form.coaching_start_date}
-              onChange={(e) => setField("coaching_start_date", e.target.value)}
+              onChange={(e) => setField("coaching_start_date", e.target.value ? mondayOf(e.target.value) : "")}
               className={inputCls}
             />
+            {form.coaching_start_date && (
+              <p className="mt-1 text-[11px] text-indigo/70">
+                코칭은 월요일에 시작합니다 · 시작일: {form.coaching_start_date}(월)
+              </p>
+            )}
           </Field>
           <div className="sm:col-span-2 flex justify-end pt-2">
             <button
@@ -356,6 +369,10 @@ export function StudentsView({
         <h2 className="text-base font-bold text-ink mb-1">엑셀 일괄 업로드</h2>
         <p className="text-xs text-ink/55 mb-4">
           양식을 내려받아 작성한 뒤 업로드하면 여러 학생을 한 번에 등록합니다. (담당 멘토는 이름으로 매칭됩니다)
+          <br />
+          <span className="text-indigo/70">
+            ※ 코칭은 항상 <b>월요일</b>에 시작합니다. 시작일에 다른 요일을 적어도 그 주 월요일로 자동 보정됩니다.
+          </span>
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -486,7 +503,7 @@ function RestartModal({
     const day = String(d.getDate()).padStart(2, "0");
     return `${d.getFullYear()}-${m}-${day}`;
   })();
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(mondayOf(today));
   const [busy, setBusy] = useState(false);
 
   return (
@@ -500,13 +517,16 @@ function RestartModal({
           기존 코칭 이력은 유지되며, 선택한 날짜를 기준으로 이어지는 월차의 주간 레포트가 새로 생성됩니다.
         </p>
         <div className="mt-4">
-          <label className="text-xs text-ink/55 font-medium">재시작일</label>
+          <label className="text-xs text-ink/55 font-medium">재시작일 (월요일 기준)</label>
           <input
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => setDate(e.target.value ? mondayOf(e.target.value) : "")}
             className={inputCls}
           />
+          {date && (
+            <p className="mt-1 text-[11px] text-indigo/70">월요일로 자동 조정됨 · {date}(월)</p>
+          )}
         </div>
         <div className="flex justify-end gap-2 mt-5">
           <button onClick={onClose} className="rounded-xl border border-ink/15 px-4 py-2 text-sm font-medium text-ink/60 hover:bg-ink/5">
@@ -705,13 +725,18 @@ function EditModal({
               ))}
             </select>
           </Field>
-          <Field label="첫 코칭 시작일">
+          <Field label="첫 코칭 시작일 (월요일 기준)">
             <input
               type="date"
               value={draft.coaching_start_date ?? ""}
-              onChange={(e) => set("coaching_start_date", e.target.value || null)}
+              onChange={(e) => set("coaching_start_date", e.target.value ? mondayOf(e.target.value) : null)}
               className={inputCls}
             />
+            {draft.coaching_start_date && (
+              <p className="mt-1 text-[11px] text-indigo/70">
+                코칭은 월요일에 시작합니다 · 시작일: {draft.coaching_start_date}(월)
+              </p>
+            )}
           </Field>
         </div>
         <div className="flex justify-end gap-2 mt-5">

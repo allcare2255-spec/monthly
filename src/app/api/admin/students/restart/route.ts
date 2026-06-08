@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
+import { mondayOf } from "@/lib/dates";
 
 // [변경 3] 코칭 종료 학생 재시작
 // POST { id, restart_date } → 코칭 중 복귀 + 다음 월차를 재시작일 기준으로 앵커
@@ -12,6 +13,8 @@ export async function POST(req: Request) {
   if (!id || !restart_date) {
     return NextResponse.json({ error: "id / restart_date 누락" }, { status: 400 });
   }
+  // 재시작일도 월요일로 보정 → 이후 월차의 주간 레포트가 월요일에 시작
+  const anchorDate = mondayOf(restart_date);
 
   const supabase = getServiceClient();
 
@@ -42,7 +45,7 @@ export async function POST(req: Request) {
   const { error: anchorErr } = await supabase
     .from("coaching_restarts")
     .upsert(
-      { student_id: id, cycle_number: nextCycle, start_date: restart_date },
+      { student_id: id, cycle_number: nextCycle, start_date: anchorDate },
       { onConflict: "student_id,cycle_number" },
     );
   if (anchorErr) return NextResponse.json({ error: anchorErr.message }, { status: 500 });

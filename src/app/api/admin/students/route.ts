@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
+import { mondayOf } from "@/lib/dates";
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -18,7 +19,8 @@ export async function POST(req: Request) {
       parent_phone: parent_phone || null,
       high_school: high_school || null,
       mentor_id: mentor_id || null,
-      coaching_start_date: coaching_start_date || null,
+      // 코칭은 항상 월요일 시작 → 입력 요일과 무관하게 그 주 월요일로 보정
+      coaching_start_date: coaching_start_date ? mondayOf(coaching_start_date) : null,
     })
     .select()
     .single();
@@ -30,6 +32,8 @@ export async function PATCH(req: Request) {
   const session = await getSession();
   if (session?.role !== "admin") return NextResponse.json({ error: "권한 없음" }, { status: 403 });
   const { id, ...patch } = await req.json();
+  // 코칭 시작일이 변경되는 경우에도 월요일로 보정
+  if (patch.coaching_start_date) patch.coaching_start_date = mondayOf(patch.coaching_start_date);
   const supabase = getServiceClient();
   const { data, error } = await supabase
     .from("coaching_students")
