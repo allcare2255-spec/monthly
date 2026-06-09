@@ -33,12 +33,19 @@ export type CoachingCycle = {
 
 export type DayStatus = "submitted" | "missed" | "paused";
 
+export type DayPhoto = {
+  url: string;   // public URL
+  path: string;  // storage object path (삭제용)
+};
+
 export type DayData = {
   date: string;                  // "2026-05-27"
   wake_up_time: string | null;   // "06:30"
+  wake_cert_off?: boolean;       // [수정 4] 기상 인증 X (시간 입력 비활성 토글)
   study_minutes: number | null;
   memo: string | null;
   status: DayStatus;
+  photos?: DayPhoto[];           // [수정 5] 일별 공부 인증 사진 (최대 4장/일)
 };
 
 export type WeeklyReport = {
@@ -62,6 +69,33 @@ export type MonthlyReport = {
   cycle_number: number;
   month_summary: string | null;
   next_month_direction: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+// [수정 3] 주간 계획표
+export type PlanTask = { id: string; text: string; done: boolean };
+
+export type PlanDay = {
+  notes: string;
+  tasks: PlanTask[];
+};
+
+export type WeekdayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+
+export type WeeklyPlanData = {
+  weekly_goals: PlanTask[];
+  main_test: string[];
+  days: Record<WeekdayKey, PlanDay>;
+  summary: { achievement: string; feedback: string };
+};
+
+export type WeeklyPlan = {
+  id: string;
+  student_id: string;
+  cycle_number: number;
+  week_number: number;
+  plan_data: WeeklyPlanData;
   created_at: string;
   updated_at: string;
 };

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { DayData, DayStatus, WeeklyReport } from "@/types";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { DayData, DayPhoto, DayStatus, WeeklyReport } from "@/types";
 import { hmToMinutes, minutesToHm } from "@/lib/dates";
 
 const WEEKDAY_KO = ["월", "화", "수", "목", "금", "토", "일"];
@@ -142,6 +142,9 @@ export function WeeklyReportEditor({
               day={day}
               weekday={WEEKDAY_KO[idx]}
               saving={savingField === `day-${idx}`}
+              studentId={studentId}
+              cycle={cycle}
+              week={week}
               onChange={(patch) => commitDay(idx, patch)}
             />
           ))}
@@ -225,11 +228,17 @@ function DayCard({
   day,
   weekday,
   saving,
+  studentId,
+  cycle,
+  week,
   onChange,
 }: {
   day: DayData;
   weekday: string;
   saving: boolean;
+  studentId: string;
+  cycle: number;
+  week: number;
   onChange: (patch: Partial<DayData>) => void;
 }) {
   const studyH = day.study_minutes != null ? Math.floor(day.study_minutes / 60) : "";
@@ -272,10 +281,11 @@ function DayCard({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-ink/55 font-medium">기상 시간</label>
-          {/* [수정 3] 오전 기본값 + 기상 인증 X */}
+          {/* [수정 4] 오전 기본값 + 기상 인증 X 토글 */}
           <WakeTimeInput
             value={day.wake_up_time}
-            onChange={(v) => onChange({ wake_up_time: v })}
+            certOff={!!day.wake_cert_off}
+            onChange={onChange}
           />
         </div>
         <div>
@@ -316,7 +326,126 @@ function DayCard({
           className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm"
         />
       </div>
+
+      {/* [수정 5] 공부 인증 사진 (최대 4장) */}
+      <PhotoSection
+        day={day}
+        studentId={studentId}
+        cycle={cycle}
+        week={week}
+        onChange={onChange}
+      />
+
       {saving && <p className="text-[10px] text-ink/40 mt-1">저장 중...</p>}
+    </div>
+  );
+}
+
+const MAX_PHOTOS = 4;
+
+function PhotoSection({
+  day,
+  studentId,
+  cycle,
+  week,
+  onChange,
+}: {
+  day: DayData;
+  studentId: string;
+  cycle: number;
+  week: number;
+  onChange: (patch: Partial<DayData>) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const photos = day.photos || [];
+
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (fileRef.current) fileRef.current.value = "";
+    if (!files.length) return;
+    setErr(null);
+
+    const room = MAX_PHOTOS - photos.length;
+    if (room <= 0) {
+      setErr(`하루 최대 ${MAX_PHOTOS}장까지 첨부할 수 있습니다.`);
+      return;
+    }
+    const picked = files.slice(0, room);
+    if (files.length > room) setErr(`최대 ${MAX_PHOTOS}장까지만 첨부되어 ${picked.length}장만 업로드합니다.`);
+
+    setBusy(true);
+    const uploaded: DayPhoto[] = [];
+    for (const file of picked) {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("student_id", studentId);
+      fd.append("cycle", String(cycle));
+      fd.append("week", String(week));
+      fd.append("date", day.date);
+      const res = await fetch("/api/reports/weekly/photo", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) uploaded.push({ url: data.url, path: data.path });
+      else setErr(data.error || "업로드 실패");
+    }
+    setBusy(false);
+    if (uploaded.length) onChange({ photos: [...photos, ...uploaded] });
+  }
+
+  async function removePhoto(p: DayPhoto) {
+    onChange({ photos: photos.filter((x) => x.path !== p.path) });
+    await fetch("/api/reports/weekly/photo", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ student_id: studentId, path: p.path }),
+    }).catch(() => {});
+  }
+
+  return (
+    <div className="mt-3">
+      <div className="flex items-center justify-between">
+        <label className="text-xs text-ink/55 font-medium">
+          공부 인증 사진 <span className="text-ink/40">({photos.length}/{MAX_PHOTOS})</span>
+        </label>
+        {photos.length < MAX_PHOTOS && (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={busy}
+            className="no-print text-[11px] rounded-lg border border-indigo/25 bg-gradient-to-r from-indigo/8 to-fuchsia/8 hover:from-indigo/15 hover:to-fuchsia/15 text-indigo font-semibold px-2.5 py-1 transition disabled:opacity-50"
+          >
+            {busy ? "업로드 중..." : "+ 사진 추가"}
+          </button>
+        )}
+      </div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={onPick}
+        className="hidden"
+      />
+      {photos.length > 0 && (
+        <div className="mt-2 grid grid-cols-4 gap-2">
+          {photos.map((p) => (
+            <div key={p.path} className="relative group aspect-square rounded-xl overflow-hidden border border-ink/10 bg-ink/5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.url} alt="공부 인증" className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => removePhoto(p)}
+                title="삭제"
+                className="no-print absolute top-1 right-1 w-5 h-5 rounded-full bg-ink/70 text-white text-xs leading-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {err && <p className="text-[10px] text-rose mt-1">{err}</p>}
     </div>
   );
 }
@@ -337,10 +466,12 @@ const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, i) => i * 5); // 0,5,...,5
 
 function WakeTimeInput({
   value,
+  certOff,
   onChange,
 }: {
   value: string | null;
-  onChange: (v: string | null) => void;
+  certOff: boolean;
+  onChange: (patch: Partial<DayData>) => void;
 }) {
   const parsed = parseHM(value);
   const [ampm, setAmpm] = useState<"오전" | "오후">(parsed?.ampm ?? "오전");
@@ -359,7 +490,23 @@ function WakeTimeInput({
     const minute = nMm === "" ? "00" : nMm;
     let h = Number(nH12) % 12;
     if (nAmpm === "오후") h += 12;
-    onChange(`${pad2(h)}:${minute}`);
+    onChange({ wake_up_time: `${pad2(h)}:${minute}` });
+  }
+
+  // [수정 4] 기상 인증 X 상태 → 배지로 전환 (클릭 시 시간 입력으로 복귀)
+  if (certOff) {
+    return (
+      <div className="mt-1">
+        <button
+          type="button"
+          onClick={() => onChange({ wake_cert_off: false })}
+          title="클릭하면 기상 시간 입력으로 돌아갑니다"
+          className="text-xs inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border font-medium bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200 transition"
+        >
+          기상 인증 X
+        </button>
+      </div>
+    );
   }
 
   const minuteOptions = parsed && !MINUTE_OPTIONS.includes(parsed.m)
@@ -410,18 +557,11 @@ function WakeTimeInput({
       </select>
       <button
         type="button"
-        onClick={() => onChange(null)}
-        className={`text-xs px-2.5 py-1.5 rounded-xl border font-medium transition ${
-          value == null
-            ? "bg-slate-100 text-slate-600 border-slate-300"
-            : "text-ink/55 border-ink/15 hover:bg-rose/5 hover:text-rose hover:border-rose/30"
-        }`}
+        onClick={() => onChange({ wake_up_time: null, wake_cert_off: true })}
+        className="text-xs px-2.5 py-1.5 rounded-xl border font-medium transition text-ink/55 border-ink/15 hover:bg-rose/5 hover:text-rose hover:border-rose/30"
       >
         기상 인증 X
       </button>
-      {value == null && (
-        <span className="text-[11px] text-ink/40">미인증</span>
-      )}
     </div>
   );
 }

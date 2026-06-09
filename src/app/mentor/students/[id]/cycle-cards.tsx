@@ -166,6 +166,16 @@ function CycleCard({
               <button onClick={() => setEditingDate(true)} className="text-indigo hover:underline font-medium">
                 수정
               </button>
+              {/* [수정 2] 메모 버튼을 날짜·수정 옆으로 이동 */}
+              <button
+                onClick={() => {
+                  setMemoDraft(memo);
+                  setEditingMemo((v) => !v);
+                }}
+                className={`font-medium hover:underline ${memo ? "text-sunset" : "text-ink/55"}`}
+              >
+                메모{memo ? " ●" : ""}
+              </button>
               <span className="inline-block px-1.5 py-0.5 rounded-full bg-ink/5 text-ink/60 text-[10px]">
                 {weekProgress}/4 주차 진행
               </span>
@@ -173,40 +183,46 @@ function CycleCard({
           )}
         </div>
 
-        <div className="flex gap-1.5 flex-wrap items-start">
-          {[1, 2, 3, 4].map((w) => (
-            <Link
-              key={w}
-              href={`/mentor/students/${studentId}/weekly?cycle=${cycle}&week=${w}`}
-              className={`text-xs rounded-full px-2.5 py-1 font-semibold border transition ${
-                w <= weekProgress
-                  ? "bg-gradient-to-r from-indigo/15 to-violet/15 text-indigo border-indigo/25 hover:from-indigo/25 hover:to-violet/25"
-                  : "text-ink/50 border-ink/10 hover:bg-indigo/5"
-              }`}
-            >
-              {cumulativeWeek(cycle, w)}주차
-            </Link>
-          ))}
+        {/* [수정 1] 주차 버튼 2줄(계획표/레포트) + 월간 레포트 */}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex flex-col gap-1.5 items-end">
+            <div className="flex gap-1.5 flex-wrap justify-end">
+              {[1, 2, 3, 4].map((w) => (
+                <Link
+                  key={w}
+                  href={`/mentor/students/${studentId}/plan?cycle=${cycle}&week=${w}`}
+                  className={`text-xs rounded-full px-2.5 py-1 font-semibold border transition ${
+                    w <= weekProgress
+                      ? "bg-gradient-to-r from-indigo/15 to-violet/15 text-indigo border-indigo/25 hover:from-indigo/25 hover:to-violet/25"
+                      : "text-ink/50 border-ink/10 hover:bg-indigo/5"
+                  }`}
+                >
+                  {cumulativeWeek(cycle, w)}주차 주간 계획표
+                </Link>
+              ))}
+            </div>
+            <div className="flex gap-1.5 flex-wrap justify-end">
+              {[1, 2, 3, 4].map((w) => (
+                <Link
+                  key={w}
+                  href={`/mentor/students/${studentId}/weekly?cycle=${cycle}&week=${w}`}
+                  className={`text-xs rounded-full px-2.5 py-1 font-semibold border transition ${
+                    w <= weekProgress
+                      ? "bg-gradient-to-r from-indigo/15 to-violet/15 text-indigo border-indigo/25 hover:from-indigo/25 hover:to-violet/25"
+                      : "text-ink/50 border-ink/10 hover:bg-indigo/5"
+                  }`}
+                >
+                  {cumulativeWeek(cycle, w)}주차 주간 레포트
+                </Link>
+              ))}
+            </div>
+          </div>
           <Link
             href={`/mentor/students/${studentId}/monthly?cycle=${cycle}`}
             className="text-xs rounded-full px-3 py-1 font-semibold bg-gradient-to-r from-fuchsia to-rose text-white border border-transparent hover:brightness-110 transition shadow-sm shadow-fuchsia/30"
           >
-            월간 →
+            {cycle}개월차 월간 레포트
           </Link>
-          {/* [수정 9-3] 메모 버튼 */}
-          <button
-            onClick={() => {
-              setMemoDraft(memo);
-              setEditingMemo((v) => !v);
-            }}
-            className={`text-xs rounded-full px-3 py-1 font-semibold border transition ${
-              memo
-                ? "bg-sunset/10 text-sunset border-sunset/25"
-                : "text-ink/55 border-ink/15 hover:bg-sunset/5"
-            }`}
-          >
-            메모{memo ? " ●" : ""}
-          </button>
         </div>
       </div>
 
