@@ -13,6 +13,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* 손글씨(필기체) 폰트 — 복습 결과지 응원 문구용 */}
+        <link
+          rel="stylesheet"
+          crossOrigin="anonymous"
+          href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap"
+        />
+      </head>
       <body className="min-h-screen antialiased">{children}</body>
     </html>
   );
