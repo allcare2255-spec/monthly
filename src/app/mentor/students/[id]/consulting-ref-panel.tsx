@@ -20,7 +20,12 @@ export function ConsultingRefPanel({ submission }: { submission: ConsultingSubmi
     hour: "2-digit",
     minute: "2-digit",
   });
-  const typeLabel = submission.form_type === "monthly" ? "월간 비전 컨설팅" : "주간 성장 코칭";
+  const typeLabel =
+    submission.form_type === "monthly"
+      ? "월간 비전 컨설팅"
+      : submission.form_type === "pre"
+        ? "사전 질문지"
+        : "주간 성장 코칭";
 
   return (
     <div className="no-print rounded-2xl border border-indigo/20 bg-gradient-to-br from-indigo/[0.04] to-fuchsia/[0.04] overflow-hidden">

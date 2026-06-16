@@ -37,13 +37,39 @@ export const MONTHLY_FIELDS: ConsultingField[] = [
   { key: "memo", label: "메모", type: "longtext", required: false },
 ];
 
+// 사전 질문지 (pre) — 1주차 사전 컨설팅용. 전부 장문, 파일/동의 없음.
+const STUDY_HINT = "인강명, 학원, 과외 등 + 현재 문제점";
+export const PRE_FIELDS: ConsultingField[] = [
+  { key: "target_univ", label: "목표 대학 & 학과 3가지", type: "longtext", required: true },
+  { key: "target_score", label: "목표 대학을 위해 필요한 성적 (내신 & 수능)", type: "longtext", required: true },
+  { key: "current_status", label: "현재 나의 과목선택 & 성적대 (내신, 수능 모두)", type: "longtext", required: true },
+  { key: "study_korean", label: "국어 현재 공부 형태 및 문제점", hint: STUDY_HINT, type: "longtext", required: true },
+  { key: "study_math", label: "수학 현재 공부 형태 및 문제점", hint: STUDY_HINT, type: "longtext", required: true },
+  { key: "study_english", label: "영어 현재 공부 형태 및 문제점", hint: STUDY_HINT, type: "longtext", required: true },
+  { key: "study_explore", label: "탐구 현재 공부 형태 및 문제점", hint: STUDY_HINT, type: "longtext", required: true },
+  { key: "questions_to_mentor", label: "스카이메이트 멘토에게 질문하고 싶은 3가지", hint: "공부법, 인강 외 개인적인 질문 포함", type: "longtext", required: true },
+  { key: "four_week_plan", label: "스카이메이트로 4주 동안 이루고 싶은 계획", hint: "성적 X, 전 과목 진도 & 성취 측면, 과목별 최대한 상세히. 단 욕심 부리지 말고 70% 정도로", type: "longtext", required: true },
+  { key: "other_goal", label: "그 밖에 4주간 코칭을 통해 이루고 싶은 것 (있다면 상세히)", type: "longtext", required: false },
+];
+
 export function fieldsFor(formType: ConsultingFormType): ConsultingField[] {
-  return formType === "monthly" ? MONTHLY_FIELDS : WEEKLY_FIELDS;
+  if (formType === "pre") return PRE_FIELDS;
+  if (formType === "monthly") return MONTHLY_FIELDS;
+  return WEEKLY_FIELDS;
 }
 
 export const FORM_TITLE: Record<ConsultingFormType, string> = {
   weekly: "주간 성장 코칭 폼",
   monthly: "월간 비전 컨설팅 폼",
+  pre: "사전 질문지",
+};
+
+// 폼 상단 안내문 / 하단 문구 (값이 있는 폼만 노출)
+export const FORM_INTRO: Partial<Record<ConsultingFormType, string>> = {
+  pre: "상담을 위한 사전 질문지입니다. 성실하게 작성할수록 상담의 퀄리티가 상승합니다.",
+};
+export const FORM_OUTRO: Partial<Record<ConsultingFormType, string>> = {
+  pre: "진짜 4주간 누구보다 많이 변해봅시다. 잘 부탁드립니다 🫶",
 };
 
 // 하단 주의사항 / 동의 항목 (두 폼 공통, 전부 필수 체크)

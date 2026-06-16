@@ -5,7 +5,7 @@ import { fieldsFor } from "@/lib/consulting/forms";
 import type { ConsultingSubmission } from "@/types";
 
 type CurrentWeek =
-  | { state: "form"; week: number; formType: "weekly" | "monthly" }
+  | { state: "form"; week: number; formType: "weekly" | "monthly" | "pre" }
   | { state: "other" };
 
 export function ConsultingSection({
@@ -53,8 +53,17 @@ export function ConsultingSection({
 }
 
 function ShareLink({ token }: { token: string }) {
+  const base = typeof window !== "undefined" ? `${window.location.origin}/c/${token}` : "";
+  return (
+    <div className="glass rounded-2xl p-4 space-y-3">
+      <LinkRow label="학생 제출 링크 (주차에 맞는 폼이 자동 표시됩니다)" url={base} />
+      <LinkRow label="사전 질문지 링크 (가입 직후 · 주차 무시하고 사전 질문지)" url={base ? `${base}?form=pre` : ""} />
+    </div>
+  );
+}
+
+function LinkRow({ label, url }: { label: string; url: string }) {
   const [copied, setCopied] = useState(false);
-  const url = typeof window !== "undefined" ? `${window.location.origin}/c/${token}` : "";
   async function copy() {
     if (!url) return;
     await navigator.clipboard.writeText(url);
@@ -62,10 +71,8 @@ function ShareLink({ token }: { token: string }) {
     setTimeout(() => setCopied(false), 1500);
   }
   return (
-    <div className="glass rounded-2xl p-4">
-      <label className="text-[11px] font-semibold text-ink/55 uppercase tracking-[0.12em]">
-        학생 제출 링크 (주차에 맞는 폼이 자동 표시됩니다)
-      </label>
+    <div>
+      <label className="text-[11px] font-semibold text-ink/55 uppercase tracking-[0.12em]">{label}</label>
       <div className="mt-1.5 flex items-center gap-2">
         <input
           readOnly
@@ -92,7 +99,14 @@ function SubmissionCard({ sub }: { sub: ConsultingSubmission }) {
     hour: "2-digit",
     minute: "2-digit",
   });
-  const typeLabel = sub.form_type === "monthly" ? "월간 비전 컨설팅" : "주간 성장 코칭";
+  const typeLabel =
+    sub.form_type === "monthly" ? "월간 비전 컨설팅" : sub.form_type === "pre" ? "사전 질문지" : "주간 성장 코칭";
+  const badgeCls =
+    sub.form_type === "monthly"
+      ? "bg-fuchsia/10 text-fuchsia"
+      : sub.form_type === "pre"
+        ? "bg-violet/10 text-violet"
+        : "bg-indigo/10 text-indigo";
 
   return (
     <div className="rounded-2xl bg-white border border-ink/5 shadow-sm overflow-hidden">
@@ -101,13 +115,7 @@ function SubmissionCard({ sub }: { sub: ConsultingSubmission }) {
         className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-ink/[0.015] transition"
       >
         <div className="flex items-center gap-2">
-          <span
-            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-              sub.form_type === "monthly"
-                ? "bg-fuchsia/10 text-fuchsia"
-                : "bg-indigo/10 text-indigo"
-            }`}
-          >
+          <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${badgeCls}`}>
             {sub.week_number}주차 · {typeLabel}
           </span>
           <span className="text-xs text-ink/45">{when}</span>

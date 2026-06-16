@@ -10,15 +10,16 @@ type FormConfig =
   | { state: "loading" }
   | { state: "invalid" }
   | { state: "not_started"; prefill: Prefill }
-  | { state: "pre"; prefill: Prefill; week: number }
   | {
       state: "form";
       prefill: Prefill;
       week: number;
-      formType: "weekly" | "monthly";
+      formType: "weekly" | "monthly" | "pre";
       title: string;
       fields: ConsultingField[];
       agreements: AgreementItem[];
+      intro: string | null;
+      outro: string | null;
     };
 
 export default function ConsultingFormPage({ params }: { params: Promise<{ token: string }> }) {
@@ -55,12 +56,6 @@ export default function ConsultingFormPage({ params }: { params: Promise<{ token
             아직 코칭 시작일이 등록되지 않았어요. 담당 멘토에게 문의해주세요.
           </Notice>
         )}
-        {cfg.state === "pre" && (
-          <Notice prefill={cfg.prefill}>
-            <strong>1주차 사전 컨설팅</strong>은 별도로 안내된 <strong>사전질문지</strong>로 작성해주세요.
-            <br />이 폼은 2주차부터 사용됩니다.
-          </Notice>
-        )}
         {cfg.state === "form" && <ConsultingForm token={token} cfg={cfg} />}
       </div>
     </main>
@@ -75,16 +70,19 @@ function Centered({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Header({ prefill, sub }: { prefill: Prefill; sub?: string }) {
+function Header({ prefill, sub, isPre }: { prefill: Prefill; sub?: string; isPre?: boolean }) {
   return (
     <div className="mb-5">
       <div className="text-[11px] uppercase tracking-[0.25em] text-indigo font-semibold">SKY MATE</div>
       <h1 className="text-2xl font-extrabold text-gradient mt-1">컨설팅 준비</h1>
       {sub && <p className="text-sm text-ink/55 mt-1">{sub}</p>}
-      <div className="mt-4 grid grid-cols-3 gap-2 text-[13px]">
+      <div className="mt-4 flex flex-wrap gap-2 text-[13px]">
+        {/* pre 는 이름 위주(+멘토 있으면). 전화번호는 표시하지 않음 */}
         <ReadonlyChip label="이름" value={prefill.name} />
-        <ReadonlyChip label="전화번호" value={prefill.phone || "-"} />
-        <ReadonlyChip label="담당 멘토" value={prefill.mentorName ? `${prefill.mentorName} 멘토` : "-"} />
+        {!isPre && <ReadonlyChip label="전화번호" value={prefill.phone || "-"} />}
+        {(!isPre || prefill.mentorName) && (
+          <ReadonlyChip label="담당 멘토" value={prefill.mentorName ? `${prefill.mentorName} 멘토` : "-"} />
+        )}
       </div>
     </div>
   );
@@ -92,7 +90,7 @@ function Header({ prefill, sub }: { prefill: Prefill; sub?: string }) {
 
 function ReadonlyChip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-white border border-ink/5 px-3 py-2">
+    <div className="flex-1 min-w-[100px] rounded-xl bg-white border border-ink/5 px-3 py-2">
       <div className="text-[10px] text-ink/45 font-semibold">{label}</div>
       <div className="text-ink font-medium truncate">{value}</div>
     </div>
@@ -161,7 +159,7 @@ function ConsultingForm({
       const r = await fetch("/api/consulting/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, answers, file_paths: files, agreements: agree }),
+        body: JSON.stringify({ token, form: cfg.formType, answers, file_paths: files, agreements: agree }),
       });
       const d = await r.json();
       if (!r.ok) {
@@ -176,9 +174,21 @@ function ConsultingForm({
     }
   }
 
+  const isPre = cfg.formType === "pre";
+
   return (
     <div>
-      <Header prefill={cfg.prefill} sub={`${cfg.week}주차 · ${cfg.title}`} />
+      <Header
+        prefill={cfg.prefill}
+        sub={isPre ? cfg.title : `${cfg.week}주차 · ${cfg.title}`}
+        isPre={isPre}
+      />
+
+      {cfg.intro && (
+        <div className="mb-4 rounded-2xl bg-gradient-to-br from-indigo/[0.06] to-fuchsia/[0.06] border border-indigo/15 p-4 text-sm text-ink/80 leading-relaxed">
+          {cfg.intro}
+        </div>
+      )}
 
       <div className="space-y-4">
         {cfg.fields.map((f, i) => (
@@ -202,7 +212,8 @@ function ConsultingForm({
         ))}
       </div>
 
-      {/* 동의 항목 */}
+      {/* 동의 항목 (pre 는 없음) */}
+      {cfg.agreements.length > 0 && (
       <div className="mt-6 space-y-3">
         <div className="text-[11px] uppercase tracking-[0.2em] text-indigo font-semibold">주의사항 · 동의</div>
         {cfg.agreements.map((a) => (
@@ -230,6 +241,13 @@ function ConsultingForm({
           </label>
         ))}
       </div>
+      )}
+
+      {cfg.outro && (
+        <div className="mt-6 rounded-2xl bg-gradient-to-br from-fuchsia/[0.06] to-rose/[0.06] border border-fuchsia/15 p-4 text-sm font-semibold text-ink/80 text-center leading-relaxed">
+          {cfg.outro}
+        </div>
+      )}
 
       {error && (
         <p className="mt-4 rounded-xl bg-rose/10 text-rose text-sm px-4 py-3 font-medium">{error}</p>

@@ -22,7 +22,7 @@ export type Student = {
 };
 
 // ── 컨설팅 폼 제출 ───────────────────────────────────────────
-export type ConsultingFormType = "weekly" | "monthly";
+export type ConsultingFormType = "weekly" | "monthly" | "pre";
 
 /** 업로드된 이미지 1장 (file_paths JSON에 저장). */
 export type ConsultingFile = {

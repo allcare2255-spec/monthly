@@ -15,11 +15,23 @@ export async function POST(req: Request) {
   if (!student) return NextResponse.json({ error: "유효하지 않은 링크입니다." }, { status: 404 });
 
   const state = weekStateForStudent(student.coachingStartDate);
-  if (state.kind !== "form") {
-    return NextResponse.json({ error: "지금은 제출할 수 있는 폼이 없습니다." }, { status: 400 });
+
+  // 폼 종류 결정: ?form=pre 직접 링크면 사전 질문지(주차 무시), 아니면 서버가 주차로 재계산.
+  const forcedPre = body.form === "pre";
+  let formType: "weekly" | "monthly" | "pre";
+  let weekNumber: number;
+  if (forcedPre) {
+    formType = "pre";
+    weekNumber = state.kind === "form" ? state.week : 1;
+  } else {
+    if (state.kind !== "form") {
+      return NextResponse.json({ error: "지금은 제출할 수 있는 폼이 없습니다." }, { status: 400 });
+    }
+    formType = state.formType;
+    weekNumber = state.week;
   }
 
-  const fields = fieldsFor(state.formType);
+  const fields = fieldsFor(formType);
   const rawAnswers = (body.answers ?? {}) as Record<string, string>;
   const rawFiles = (body.file_paths ?? {}) as Record<string, ConsultingFile[]>;
   const rawAgreements = (body.agreements ?? {}) as Record<string, boolean>;
@@ -47,19 +59,21 @@ export async function POST(req: Request) {
     }
   }
 
-  // 동의 항목 — 전부 필수 체크
+  // 동의 항목 — weekly/monthly 만 전부 필수 체크 (pre 는 동의 없음)
   const agreements: Record<string, boolean> = {};
-  for (const a of AGREEMENTS) {
-    if (rawAgreements[a.key] !== true) {
-      return NextResponse.json({ error: "모든 동의 항목을 확인해주세요." }, { status: 400 });
+  if (formType !== "pre") {
+    for (const a of AGREEMENTS) {
+      if (rawAgreements[a.key] !== true) {
+        return NextResponse.json({ error: "모든 동의 항목을 확인해주세요." }, { status: 400 });
+      }
+      agreements[a.key] = true;
     }
-    agreements[a.key] = true;
   }
 
   await saveSubmission({
     studentId: student.id,
-    weekNumber: state.week,
-    formType: state.formType,
+    weekNumber,
+    formType,
     answers,
     filePaths,
     agreements,

@@ -4,18 +4,17 @@ import { weeksSinceStart, todaySeoul } from "@/lib/dates";
 
 export type WeekState =
   | { kind: "not_started"; week: 0 }                 // 코칭 시작 전 / 시작일 미등록
-  | { kind: "pre"; week: 1 }                         // 1주차 = 외부 사전질문지 (이 시스템 범위 밖)
   | { kind: "form"; week: number; formType: ConsultingFormType };
 
 /**
  * 누적 주차로 폼 종류를 결정한다.
- * - 1주차: 외부 사전질문지(pre) → 안내만
+ * - 1주차: 사전 질문지(pre)
  * - (주차-1) % 4 === 0 (5,9,13…): 월간 비전 컨설팅
  * - 그 외(2,3,4,6,7,8…): 주간 성장 코칭
  */
 export function weekStateFromWeek(week: number): WeekState {
   if (week <= 0) return { kind: "not_started", week: 0 };
-  if (week === 1) return { kind: "pre", week: 1 };
+  if (week === 1) return { kind: "form", week: 1, formType: "pre" };
   const formType: ConsultingFormType = (week - 1) % 4 === 0 ? "monthly" : "weekly";
   return { kind: "form", week, formType };
 }
