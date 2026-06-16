@@ -1,23 +1,35 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { DayData, DayPhoto, DayStatus, WeeklyReport } from "@/types";
 import { hmToMinutes, minutesToHm } from "@/lib/dates";
 
 const WEEKDAY_KO = ["월", "화", "수", "목", "금", "토", "일"];
+const pad2 = (n: number) => String(n).padStart(2, "0");
 
 export function WeeklyReportEditor({
   studentId,
   cycle,
   week,
+  studentName,
+  cumWeek,
+  weekStart,
+  weekEnd,
 }: {
   studentId: string;
   cycle: number;
   week: number;
+  studentName: string;
+  cumWeek: number;
+  weekStart: string;
+  weekEnd: string;
 }) {
   const [report, setReport] = useState<WeeklyReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingField, setSavingField] = useState<string | null>(null);
+  // [수정 4] 학생에게 보내기 → 완성 레포트 미리보기 화면
+  const [preview, setPreview] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -29,27 +41,12 @@ export function WeeklyReportEditor({
       });
   }, [studentId, cycle, week]);
 
-  // [수정 4-3] PDF 저장 시 textarea 내용이 잘리지 않도록 높이를 자동 확장
+  // [수정 4] 미리보기가 열려 있는 동안 body에 클래스 부여 → 인쇄 시 미리보기만 출력
   useEffect(() => {
-    function expand() {
-      document.querySelectorAll<HTMLTextAreaElement>("textarea").forEach((t) => {
-        t.setAttribute("data-prev-h", t.style.height);
-        t.style.height = "auto";
-        t.style.height = `${t.scrollHeight + 2}px`;
-      });
-    }
-    function restore() {
-      document.querySelectorAll<HTMLTextAreaElement>("textarea").forEach((t) => {
-        t.style.height = t.getAttribute("data-prev-h") || "";
-      });
-    }
-    window.addEventListener("beforeprint", expand);
-    window.addEventListener("afterprint", restore);
-    return () => {
-      window.removeEventListener("beforeprint", expand);
-      window.removeEventListener("afterprint", restore);
-    };
-  }, []);
+    if (preview) document.body.classList.add("preview-active");
+    else document.body.classList.remove("preview-active");
+    return () => document.body.classList.remove("preview-active");
+  }, [preview]);
 
   async function patch(patchObj: Partial<WeeklyReport>, fieldKey: string) {
     if (!report) return;
@@ -117,11 +114,12 @@ export function WeeklyReportEditor({
   return (
     <div className="space-y-6">
       <div className="flex justify-end no-print">
+        {/* [수정 4] PDF로 저장 → 학생에게 보내기 (미리보기 화면 표시) */}
         <button
-          onClick={() => window.print()}
+          onClick={() => setPreview(true)}
           className="btn-gradient rounded-xl font-semibold px-5 py-2.5"
         >
-          PDF로 저장
+          학생에게 보내기
         </button>
       </div>
 
@@ -173,6 +171,23 @@ export function WeeklyReportEditor({
           onSave={(v) => patch({ next_week_actions: v }, "next")}
         />
       </section>
+
+      {/* [수정 4·5·6] 완성 레포트 미리보기 (학생에게 보내기) */}
+      {preview &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <ReportPreview
+            studentName={studentName}
+            cycle={cycle}
+            cumWeek={cumWeek}
+            weekStart={weekStart}
+            weekEnd={weekEnd}
+            report={report}
+            stats={stats}
+            onClose={() => setPreview(false)}
+          />,
+          document.body,
+        )}
     </div>
   );
 }
@@ -208,17 +223,20 @@ function StatCard({
 
 const STATUS_STYLES: Record<DayStatus, string> = {
   submitted: "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 border-emerald-200",
+  // [수정 3] 과제 미흡 — 분홍색
+  incomplete: "bg-pink-100 text-pink-600 border-pink-300",
   missed: "bg-gradient-to-r from-rose-50 to-pink-50 text-rose border-rose/30",
   paused: "bg-slate-100 text-slate-600 border-slate-200",
 };
 const STATUS_LABEL: Record<DayStatus, string> = {
   submitted: "제출 완료",
+  incomplete: "과제 미흡",
   missed: "미제출",
   paused: "일시 정지",
 };
 
-// [수정 2] 상태 순환: 제출 완료 → 미제출 → 일시 정지 → 제출 완료 …
-const STATUS_CYCLE: DayStatus[] = ["submitted", "missed", "paused"];
+// [수정 3] 상태 순환: 제출 완료 → 과제 미흡 → 미제출 → 제출 완료 …
+const STATUS_CYCLE: DayStatus[] = ["submitted", "incomplete", "missed"];
 function nextStatus(s: DayStatus): DayStatus {
   const i = STATUS_CYCLE.indexOf(s);
   return STATUS_CYCLE[(i + 1) % STATUS_CYCLE.length];
@@ -264,12 +282,13 @@ function DayCard({
             {weekday}
           </div>
           <div>
-            <div className="text-xs text-ink/55">{day.date}</div>
-            {/* [수정 2] 배지 클릭 시 상태 순환 (오른쪽 버튼 3개 제거) */}
+            {/* [수정 1] 일별 날짜 색상 회색 → 검정 */}
+            <div className="text-xs text-ink">{day.date}</div>
+            {/* [수정 3] 배지 클릭 시 상태 순환 (오른쪽 버튼 3개 제거) */}
             <button
               type="button"
               onClick={() => onChange({ status: nextStatus(day.status) })}
-              title="클릭하면 상태가 바뀝니다 (제출 완료 → 미제출 → 일시 정지)"
+              title="클릭하면 상태가 바뀝니다 (제출 완료 → 과제 미흡 → 미제출)"
               className={`text-xs inline-block mt-0.5 px-2 py-0.5 rounded-full border font-medium cursor-pointer transition hover:brightness-95 ${STATUS_STYLES[day.status]}`}
             >
               {STATUS_LABEL[day.status]}
@@ -281,7 +300,7 @@ function DayCard({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-ink/55 font-medium">기상 시간</label>
-          {/* [수정 4] 오전 기본값 + 기상 인증 X 토글 */}
+          {/* [수정 2] 시/분 직접 타이핑 + 기상 인증 X 토글 */}
           <WakeTimeInput
             value={day.wake_up_time}
             certOff={!!day.wake_cert_off}
@@ -450,20 +469,7 @@ function PhotoSection({
   );
 }
 
-// [수정 3] 기상 시간 입력 — 오전/오후 토글(기본 오전) + 시/분 + 기상 인증 X
-function parseHM(value: string | null) {
-  const min = hmToMinutes(value);
-  if (min == null) return null;
-  const h24 = Math.floor(min / 60);
-  const m = min % 60;
-  const ampm: "오전" | "오후" = h24 < 12 ? "오전" : "오후";
-  let h12 = h24 % 12;
-  if (h12 === 0) h12 = 12;
-  return { ampm, h12, m };
-}
-const pad2 = (n: number) => String(n).padStart(2, "0");
-const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, i) => i * 5); // 0,5,...,55
-
+// [수정 2] 기상 시간 — 시/분 숫자 직접 입력 (순공 시간과 동일) + 기상 인증 X
 function WakeTimeInput({
   value,
   certOff,
@@ -473,27 +479,21 @@ function WakeTimeInput({
   certOff: boolean;
   onChange: (patch: Partial<DayData>) => void;
 }) {
-  const parsed = parseHM(value);
-  const [ampm, setAmpm] = useState<"오전" | "오후">(parsed?.ampm ?? "오전");
-  const [h12, setH12] = useState<string>(parsed ? String(parsed.h12) : "");
-  const [mm, setMm] = useState<string>(parsed ? pad2(parsed.m) : "");
+  const min = hmToMinutes(value);
+  const hh = min != null ? Math.floor(min / 60) : "";
+  const mm = min != null ? min % 60 : "";
 
-  useEffect(() => {
-    const p = parseHM(value);
-    setAmpm(p?.ampm ?? "오전");
-    setH12(p ? String(p.h12) : "");
-    setMm(p ? pad2(p.m) : "");
-  }, [value]);
-
-  function commit(nAmpm: "오전" | "오후", nH12: string, nMm: string) {
-    if (nH12 === "") return; // 시(時)가 선택되어야 인증으로 처리
-    const minute = nMm === "" ? "00" : nMm;
-    let h = Number(nH12) % 12;
-    if (nAmpm === "오후") h += 12;
-    onChange({ wake_up_time: `${pad2(h)}:${minute}` });
+  function setWake(h: string, m: string) {
+    const hv = h === "" ? null : Number(h);
+    const mv = m === "" ? null : Number(m);
+    if (hv == null && mv == null) {
+      onChange({ wake_up_time: null });
+      return;
+    }
+    onChange({ wake_up_time: `${pad2(hv || 0)}:${pad2(mv || 0)}` });
   }
 
-  // [수정 4] 기상 인증 X 상태 → 배지로 전환 (클릭 시 시간 입력으로 복귀)
+  // [수정 2/6] 기상 인증 X 상태 → 배지로 전환 (클릭 시 시간 입력으로 복귀)
   if (certOff) {
     return (
       <div className="mt-1">
@@ -509,52 +509,28 @@ function WakeTimeInput({
     );
   }
 
-  const minuteOptions = parsed && !MINUTE_OPTIONS.includes(parsed.m)
-    ? [parsed.m, ...MINUTE_OPTIONS].sort((a, b) => a - b)
-    : MINUTE_OPTIONS;
-
-  const selCls =
-    "rounded-xl border border-ink/10 px-2 py-1.5 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition bg-white";
-
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-2">
-      <select
-        value={ampm}
-        onChange={(e) => {
-          const v = e.target.value as "오전" | "오후";
-          setAmpm(v);
-          commit(v, h12, mm);
-        }}
-        className={selCls}
-      >
-        <option value="오전">오전</option>
-        <option value="오후">오후</option>
-      </select>
-      <select
-        value={h12}
-        onChange={(e) => {
-          setH12(e.target.value);
-          commit(ampm, e.target.value, mm === "" ? "00" : mm);
-        }}
-        className={selCls}
-      >
-        <option value="">시</option>
-        {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-          <option key={h} value={h}>{h}시</option>
-        ))}
-      </select>
-      <select
+    <div className="mt-1 flex gap-2 items-center">
+      <input
+        type="number"
+        min="0"
+        max="23"
+        value={hh}
+        onChange={(e) => setWake(e.target.value, String(mm))}
+        className="w-16 rounded-xl border border-ink/10 px-2 py-1.5 text-center outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
+        placeholder="7"
+      />
+      <span className="text-sm text-ink/55">시</span>
+      <input
+        type="number"
+        min="0"
+        max="59"
         value={mm}
-        onChange={(e) => {
-          setMm(e.target.value);
-          commit(ampm, h12, e.target.value);
-        }}
-        className={selCls}
-      >
-        {minuteOptions.map((m) => (
-          <option key={m} value={pad2(m)}>{pad2(m)}분</option>
-        ))}
-      </select>
+        onChange={(e) => setWake(String(hh), e.target.value)}
+        className="w-16 rounded-xl border border-ink/10 px-2 py-1.5 text-center outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
+        placeholder="00"
+      />
+      <span className="text-sm text-ink/55">분</span>
       <button
         type="button"
         onClick={() => onChange({ wake_up_time: null, wake_cert_off: true })}
@@ -591,6 +567,195 @@ function CommentBlock({
         placeholder="자유롭게 작성하세요"
       />
       {saving && <p className="text-[10px] text-ink/40 mt-1">저장 중...</p>}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// [수정 4·5·6] 완성 레포트 미리보기 + PDF 저장
+// ─────────────────────────────────────────────────────────────
+
+type StatsShape = {
+  submitted: number;
+  totalDay: number;
+  taskRate: number;
+  avgStudy: number;
+  avgWake: string;
+} | null;
+
+function wakeText(day: DayData): string | null {
+  // 기상 인증 X → "기상 인증 X", 시간 입력 → "7시 00분", 둘 다 없으면 null(미표시)
+  if (day.wake_cert_off) return "기상 인증 X";
+  const min = hmToMinutes(day.wake_up_time);
+  if (min == null) return null;
+  return `${Math.floor(min / 60)}시 ${pad2(min % 60)}분`;
+}
+
+function ReportPreview({
+  studentName,
+  cycle,
+  cumWeek,
+  weekStart,
+  weekEnd,
+  report,
+  stats,
+  onClose,
+}: {
+  studentName: string;
+  cycle: number;
+  cumWeek: number;
+  weekStart: string;
+  weekEnd: string;
+  report: WeeklyReport;
+  stats: StatsShape;
+  onClose: () => void;
+}) {
+  const comments = [
+    { label: "이번 주에 잘 한 것", value: report.good_points },
+    { label: "이번 주에 아쉬운 것", value: report.improvement_points },
+    { label: "다음 주에 하면 좋을 것", value: report.next_week_actions },
+  ].filter((c) => (c.value || "").trim());
+
+  return (
+    <div
+      data-preview-root
+      className="fixed inset-0 z-50 overflow-auto bg-white"
+    >
+      {/* 액션 바 (인쇄 시 숨김) */}
+      <div className="preview-actions no-print sticky top-0 z-10 flex items-center justify-between gap-3 bg-white/90 backdrop-blur border-b border-ink/10 px-5 py-3">
+        <button
+          onClick={onClose}
+          className="rounded-xl border border-ink/15 px-4 py-2 text-sm font-semibold text-ink/70 hover:bg-ink/5 transition"
+        >
+          ← 닫기
+        </button>
+        <div className="text-sm font-semibold text-ink/60">완성 레포트 미리보기</div>
+        <button
+          onClick={() => window.print()}
+          className="btn-gradient rounded-xl font-semibold px-5 py-2.5"
+        >
+          PDF로 저장
+        </button>
+      </div>
+
+      {/* 완성 문서 */}
+      <div className="preview-doc mx-auto max-w-[820px] px-8 py-10">
+        <header className="mb-8">
+          <div className="text-[11px] uppercase tracking-[0.25em] text-indigo font-semibold">
+            Weekly · {cumWeek}주차
+          </div>
+          <h1 className="text-3xl font-extrabold text-ink mt-1">
+            {studentName} <span className="text-ink/30 font-bold">·</span> {cumWeek}주차 주간 레포트
+          </h1>
+          {/* [수정 1] 날짜 검정 */}
+          <p className="text-ink mt-2 text-sm">
+            코칭 {cycle}개월차 · {weekStart} ~ {weekEnd}
+          </p>
+        </header>
+
+        {/* 통계 요약 */}
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          <PreviewStat label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
+          <PreviewStat label="평균 순공" value={minutesToHm(stats?.avgStudy)} />
+          <PreviewStat label="평균 기상" value={stats?.avgWake || "-"} />
+        </div>
+
+        {/* 일별 기록 */}
+        <h2 className="text-base font-bold text-ink mb-3">일별 기록</h2>
+        <div className="space-y-3 mb-8">
+          {report.day_data.map((day, idx) => (
+            <PreviewDayCard key={day.date} day={day} weekday={WEEKDAY_KO[idx]} />
+          ))}
+        </div>
+
+        {/* 멘토 총평 — 내용 있는 항목만 */}
+        {comments.length > 0 && (
+          <>
+            <h2 className="text-base font-bold text-ink mb-3">멘토 총평</h2>
+            <div className="space-y-3">
+              {comments.map((c) => (
+                <div key={c.label} className="preview-day-card border border-ink/10 rounded-2xl p-5">
+                  <div className="text-sm font-bold text-ink mb-1.5">{c.label}</div>
+                  <div className="text-sm text-ink/80 leading-relaxed whitespace-pre-wrap">{c.value}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PreviewStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-2xl border border-ink/10 p-4">
+      <div className="text-[11px] text-ink/55 uppercase tracking-[0.15em] font-semibold">{label}</div>
+      <div className="text-2xl font-extrabold mt-1 tabular-nums text-ink">{value}</div>
+      {sub && <div className="text-[11px] text-ink/45 mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
+function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
+  const wake = wakeText(day);
+  const study = day.study_minutes != null ? minutesToHm(day.study_minutes) : null;
+  const memo = (day.memo || "").trim();
+  const photos = day.photos || [];
+
+  return (
+    <div className="preview-day-card border border-ink/10 rounded-2xl p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo to-violet text-white flex items-center justify-center font-bold">
+          {weekday}
+        </div>
+        <div>
+          {/* [수정 1] 날짜 검정 */}
+          <div className="text-xs text-ink">{day.date}</div>
+          {/* [수정 5] 정적 배지 (클릭 불가) */}
+          <span className={`text-xs inline-block mt-0.5 px-2 py-0.5 rounded-full border font-medium ${STATUS_STYLES[day.status]}`}>
+            {STATUS_LABEL[day.status]}
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {/* [수정 6] 기상 시간은 항상 표시 */}
+        <div>
+          <div className="text-xs text-ink/55 font-medium">기상 시간</div>
+          <div className="mt-1 text-sm text-ink">{wake ?? "-"}</div>
+        </div>
+        {/* [수정 6] 순공 시간 없으면 숨김 */}
+        {study && (
+          <div>
+            <div className="text-xs text-ink/55 font-medium">순공 시간</div>
+            <div className="mt-1 text-sm text-ink">{study}</div>
+          </div>
+        )}
+      </div>
+
+      {/* [수정 6] 일별 피드백 비어있으면 섹션 숨김 */}
+      {memo && (
+        <div className="mt-3">
+          <div className="text-xs text-ink/55 font-medium">일별 피드백</div>
+          <div className="mt-1 text-sm text-ink/80 leading-relaxed whitespace-pre-wrap">{memo}</div>
+        </div>
+      )}
+
+      {/* [수정 6] 공부 인증 사진 없으면 섹션 숨김 */}
+      {photos.length > 0 && (
+        <div className="mt-3">
+          <div className="text-xs text-ink/55 font-medium">공부 인증 사진</div>
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            {photos.map((p) => (
+              <div key={p.path} className="aspect-square rounded-xl overflow-hidden border border-ink/10 bg-ink/5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.url} alt="공부 인증" className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -138,13 +138,18 @@ html, body {
   }
   @page { size: A4; margin: 14mm; }
   .print-page-break { page-break-before: always; }
-  /* [수정 4-3] PDF 저장 시 textarea 내용 전체 표시 (높이는 JS가 확장) */
-  textarea {
+
+  /* [수정 4] 미리보기가 열린 상태에서 인쇄 → 미리보기 문서만 출력 */
+  body.preview-active > :not([data-preview-root]) { display: none !important; }
+  [data-preview-root] {
+    position: static !important;
     overflow: visible !important;
-    resize: none !important;
-    border-color: rgba(0, 0, 0, 0.12) !important;
-    page-break-inside: avoid;
+    z-index: auto !important;
   }
+  .preview-actions { display: none !important; }
+  /* [수정 5] 일별 기록 카드가 페이지 중간에서 잘리지 않도록 */
+  .preview-day-card { page-break-inside: avoid; }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

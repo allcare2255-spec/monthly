@@ -86,10 +86,11 @@ export default async function WeeklyReportPage({
           {student.name} <span className="text-ink/30 font-bold">·</span> {cumulativeWeek(cycle, week)}주차 주간 레포트
         </h1>
         {/* [수정 5/6] 해당 주차 날짜만 표시, 수정(연필) 불가 — 날짜 수정은 학생 상세 페이지에서 */}
-        <p className="text-ink/55 mt-2 text-sm">
+        {/* [수정 1] 코칭 월차·날짜 텍스트 색상 회색 → 검정 */}
+        <p className="text-ink mt-2 text-sm">
           코칭 {cycle}개월차 · {weekStart} ~ {weekEnd}
           {session.role === "admin" && (
-            <span className="ml-2 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-fuchsia to-rose text-white">
+            <span className="ml-2 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-fuchsia to-rose text-white no-print">
               ADMIN
             </span>
           )}
@@ -122,7 +123,15 @@ export default async function WeeklyReportPage({
 
       <ConsultingRefPanel submission={consultingSub} />
 
-      <WeeklyReportEditor studentId={id} cycle={cycle} week={week} />
+      <WeeklyReportEditor
+        studentId={id}
+        cycle={cycle}
+        week={week}
+        studentName={student.name}
+        cumWeek={cumulativeWeek(cycle, week)}
+        weekStart={weekStart}
+        weekEnd={weekEnd}
+      />
     </div>
   );
 }
