@@ -123,33 +123,17 @@ export function WeeklyReportEditor({
         </button>
       </div>
 
-      {/* [수정 1] 통계 요약 — 3분할 (일시 정지 카드 제거) */}
+      {/* [수정 1] 1. 통계 요약 — 3분할 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
         <StatCard label="평균 순공" value={minutesToHm(stats?.avgStudy)} />
         <StatCard label="평균 기상" value={stats?.avgWake || "-"} />
       </div>
 
-      {/* 일별 카드 */}
-      <section className="space-y-3">
-        <h2 className="text-base font-bold text-ink">일별 기록</h2>
-        <div className="space-y-2">
-          {report.day_data.map((day, idx) => (
-            <DayCard
-              key={day.date}
-              day={day}
-              weekday={WEEKDAY_KO[idx]}
-              saving={savingField === `day-${idx}`}
-              studentId={studentId}
-              cycle={cycle}
-              week={week}
-              onChange={(patch) => commitDay(idx, patch)}
-            />
-          ))}
-        </div>
-      </section>
+      {/* [수정 1·2] 2. 도넛 차트 2개 */}
+      <DonutCharts report={report} />
 
-      {/* 3단계 멘토 총평 */}
+      {/* [수정 1] 3. 멘토 총평 */}
       <section className="space-y-3">
         <h2 className="text-base font-bold text-ink">멘토 총평</h2>
         <CommentBlock
@@ -170,6 +154,25 @@ export function WeeklyReportEditor({
           saving={savingField === "next"}
           onSave={(v) => patch({ next_week_actions: v }, "next")}
         />
+      </section>
+
+      {/* [수정 1] 4. 일별 기록 */}
+      <section className="space-y-3">
+        <h2 className="text-base font-bold text-ink">일별 기록</h2>
+        <div className="space-y-2">
+          {report.day_data.map((day, idx) => (
+            <DayCard
+              key={day.date}
+              day={day}
+              weekday={WEEKDAY_KO[idx]}
+              saving={savingField === `day-${idx}`}
+              studentId={studentId}
+              cycle={cycle}
+              week={week}
+              onChange={(patch) => commitDay(idx, patch)}
+            />
+          ))}
+        </div>
       </section>
 
       {/* [수정 4·5·6] 완성 레포트 미리보기 (학생에게 보내기) */}
@@ -217,6 +220,100 @@ function StatCard({
         </div>
         {sub && <div className="text-[11px] text-ink/45 mt-0.5">{sub}</div>}
       </div>
+    </div>
+  );
+}
+
+// [수정 2] 도넛 차트 2개 — 일별 기록 데이터 기반 자동 계산
+type Seg = { label: string; count: number; color: string };
+
+function Donut({ title, segments }: { title: string; segments: Seg[] }) {
+  const total = segments.reduce((s, x) => s + x.count, 0);
+  const R = 54;
+  const STROKE = 22;
+  const C = 2 * Math.PI * R;
+  let offset = 0;
+
+  return (
+    <div className="rounded-2xl bg-white border border-ink/5 p-5 shadow-sm">
+      <div className="text-sm font-bold text-ink mb-3 text-center">{title}</div>
+      <div className="flex items-center justify-center gap-5">
+        <svg viewBox="0 0 160 160" className="w-32 h-32 -rotate-90">
+          {/* 배경 트랙 */}
+          <circle cx="80" cy="80" r={R} fill="none" stroke="#EceEF3" strokeWidth={STROKE} />
+          {total > 0 &&
+            segments.map((s) => {
+              if (s.count <= 0) return null;
+              const len = (s.count / total) * C;
+              const seg = (
+                <circle
+                  key={s.label}
+                  cx="80"
+                  cy="80"
+                  r={R}
+                  fill="none"
+                  stroke={s.color}
+                  strokeWidth={STROKE}
+                  strokeDasharray={`${len} ${C - len}`}
+                  strokeDashoffset={-offset}
+                />
+              );
+              offset += len;
+              return seg;
+            })}
+        </svg>
+        <div className="space-y-1.5">
+          {segments.map((s) => {
+            const pct = total > 0 ? Math.round((s.count / total) * 100) : 0;
+            return (
+              <div key={s.label} className="flex items-center gap-2 text-xs">
+                <span className="w-3 h-3 rounded-full" style={{ background: s.color }} />
+                <span className="text-ink/70 font-medium">{s.label}</span>
+                <span className="text-ink/50 tabular-nums">
+                  {s.count}개 ({pct}%)
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 색상 (Tailwind 팔레트와 동일 톤)
+const C_GREEN = "#10B981";
+const C_PINK = "#EC4899";
+const C_RED = "#F43F5E";
+const C_GRAY = "#94A3B8";
+
+function DonutCharts({ report }: { report: WeeklyReport }) {
+  const days = report.day_data;
+  // 차트 1 — 제출 과제 인증
+  const submitted = days.filter((d) => d.status === "submitted").length;
+  const incomplete = days.filter((d) => d.status === "incomplete").length;
+  const missed = days.filter((d) => d.status === "missed").length;
+  // 차트 2 — 기상 인증 (기상 시간 입력 여부)
+  const wakeOn = days.filter((d) => !!d.wake_up_time).length;
+  const wakeOff = days.length - wakeOn;
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <Donut
+        title="제출 과제 인증"
+        segments={[
+          { label: "제출 완료", count: submitted, color: C_GREEN },
+          { label: "과제 미흡", count: incomplete, color: C_PINK },
+          { label: "미제출", count: missed, color: C_RED },
+        ]}
+      />
+      <Donut
+        title="기상 인증"
+        segments={[
+          { label: "기상 인증", count: wakeOn, color: C_GREEN },
+          { label: "기상 인증 X", count: wakeOff, color: C_GRAY },
+        ]}
+      />
     </div>
   );
 }
@@ -334,14 +431,22 @@ function DayCard({
         </div>
       </div>
 
+      {/* [수정 3] 학생 셀프 피드백 */}
       <div className="mt-3">
-        <label className="text-xs text-ink/55 font-medium">
-          일별 피드백 <span className="no-print">(카톡 복사·붙여넣기)</span>
-        </label>
-        <textarea
-          rows={2}
+        <label className="text-xs text-ink/55 font-medium">학생 셀프 피드백</label>
+        <AutoTextarea
           value={day.memo || ""}
-          onChange={(e) => onChange({ memo: e.target.value || null })}
+          onChange={(v) => onChange({ memo: v || null })}
+          className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm"
+        />
+      </div>
+
+      {/* [수정 3] 멘토 피드백 요약 */}
+      <div className="mt-3">
+        <label className="text-xs text-ink/55 font-medium">멘토 피드백 요약</label>
+        <AutoTextarea
+          value={day.mentor_memo || ""}
+          onChange={(v) => onChange({ mentor_memo: v || null })}
           className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm"
         />
       </div>
@@ -558,16 +663,50 @@ function CommentBlock({
   return (
     <div className="bg-white border border-ink/5 rounded-2xl p-4 shadow-sm">
       <label className="text-sm font-bold text-ink">{label}</label>
-      <textarea
-        rows={3}
+      {/* [수정 4] 내용 길이에 맞게 자동 확장 */}
+      <AutoTextarea
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={setText}
         onBlur={() => text !== initial && onSave(text)}
         className="mt-2 w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm leading-relaxed"
         placeholder="자유롭게 작성하세요"
       />
       {saving && <p className="text-[10px] text-ink/40 mt-1">저장 중...</p>}
     </div>
+  );
+}
+
+// [수정 4] 내용 길이에 맞게 높이 자동 확장 + 스크롤바 없음
+function AutoTextarea({
+  value,
+  onChange,
+  onBlur,
+  className,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onBlur?: () => void;
+  className?: string;
+  placeholder?: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  return (
+    <textarea
+      ref={ref}
+      rows={2}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={onBlur}
+      placeholder={placeholder}
+      className={`resize-none overflow-hidden ${className || ""}`}
+    />
   );
 }
 
@@ -653,24 +792,21 @@ function ReportPreview({
           </p>
         </header>
 
-        {/* 통계 요약 */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        {/* [수정 1] 1. 통계 요약 */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
           <PreviewStat label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
           <PreviewStat label="평균 순공" value={minutesToHm(stats?.avgStudy)} />
           <PreviewStat label="평균 기상" value={stats?.avgWake || "-"} />
         </div>
 
-        {/* 일별 기록 */}
-        <h2 className="text-base font-bold text-ink mb-3">일별 기록</h2>
-        <div className="space-y-3 mb-8">
-          {report.day_data.map((day, idx) => (
-            <PreviewDayCard key={day.date} day={day} weekday={WEEKDAY_KO[idx]} />
-          ))}
+        {/* [수정 1·2] 2. 도넛 차트 2개 */}
+        <div className="mb-8">
+          <DonutCharts report={report} />
         </div>
 
-        {/* 멘토 총평 — 내용 있는 항목만 */}
+        {/* [수정 1] 3. 멘토 총평 — 내용 있는 항목만 */}
         {comments.length > 0 && (
-          <>
+          <div className="mb-8">
             <h2 className="text-base font-bold text-ink mb-3">멘토 총평</h2>
             <div className="space-y-3">
               {comments.map((c) => (
@@ -680,8 +816,16 @@ function ReportPreview({
                 </div>
               ))}
             </div>
-          </>
+          </div>
         )}
+
+        {/* [수정 1] 4. 일별 기록 */}
+        <h2 className="text-base font-bold text-ink mb-3">일별 기록</h2>
+        <div className="space-y-3">
+          {report.day_data.map((day, idx) => (
+            <PreviewDayCard key={day.date} day={day} weekday={WEEKDAY_KO[idx]} />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -701,6 +845,7 @@ function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
   const wake = wakeText(day);
   const study = day.study_minutes != null ? minutesToHm(day.study_minutes) : null;
   const memo = (day.memo || "").trim();
+  const mentorMemo = (day.mentor_memo || "").trim();
   const photos = day.photos || [];
 
   return (
@@ -734,11 +879,19 @@ function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
         )}
       </div>
 
-      {/* [수정 6] 일별 피드백 비어있으면 섹션 숨김 */}
+      {/* [수정 3·6] 학생 셀프 피드백 — 비어있으면 숨김 */}
       {memo && (
         <div className="mt-3">
-          <div className="text-xs text-ink/55 font-medium">일별 피드백</div>
+          <div className="text-xs text-ink/55 font-medium">학생 셀프 피드백</div>
           <div className="mt-1 text-sm text-ink/80 leading-relaxed whitespace-pre-wrap">{memo}</div>
+        </div>
+      )}
+
+      {/* [수정 3·6] 멘토 피드백 요약 — 비어있으면 숨김 */}
+      {mentorMemo && (
+        <div className="mt-3">
+          <div className="text-xs text-ink/55 font-medium">멘토 피드백 요약</div>
+          <div className="mt-1 text-sm text-ink/80 leading-relaxed whitespace-pre-wrap">{mentorMemo}</div>
         </div>
       )}
 

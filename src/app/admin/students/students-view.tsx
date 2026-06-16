@@ -85,20 +85,6 @@ export function StudentsView({
     location.reload();
   }
 
-  async function updateMentor(id: string, mentor_id: string) {
-    const res = await fetch("/api/admin/students", {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ id, mentor_id: mentor_id || null }),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      return alert(data.error);
-    }
-    router.refresh();
-    location.reload();
-  }
-
   // [수정 6-3] 코칭 종료 / 재개
   async function setEnded(id: string, ended: boolean) {
     const res = await fetch("/api/admin/students", {
@@ -408,8 +394,6 @@ export function StudentsView({
         </h2>
         <StudentTable
           students={active}
-          mentors={mentors}
-          onMentorChange={updateMentor}
           onEdit={setEditing}
           onEnd={(id) => setEnded(id, true)}
           onRemove={remove}
@@ -428,7 +412,7 @@ export function StudentsView({
                 <tr>
                   <th className="text-left px-4 py-3">학생</th>
                   <th className="text-left px-4 py-3">학교 / 학년</th>
-                  <th className="text-left px-4 py-3">코칭 시작</th>
+                  <th className="text-left px-4 py-3">첫 코칭 시작일</th>
                   <th className="text-left px-4 py-3">담당 멘토</th>
                   <th className="text-right px-4 py-3"></th>
                 </tr>
@@ -549,15 +533,11 @@ function RestartModal({
 
 function StudentTable({
   students,
-  mentors,
-  onMentorChange,
   onEdit,
   onEnd,
   onRemove,
 }: {
   students: Student[];
-  mentors: MentorOpt[];
-  onMentorChange: (id: string, mentor_id: string) => void;
   onEdit: (s: Student) => void;
   onEnd: (id: string) => void;
   onRemove: (id: string) => void;
@@ -570,8 +550,11 @@ function StudentTable({
             <th className="text-left px-4 py-3">학생</th>
             <th className="text-left px-4 py-3">학교</th>
             <th className="text-left px-4 py-3">학년</th>
-            <th className="text-left px-4 py-3">학생 번호 / 학부모 번호</th>
-            <th className="text-left px-4 py-3">코칭 시작</th>
+            {/* [수정 6] 학생 번호 / 학부모 번호 컬럼 분리 */}
+            <th className="text-left px-4 py-3">학생 번호</th>
+            <th className="text-left px-4 py-3">학부모 번호</th>
+            {/* [수정 7] 코칭 시작 → 첫 코칭 시작일 */}
+            <th className="text-left px-4 py-3">첫 코칭 시작일</th>
             <th className="text-left px-4 py-3">담당 멘토</th>
             <th className="text-left px-4 py-3">관리</th>
             <th className="text-right px-4 py-3"></th>
@@ -585,25 +568,12 @@ function StudentTable({
               </td>
               <td className="px-4 py-3">{s.high_school || "-"}</td>
               <td className="px-4 py-3">{s.grade || "-"}</td>
-              <td className="px-4 py-3 text-ink/70">
-                <div>{s.phone || "-"}</div>
-                <div className="text-xs text-ink/50">{s.parent_phone || "-"}</div>
-              </td>
+              {/* [수정 6] 학생 번호 / 학부모 번호 별도 컬럼 */}
+              <td className="px-4 py-3 text-ink/70">{s.phone || "-"}</td>
+              <td className="px-4 py-3 text-ink/70">{s.parent_phone || "-"}</td>
               <td className="px-4 py-3 text-ink/70">{s.coaching_start_date || "-"}</td>
-              <td className="px-4 py-3">
-                <select
-                  value={s.mentor_id || ""}
-                  onChange={(e) => onMentorChange(s.id, e.target.value)}
-                  className="rounded-lg border border-ink/10 bg-white px-2 py-1 text-sm focus:border-indigo focus:ring-2 focus:ring-indigo/15 outline-none"
-                >
-                  <option value="">미배정</option>
-                  {mentors.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </td>
+              {/* [수정 5] 담당 멘토 — 드롭다운 제거, 정적 텍스트 (수정은 수정 버튼으로만) */}
+              <td className="px-4 py-3 text-ink/70">{s.mentor?.name || "미배정"}</td>
               <td className="px-4 py-3">
                 <Link
                   href={`/mentor/students/${s.id}`}
@@ -627,7 +597,7 @@ function StudentTable({
           ))}
           {students.length === 0 && (
             <tr>
-              <td colSpan={8} className="px-4 py-12 text-center text-ink/40 text-sm">
+              <td colSpan={9} className="px-4 py-12 text-center text-ink/40 text-sm">
                 아직 등록된 학생이 없습니다
               </td>
             </tr>

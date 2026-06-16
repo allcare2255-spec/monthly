@@ -7,7 +7,7 @@ export default async function AdminMentorsPage() {
   const supabase = getServiceClient();
   const { data } = await supabase
     .from("coaching_mentors")
-    .select("id, name, mentor_code, created_at")
-    .order("created_at", { ascending: false });
+    .select("id, name, mentor_code, unique_number, first_coaching_date, created_at")
+    .order("name", { ascending: true });
   return <MentorsView initial={data || []} />;
 }

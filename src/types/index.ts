@@ -2,6 +2,8 @@ export type Mentor = {
   id: string;
   name: string;
   mentor_code: string;
+  unique_number: number | null;      // [수정 9] 관리자가 부여하는 고유 번호
+  first_coaching_date: string | null; // [수정 9] 첫 코칭 시작일 (yyyy-mm-dd)
   created_at: string;
 };
 
@@ -65,7 +67,8 @@ export type DayData = {
   wake_up_time: string | null;   // "06:30"
   wake_cert_off?: boolean;       // [수정 4] 기상 인증 X (시간 입력 비활성 토글)
   study_minutes: number | null;
-  memo: string | null;
+  memo: string | null;           // [수정 3] 학생 셀프 피드백
+  mentor_memo?: string | null;   // [수정 3] 멘토 피드백 요약
   status: DayStatus;
   photos?: DayPhoto[];           // [수정 5] 일별 공부 인증 사진 (최대 4장/일)
 };
