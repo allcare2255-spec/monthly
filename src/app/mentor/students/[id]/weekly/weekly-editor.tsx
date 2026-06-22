@@ -61,19 +61,19 @@ export function WeeklyReportEditor({
     if (res.ok) setReport(data.report);
   }
 
-  function updateDay(idx: number, dayPatch: Partial<DayData>) {
+  function updateDayByDate(date: string, dayPatch: Partial<DayData>) {
     if (!report) return;
-    const nextDays = report.day_data.map((d, i) =>
-      i === idx ? { ...d, ...dayPatch } : d,
+    const nextDays = report.day_data.map((d) =>
+      d.date === date ? { ...d, ...dayPatch } : d,
     );
     setReport({ ...report, day_data: nextDays });
     return nextDays;
   }
 
-  async function commitDay(idx: number, dayPatch: Partial<DayData>) {
-    const next = updateDay(idx, dayPatch);
+  async function commitDayByDate(date: string, dayPatch: Partial<DayData>) {
+    const next = updateDayByDate(date, dayPatch);
     if (!next) return;
-    await patch({ day_data: next }, `day-${idx}`);
+    await patch({ day_data: next }, `day-${date}`);
   }
 
   const stats = useMemo(() => {
@@ -165,11 +165,11 @@ export function WeeklyReportEditor({
               key={day.date}
               day={day}
               weekday={WEEKDAY_KO[idx]}
-              saving={savingField === `day-${idx}`}
+              saving={savingField === `day-${day.date}`}
               studentId={studentId}
               cycle={cycle}
               week={week}
-              onChange={(patch) => commitDay(idx, patch)}
+              onChange={(p) => commitDayByDate(day.date, p)}
             />
           ))}
         </div>
@@ -356,18 +356,29 @@ function DayCard({
   week: number;
   onChange: (patch: Partial<DayData>) => void;
 }) {
-  const studyH = day.study_minutes != null ? Math.floor(day.study_minutes / 60) : "";
-  const studyM = day.study_minutes != null ? day.study_minutes % 60 : "";
+  // 로컬 state: 포커스 중에는 서버 응답이 값을 덮어쓰지 않도록 분리
+  const [studyHLocal, setStudyHLocal] = useState(() =>
+    day.study_minutes != null ? String(Math.floor(day.study_minutes / 60)) : ""
+  );
+  const [studyMLocal, setStudyMLocal] = useState(() =>
+    day.study_minutes != null ? String(day.study_minutes % 60) : ""
+  );
+  const studyFocused = useRef(false);
 
-  function setStudy(h: string, m: string) {
-    const hh = h === "" ? null : Number(h);
-    const mm = m === "" ? null : Number(m);
+  useEffect(() => {
+    if (studyFocused.current) return;
+    setStudyHLocal(day.study_minutes != null ? String(Math.floor(day.study_minutes / 60)) : "");
+    setStudyMLocal(day.study_minutes != null ? String(day.study_minutes % 60) : "");
+  }, [day.study_minutes]);
+
+  function commitStudy() {
+    const hh = studyHLocal === "" ? null : Number(studyHLocal);
+    const mm = studyMLocal === "" ? null : Number(studyMLocal);
     if (hh == null && mm == null) {
       onChange({ study_minutes: null, status: day.status === "submitted" ? "missed" : day.status });
       return;
     }
     const total = (hh || 0) * 60 + (mm || 0);
-    // 순공 시간 입력 = 자동 제출 완료
     onChange({ study_minutes: total, status: day.status === "paused" ? "paused" : "submitted" });
   }
 
@@ -411,8 +422,10 @@ function DayCard({
               type="number"
               min="0"
               max="24"
-              value={studyH}
-              onChange={(e) => setStudy(e.target.value, String(studyM))}
+              value={studyHLocal}
+              onChange={(e) => setStudyHLocal(e.target.value)}
+              onFocus={() => { studyFocused.current = true; }}
+              onBlur={() => { studyFocused.current = false; commitStudy(); }}
               className="w-16 rounded-xl border border-ink/10 px-2 py-1.5 text-center outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
               placeholder="0"
             />
@@ -421,8 +434,10 @@ function DayCard({
               type="number"
               min="0"
               max="59"
-              value={studyM}
-              onChange={(e) => setStudy(String(studyH), e.target.value)}
+              value={studyMLocal}
+              onChange={(e) => setStudyMLocal(e.target.value)}
+              onFocus={() => { studyFocused.current = true; }}
+              onBlur={() => { studyFocused.current = false; commitStudy(); }}
               className="w-16 rounded-xl border border-ink/10 px-2 py-1.5 text-center outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
               placeholder="0"
             />
@@ -484,6 +499,9 @@ function PhotoSection({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const photos = day.photos || [];
+  // 업로드가 진행되는 동안 클로저가 stale해지는 것을 방지: ref로 최신 사진 목록 유지
+  const photosRef = useRef(photos);
+  useEffect(() => { photosRef.current = day.photos || []; }, [day.photos]);
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -491,7 +509,8 @@ function PhotoSection({
     if (!files.length) return;
     setErr(null);
 
-    const room = MAX_PHOTOS - photos.length;
+    const currentPhotos = photosRef.current;
+    const room = MAX_PHOTOS - currentPhotos.length;
     if (room <= 0) {
       setErr(`하루 최대 ${MAX_PHOTOS}장까지 첨부할 수 있습니다.`);
       return;
@@ -514,7 +533,8 @@ function PhotoSection({
       else setErr(data.error || "업로드 실패");
     }
     setBusy(false);
-    if (uploaded.length) onChange({ photos: [...photos, ...uploaded] });
+    // 업로드 완료 시점의 최신 목록(ref)에 합쳐서 저장 (stale 클로저 방지)
+    if (uploaded.length) onChange({ photos: [...photosRef.current, ...uploaded] });
   }
 
   async function removePhoto(p: DayPhoto) {
@@ -574,7 +594,8 @@ function PhotoSection({
   );
 }
 
-// [수정 2] 기상 시간 — 시/분 숫자 직접 입력 (순공 시간과 동일) + 기상 인증 X
+// [수정 2] 기상 시간 — 시/분 숫자 직접 입력 + 기상 인증 X
+// 로컬 state로 관리하여 서버 응답이 입력 중 값을 덮어쓰지 않도록 처리
 function WakeTimeInput({
   value,
   certOff,
@@ -584,13 +605,27 @@ function WakeTimeInput({
   certOff: boolean;
   onChange: (patch: Partial<DayData>) => void;
 }) {
-  const min = hmToMinutes(value);
-  const hh = min != null ? Math.floor(min / 60) : "";
-  const mm = min != null ? min % 60 : "";
+  const [localH, setLocalH] = useState(() => {
+    const min = hmToMinutes(value);
+    return min != null ? String(Math.floor(min / 60)) : "";
+  });
+  const [localM, setLocalM] = useState(() => {
+    const min = hmToMinutes(value);
+    return min != null ? String(min % 60) : "";
+  });
+  const focused = useRef(false);
 
-  function setWake(h: string, m: string) {
-    const hv = h === "" ? null : Number(h);
-    const mv = m === "" ? null : Number(m);
+  // 포커스 없을 때만 서버 데이터로 싱크
+  useEffect(() => {
+    if (focused.current) return;
+    const min = hmToMinutes(value);
+    setLocalH(min != null ? String(Math.floor(min / 60)) : "");
+    setLocalM(min != null ? String(min % 60) : "");
+  }, [value]);
+
+  function commitWake() {
+    const hv = localH === "" ? null : Number(localH);
+    const mv = localM === "" ? null : Number(localM);
     if (hv == null && mv == null) {
       onChange({ wake_up_time: null });
       return;
@@ -620,8 +655,10 @@ function WakeTimeInput({
         type="number"
         min="0"
         max="23"
-        value={hh}
-        onChange={(e) => setWake(e.target.value, String(mm))}
+        value={localH}
+        onChange={(e) => setLocalH(e.target.value)}
+        onFocus={() => { focused.current = true; }}
+        onBlur={() => { focused.current = false; commitWake(); }}
         className="w-16 rounded-xl border border-ink/10 px-2 py-1.5 text-center outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
         placeholder="7"
       />
@@ -630,8 +667,10 @@ function WakeTimeInput({
         type="number"
         min="0"
         max="59"
-        value={mm}
-        onChange={(e) => setWake(String(hh), e.target.value)}
+        value={localM}
+        onChange={(e) => setLocalM(e.target.value)}
+        onFocus={() => { focused.current = true; }}
+        onBlur={() => { focused.current = false; commitWake(); }}
         className="w-16 rounded-xl border border-ink/10 px-2 py-1.5 text-center outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
         placeholder="00"
       />
