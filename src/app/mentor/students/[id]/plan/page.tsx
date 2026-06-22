@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
 import { addDays, cumulativeWeek, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
 import { WeeklyPlanEditor } from "./plan-editor";
+import { SendButton } from "./send-button";
 
 export const dynamic = "force-dynamic";
 
@@ -61,37 +62,33 @@ export default async function WeeklyPlanPage({
           코칭 {cycle}개월차 · {weekStart} ~ {dates[6]}
         </p>
 
-        <div className="flex gap-1 bg-white border border-ink/5 p-1 rounded-xl w-fit shadow-sm mt-4">
-          {[1, 2, 3, 4].map((w) => (
+        <div className="flex items-center justify-between mt-4">
+          <div className="flex gap-1 bg-white border border-ink/5 p-1 rounded-xl w-fit shadow-sm">
+            {[1, 2, 3, 4].map((w) => (
+              <Link
+                key={w}
+                href={`/mentor/students/${id}/plan?cycle=${cycle}&week=${w}`}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                  w === week
+                    ? "bg-gradient-to-r from-indigo to-violet text-white shadow-md shadow-indigo/30"
+                    : "text-ink/60 hover:bg-indigo/5"
+                }`}
+              >
+                {cumulativeWeek(cycle, w)}주차
+              </Link>
+            ))}
             <Link
-              key={w}
-              href={`/mentor/students/${id}/plan?cycle=${cycle}&week=${w}`}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                w === week
-                  ? "bg-gradient-to-r from-indigo to-violet text-white shadow-md shadow-indigo/30"
-                  : "text-ink/60 hover:bg-indigo/5"
-              }`}
+              href={`/mentor/students/${id}/weekly?cycle=${cycle}&week=${week}`}
+              className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold text-fuchsia hover:bg-fuchsia/5"
             >
-              {cumulativeWeek(cycle, w)}주차
+              주간 레포트 →
             </Link>
-          ))}
-          <Link
-            href={`/mentor/students/${id}/weekly?cycle=${cycle}&week=${week}`}
-            className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold text-fuchsia hover:bg-fuchsia/5"
-          >
-            주간 레포트 →
-          </Link>
+          </div>
+          <SendButton studentName={student.name} weekLabel={cumulativeWeek(cycle, week)} />
         </div>
       </div>
 
-      <WeeklyPlanEditor
-        studentId={id}
-        cycle={cycle}
-        week={week}
-        dates={dates}
-        studentName={student.name}
-        weekLabel={cumulativeWeek(cycle, week)}
-      />
+      <WeeklyPlanEditor studentId={id} cycle={cycle} week={week} dates={dates} />
     </div>
   );
 }

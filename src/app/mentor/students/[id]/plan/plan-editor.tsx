@@ -22,22 +22,16 @@ export function WeeklyPlanEditor({
   cycle,
   week,
   dates,
-  studentName,
-  weekLabel,
 }: {
   studentId: string;
   cycle: number;
   week: number;
   dates: string[]; // 월~일 7개
-  studentName: string;
-  weekLabel: number;
 }) {
-  const captureRef = useRef<HTMLDivElement>(null);
   const [plan, setPlan] = useState<WeeklyPlanData | null>(null);
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
-  const [exporting, setExporting] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -72,46 +66,6 @@ export function WeeklyPlanEditor({
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  async function handleExport() {
-    const root = captureRef.current;
-    if (!root || exporting) return;
-    setExporting(true);
-
-    const { default: html2canvas } = await import("html2canvas");
-
-    // Temporarily disable spellcheck to suppress red underlines
-    const textFields = root.querySelectorAll<HTMLElement>("input, textarea");
-    textFields.forEach((el) => el.setAttribute("spellcheck", "false"));
-
-    // Hide no-print elements
-    const noPrintEls = Array.from(root.querySelectorAll<HTMLElement>(".no-print"));
-    const prevDisplays = noPrintEls.map((el) => el.style.display);
-    noPrintEls.forEach((el) => { el.style.display = "none"; });
-
-    // Suppress spell-check underlines via injected style
-    const style = document.createElement("style");
-    style.id = "__capture_style__";
-    style.textContent = "input, textarea { text-decoration: none !important; }";
-    document.head.appendChild(style);
-
-    try {
-      const canvas = await html2canvas(root, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#f4f5f9",
-      });
-      const link = document.createElement("a");
-      link.download = `${studentName}_${weekLabel}주차_주간계획표.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    } finally {
-      noPrintEls.forEach((el, i) => { el.style.display = prevDisplays[i]; });
-      textFields.forEach((el) => el.removeAttribute("spellcheck"));
-      document.getElementById("__capture_style__")?.remove();
-      setExporting(false);
-    }
-  }
-
   if (loading) {
     return <div className="rounded-xl bg-white border border-ink/5 p-8 text-center text-ink/50">불러오는 중...</div>;
   }
@@ -137,19 +91,11 @@ export function WeeklyPlanEditor({
   const achievement = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   return (
-    <div className="space-y-4" ref={captureRef}>
-      <div className="flex justify-between items-center no-print">
+    <div className="space-y-4" id="plan-capture-root">
+      <div className="flex justify-end no-print">
         <span className="text-xs text-ink/45">
           {saveState === "saving" ? "저장 중..." : saveState === "saved" ? "자동 저장됨 ✓" : ""}
         </span>
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={exporting}
-          className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-indigo to-violet text-white shadow-md shadow-indigo/30 hover:opacity-90 active:scale-95 transition disabled:opacity-60"
-        >
-          {exporting ? "저장 중..." : "학생에게 보내기"}
-        </button>
       </div>
 
       {/* 상단: Weekly goals | Main Test */}
