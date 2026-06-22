@@ -207,6 +207,8 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
               };
             })}
             initialOverrides={overrides}
+            today={todaySeoul()}
+            monthlyDone={(monthlyRows || []).map((r) => r.cycle_number)}
           />
         </section>
       )}
