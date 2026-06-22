@@ -133,7 +133,7 @@ function TimelineItem({
             </span>
           )}
         </div>
-        <div className="text-[10px] text-ink/30 mt-0.5">{dateRange}</div>
+        <div className="text-xs text-ink/60 mt-0.5 font-medium">{dateRange}</div>
         {links && links.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {links.map((l) => (
@@ -246,6 +246,7 @@ function CycleCard({
 
   // 각 항목 상태
   const preS: TStatus = today >= cs ? "completed" : today >= preSat ? "active" : "upcoming";
+  const w1PlanSt = dStatus(preSat, wS[0], today, weekProgress >= 1);
 
   const weekSt = [0, 1, 2, 3].map((i) => wStatus(wS[i], wE[i], today));
 
@@ -375,6 +376,19 @@ function CycleCard({
             dateRange={`${fmt(preSat)} ~ ${fmt(preSun)}`}
           />
         )}
+
+        {/* 1주차 주간 계획표 */}
+        <TimelineItem
+          s={w1PlanSt}
+          label={`${cumulativeWeek(cycle, 1)}주차 주간 계획표`}
+          dateRange={`${fmt(preSat)} ~ ${fmt(wS[0])}`}
+          links={[
+            {
+              label: `${cumulativeWeek(cycle, 1)}주차 계획표`,
+              href: `/mentor/students/${studentId}/plan?cycle=${cycle}&week=1`,
+            },
+          ]}
+        />
 
         {/* ②~⑦ 1~3주차 코칭 + 레포트/계획표 전환 */}
         {[0, 1, 2].map((wi) => {
