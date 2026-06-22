@@ -84,7 +84,14 @@ export default async function WeeklyPlanPage({
         </div>
       </div>
 
-      <WeeklyPlanEditor studentId={id} cycle={cycle} week={week} dates={dates} />
+      <WeeklyPlanEditor
+        studentId={id}
+        cycle={cycle}
+        week={week}
+        dates={dates}
+        studentName={student.name}
+        weekLabel={cumulativeWeek(cycle, week)}
+      />
     </div>
   );
 }
