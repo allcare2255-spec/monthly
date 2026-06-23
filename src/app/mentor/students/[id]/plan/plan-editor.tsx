@@ -19,13 +19,17 @@ function uid() {
 
 export function WeeklyPlanEditor({
   studentId,
+  studentName,
   cycle,
   week,
+  weekLabel,
   dates,
 }: {
   studentId: string;
+  studentName: string;
   cycle: number;
   week: number;
+  weekLabel: number;
   dates: string[]; // 월~일 7개
 }) {
   const [plan, setPlan] = useState<WeeklyPlanData | null>(null);
@@ -92,6 +96,16 @@ export function WeeklyPlanEditor({
 
   return (
     <div className="space-y-4" id="plan-capture-root">
+      {/* PNG 전용 헤더 — 웹에서는 숨김, PNG 캡처 시에만 표시 */}
+      <div className="png-only" style={{ display: "none", padding: "8px 4px 4px" }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: "#111111", lineHeight: 1.3 }}>
+          {studentName} · {weekLabel}주차 주간계획표
+        </div>
+        <div style={{ fontSize: 13, color: "#444444", marginTop: 4 }}>
+          코칭 {cycle}개월차 · {dates[0]} ~ {dates[6]}
+        </div>
+      </div>
+
       <div className="flex justify-end no-print">
         <span className="text-xs text-ink/45">
           {saveState === "saving" ? "저장 중..." : saveState === "saved" ? "자동 저장됨 ✓" : ""}
@@ -205,7 +219,7 @@ function DayColumn({
     <div className="rounded-2xl bg-white border border-ink/5 p-4 shadow-sm flex flex-col">
       <div className="flex items-baseline justify-between mb-2">
         <h3 className="text-sm font-extrabold text-ink">{label}</h3>
-        <span className="text-[11px] text-ink/45">
+        <span className="text-[11px] text-[#111111] whitespace-nowrap">
           {ko}{date ? ` · ${date.slice(5)}` : ""}
         </span>
       </div>

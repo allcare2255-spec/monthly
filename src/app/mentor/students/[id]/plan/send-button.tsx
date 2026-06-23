@@ -27,6 +27,11 @@ export function SendButton({
     const prevDisplays = noPrintEls.map((el) => el.style.display);
     noPrintEls.forEach((el) => { el.style.display = "none"; });
 
+    // Show png-only elements (hidden in web view, visible in PNG)
+    const pngOnlyEls = Array.from(root.querySelectorAll<HTMLElement>(".png-only"));
+    const pngOnlyPrevDisplays = pngOnlyEls.map((el) => el.style.display);
+    pngOnlyEls.forEach((el) => { el.style.display = "block"; });
+
     // Replace native checkboxes with SVG visuals (dom-to-image-more cannot render native checkbox states)
     const checkboxEls = Array.from(root.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
     const checkboxCleanup: (() => void)[] = [];
@@ -63,6 +68,7 @@ export function SendButton({
       link.click();
     } finally {
       noPrintEls.forEach((el, i) => { el.style.display = prevDisplays[i]; });
+      pngOnlyEls.forEach((el, i) => { el.style.display = pngOnlyPrevDisplays[i]; });
       textFields.forEach((el) => el.removeAttribute("spellcheck"));
       checkboxCleanup.forEach((fn) => fn());
       setExporting(false);
