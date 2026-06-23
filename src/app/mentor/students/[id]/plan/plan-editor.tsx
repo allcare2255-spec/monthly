@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import type { PlanTask, PlanDay, WeekdayKey, WeeklyPlanData } from "@/types";
 
 const WEEKDAY_LABEL: { key: WeekdayKey; en: string; ko: string }[] = [
@@ -209,12 +209,12 @@ function DayColumn({
           {ko}{date ? ` · ${date.slice(5)}` : ""}
         </span>
       </div>
-      <textarea
-        rows={2}
+      <AutoResizeTextarea
         value={day.notes}
-        onChange={(e) => onChange({ notes: e.target.value })}
+        onChange={(v) => onChange({ notes: v })}
         placeholder="Notes"
-        className="w-full rounded-lg border border-ink/10 px-2.5 py-1.5 text-sm outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition resize-none"
+        rows={2}
+        className="w-full rounded-lg border border-ink/10 px-2.5 py-1.5 text-sm outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
       />
       <div className="mt-2">
         <Checklist
@@ -240,38 +240,51 @@ function Checklist({
   placeholder?: string;
   compact?: boolean;
 }) {
+  const [focusId, setFocusId] = useState<string | null>(null);
+
   const update = (id: string, patch: Partial<PlanTask>) =>
     onChange(items.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   const remove = (id: string) => onChange(items.filter((t) => t.id !== id));
-  const add = () => onChange([...items, { id: uid(), text: "", done: false }]);
+
+  function add() {
+    const newId = uid();
+    onChange([...items, { id: newId, text: "", done: false }]);
+    setFocusId(newId);
+  }
+
+  function addAfter(id: string) {
+    const idx = items.findIndex((t) => t.id === id);
+    const newId = uid();
+    const next = [
+      ...items.slice(0, idx + 1),
+      { id: newId, text: "", done: false },
+      ...items.slice(idx + 1),
+    ];
+    onChange(next);
+    setFocusId(newId);
+  }
+
+  function removeAndFocusPrev(id: string) {
+    const idx = items.findIndex((t) => t.id === id);
+    const prev = items[idx - 1];
+    onChange(items.filter((t) => t.id !== id));
+    if (prev) setFocusId(prev.id);
+  }
 
   return (
     <div className="space-y-1.5">
       {items.map((t) => (
-        <div key={t.id} className="group flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={t.done}
-            onChange={(e) => update(t.id, { done: e.target.checked })}
-            className="h-4 w-4 shrink-0 rounded border-ink/30 text-indigo focus:ring-indigo/30 cursor-pointer accent-indigo-600"
-          />
-          <input
-            value={t.text}
-            onChange={(e) => update(t.id, { text: e.target.value })}
-            placeholder={placeholder}
-            className={`flex-1 bg-transparent border-b border-transparent hover:border-ink/10 focus:border-indigo outline-none text-sm py-0.5 transition ${
-              t.done ? "line-through text-ink/40" : "text-ink/80"
-            }`}
-          />
-          <button
-            type="button"
-            onClick={() => remove(t.id)}
-            title="삭제"
-            className="no-print shrink-0 text-ink/30 hover:text-rose opacity-0 group-hover:opacity-100 transition text-sm"
-          >
-            ×
-          </button>
-        </div>
+        <ChecklistItem
+          key={t.id}
+          item={t}
+          shouldFocus={focusId === t.id}
+          onFocusConsumed={() => setFocusId(null)}
+          onUpdate={(patch) => update(t.id, patch)}
+          onRemove={() => remove(t.id)}
+          onEnter={() => addAfter(t.id)}
+          onBackspaceEmpty={() => removeAndFocusPrev(t.id)}
+          placeholder={placeholder}
+        />
       ))}
       <button
         type="button"
@@ -283,6 +296,116 @@ function Checklist({
     </div>
   );
 }
+
+function ChecklistItem({
+  item,
+  shouldFocus,
+  onFocusConsumed,
+  onUpdate,
+  onRemove,
+  onEnter,
+  onBackspaceEmpty,
+  placeholder,
+}: {
+  item: PlanTask;
+  shouldFocus: boolean;
+  onFocusConsumed: () => void;
+  onUpdate: (patch: Partial<PlanTask>) => void;
+  onRemove: () => void;
+  onEnter: () => void;
+  onBackspaceEmpty: () => void;
+  placeholder?: string;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const consumeRef = useRef(onFocusConsumed);
+  useEffect(() => { consumeRef.current = onFocusConsumed; });
+
+  useEffect(() => {
+    if (!shouldFocus) return;
+    const el = textareaRef.current;
+    if (el) {
+      el.focus();
+      const len = el.value.length;
+      el.setSelectionRange(len, len);
+    }
+    consumeRef.current();
+  }, [shouldFocus]);
+
+  return (
+    <div className="group flex items-center gap-2">
+      <input
+        type="checkbox"
+        checked={item.done}
+        onChange={(e) => onUpdate({ done: e.target.checked })}
+        className="h-4 w-4 shrink-0 rounded border-ink/30 text-indigo focus:ring-indigo/30 cursor-pointer accent-indigo-600"
+      />
+      <AutoResizeTextarea
+        ref={textareaRef}
+        value={item.text}
+        onChange={(v) => onUpdate({ text: v })}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (item.text.trim()) onEnter();
+          } else if (e.key === "Backspace" && !item.text) {
+            e.preventDefault();
+            onBackspaceEmpty();
+          }
+        }}
+        placeholder={placeholder}
+        rows={1}
+        className={`flex-1 bg-transparent border-b border-transparent hover:border-ink/10 focus:border-indigo outline-none text-sm py-0.5 transition break-words ${
+          item.done ? "line-through text-ink/40" : "text-ink/80"
+        }`}
+      />
+      <button
+        type="button"
+        onClick={onRemove}
+        title="삭제"
+        className="no-print shrink-0 text-ink/30 hover:text-rose opacity-0 group-hover:opacity-100 transition text-sm"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
+/* ── Notes / 할 일 항목 — 높이 자동 확장 textarea ── */
+const AutoResizeTextarea = forwardRef<
+  HTMLTextAreaElement,
+  {
+    value: string;
+    onChange: (v: string) => void;
+    onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+    placeholder?: string;
+    className?: string;
+    rows?: number;
+  }
+>(({ value, onChange, onKeyDown, placeholder, className, rows = 2 }, forwardedRef) => {
+  const localRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = localRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  return (
+    <textarea
+      ref={(el) => {
+        (localRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+        if (typeof forwardedRef === "function") forwardedRef(el);
+        else if (forwardedRef) (forwardedRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+      }}
+      rows={rows}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={onKeyDown}
+      placeholder={placeholder}
+      className={`resize-none overflow-hidden ${className ?? ""}`}
+    />
+  );
+});
+AutoResizeTextarea.displayName = "AutoResizeTextarea";
 
 /* ── 번호 매기기 목록 (자유 추가/삭제, 자동저장) ── */
 function NumberedList({

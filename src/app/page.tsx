@@ -27,7 +27,7 @@ export default async function Home() {
             <div className="text-[11px] uppercase tracking-[0.3em] text-white/60 mb-2">
               Premium Coaching
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-violet-200 to-fuchsia-300 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-emerald-200 to-teal-300 bg-clip-text text-transparent">
               SKY MATE
             </h1>
             <p className="mt-3 text-sm text-white/70">관리자 또는 멘토 코드를 입력해주세요</p>

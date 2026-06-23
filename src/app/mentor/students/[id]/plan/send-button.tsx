@@ -27,6 +27,34 @@ export function SendButton({
     const prevDisplays = noPrintEls.map((el) => el.style.display);
     noPrintEls.forEach((el) => { el.style.display = "none"; });
 
+    // Replace native checkboxes with SVG visuals (dom-to-image-more cannot render native checkbox states)
+    const checkboxEls = Array.from(root.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+    const checkboxCleanup: (() => void)[] = [];
+    checkboxEls.forEach((cb) => {
+      const checked = cb.checked;
+      const visual = document.createElement("span");
+      visual.style.cssText = [
+        "display:inline-flex",
+        "align-items:center",
+        "justify-content:center",
+        "width:16px",
+        "height:16px",
+        "border-radius:4px",
+        "flex-shrink:0",
+        `border:2px solid ${checked ? "#4F46E5" : "rgba(0,0,0,0.25)"}`,
+        `background:${checked ? "#4F46E5" : "transparent"}`,
+      ].join(";");
+      if (checked) {
+        visual.innerHTML = `<svg viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M1.5 5.5l2.5 2.5 4.5-4.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      }
+      cb.style.display = "none";
+      cb.parentElement?.insertBefore(visual, cb);
+      checkboxCleanup.push(() => {
+        visual.remove();
+        cb.style.display = "";
+      });
+    });
+
     try {
       const dataUrl = await domtoimage.default.toPng(root, { scale: 2 });
       const link = document.createElement("a");
@@ -36,6 +64,7 @@ export function SendButton({
     } finally {
       noPrintEls.forEach((el, i) => { el.style.display = prevDisplays[i]; });
       textFields.forEach((el) => el.removeAttribute("spellcheck"));
+      checkboxCleanup.forEach((fn) => fn());
       setExporting(false);
     }
   }

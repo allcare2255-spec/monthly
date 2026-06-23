@@ -205,7 +205,7 @@ export function MonthlyReportView({
                   formatter={(v) => [`${Number(v).toFixed(1)}시간`, "순공"]}
                   contentStyle={{ fontSize: 12 }}
                 />
-                <Line type="monotone" dataKey="hours" stroke="#8B5CF6" strokeWidth={2.5} dot={{ r: 3, fill: "#4F46E5" }} activeDot={{ r: 5, fill: "#D946EF" }} />
+                <Line type="monotone" dataKey="hours" stroke="#10B981" strokeWidth={2.5} dot={{ r: 3, fill: "#059669" }} activeDot={{ r: 5, fill: "#34d399" }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -223,7 +223,7 @@ export function MonthlyReportView({
                 <Tooltip formatter={(v) => [`${v}%`, "완료율"]} contentStyle={{ fontSize: 12 }} />
                 <Bar dataKey="rate" radius={[8, 8, 0, 0]}>
                   {weekRates.map((w, i) => {
-                    const colors = ["#4F46E5", "#8B5CF6", "#D946EF", "#F43F5E"];
+                    const colors = ["#10B981", "#059669", "#34d399", "#0d9488"];
                     return <Cell key={i} fill={w.hasData ? colors[i] : "#E2E8F0"} />;
                   })}
                 </Bar>

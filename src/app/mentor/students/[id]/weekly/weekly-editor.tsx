@@ -283,7 +283,7 @@ function Donut({ title, segments }: { title: string; segments: Seg[] }) {
 
 // 색상 (Tailwind 팔레트와 동일 톤)
 const C_GREEN = "#10B981";
-const C_PINK = "#EC4899";
+const C_ORANGE = "#f97316";
 const C_RED = "#F43F5E";
 const C_GRAY = "#94A3B8";
 
@@ -303,7 +303,7 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
         title="제출 과제 인증"
         segments={[
           { label: "제출 완료", count: submitted, color: C_GREEN },
-          { label: "과제 미흡", count: incomplete, color: C_PINK },
+          { label: "과제 미흡", count: incomplete, color: C_ORANGE },
           { label: "미제출", count: missed, color: C_RED },
         ]}
       />

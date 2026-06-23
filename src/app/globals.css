@@ -8,16 +8,16 @@
   --color-cream: #F3F0DF;
   --color-cream-light: #FAF8EE;
 
-  /* 트렌디 액센트 (인디고 - 바이올렛 - 핑크) */
-  --color-indigo: #4F46E5;
-  --color-violet: #8B5CF6;
-  --color-fuchsia: #D946EF;
+  /* 민트/에메랄드 + 소프트 핑크 */
+  --color-indigo: #10B981;
+  --color-violet: #059669;
+  --color-fuchsia: #f472b6;
   --color-rose: #F43F5E;
   --color-sunset: #FB923C;
 }
 
 :root {
-  --background: #F7F5FF;
+  --background: #f9fafb;
   --foreground: #0B1020;
 }
 
@@ -41,19 +41,15 @@ html, body {
 .mesh-bg {
   position: relative;
   background:
-    radial-gradient(at 18% 12%, rgba(79, 70, 229, 0.55) 0px, transparent 50%),
-    radial-gradient(at 82% 18%, rgba(217, 70, 239, 0.45) 0px, transparent 50%),
-    radial-gradient(at 50% 88%, rgba(251, 146, 60, 0.35) 0px, transparent 55%),
-    radial-gradient(at 12% 78%, rgba(139, 92, 246, 0.5) 0px, transparent 55%),
-    linear-gradient(180deg, #1B1238 0%, #0B0F2A 100%);
+    radial-gradient(at 18% 12%, rgba(16, 185, 129, 0.55) 0px, transparent 50%),
+    radial-gradient(at 82% 18%, rgba(5, 150, 105, 0.45) 0px, transparent 50%),
+    radial-gradient(at 50% 88%, rgba(251, 146, 60, 0.28) 0px, transparent 55%),
+    radial-gradient(at 12% 78%, rgba(13, 148, 136, 0.50) 0px, transparent 55%),
+    linear-gradient(180deg, #0c2d1f 0%, #081a12 100%);
 }
 
 .mesh-bg-soft {
-  background:
-    radial-gradient(at 8% 0%, rgba(79, 70, 229, 0.18) 0px, transparent 45%),
-    radial-gradient(at 100% 0%, rgba(217, 70, 239, 0.16) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(251, 146, 60, 0.10) 0px, transparent 50%),
-    #FAF8FF;
+  background: #f9fafb;
 }
 
 /* ───────────────────────────────────────
@@ -77,7 +73,7 @@ html, body {
    그라데이션 텍스트 / 보더
 ─────────────────────────────────────── */
 .text-gradient {
-  background: linear-gradient(135deg, #4F46E5 0%, #8B5CF6 45%, #D946EF 100%);
+  background: linear-gradient(135deg, #10B981 0%, #059669 55%, #0d9488 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -91,10 +87,10 @@ html, body {
 }
 
 .btn-gradient {
-  background: linear-gradient(135deg, #4F46E5 0%, #8B5CF6 50%, #D946EF 100%);
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   color: #FFFFFF;
   transition: filter 0.2s, transform 0.1s;
-  box-shadow: 0 8px 24px -8px rgba(139, 92, 246, 0.45);
+  box-shadow: 0 8px 24px -8px rgba(16, 185, 129, 0.40);
 }
 .btn-gradient:hover {
   filter: brightness(1.08);
@@ -117,7 +113,7 @@ html, body {
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: linear-gradient(135deg, #4F46E5, #8B5CF6, #D946EF);
+  background: linear-gradient(135deg, #10B981, #059669, #0d9488);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
