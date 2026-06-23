@@ -13,8 +13,8 @@ export default function SkyMateLogo({ size = 48, className = "" }: Props) {
     >
       <defs>
         <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#34D399" />
-          <stop offset="100%" stopColor="#059669" />
+          <stop offset="0%" stopColor="#38bdf8" />
+          <stop offset="100%" stopColor="#0ea5e9" />
         </linearGradient>
       </defs>
       <polygon points="50,5 72,22 64,22 50,13 36,22 28,22" fill="url(#skyGrad)" />

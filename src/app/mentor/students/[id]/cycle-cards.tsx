@@ -194,6 +194,7 @@ function CycleCard({
   const [editingMemo, setEditingMemo] = useState(false);
   const [memoDraft, setMemoDraft] = useState(memo);
   const [busy, setBusy] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   async function save(patch: Partial<Override>) {
     setBusy(true);
@@ -270,17 +271,28 @@ function CycleCard({
       />
 
       {/* 헤더 */}
-      <div className="relative mb-4">
-        <div className="text-[11px] uppercase tracking-[0.2em] text-indigo font-semibold">
-          Coaching Month {cycle}
-        </div>
-        <div className="text-xl font-extrabold text-ink mt-0.5 flex items-center flex-wrap gap-2">
-          {studentName} 코칭 {cycle}개월차
-          {isCurrent && (
-            <span className="inline-block px-1.5 py-0.5 rounded-full bg-gradient-to-r from-indigo/15 to-violet/15 text-indigo font-semibold text-[10px]">
-              {currentWeek}주차 진행 중
-            </span>
-          )}
+      <div className="relative mb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] uppercase tracking-[0.2em] text-indigo font-semibold">
+              Coaching Month {cycle}
+            </div>
+            <div className="text-xl font-extrabold text-ink mt-0.5 flex items-center flex-wrap gap-2">
+              {studentName} 코칭 {cycle}개월차
+              {isCurrent && (
+                <span className="inline-block px-1.5 py-0.5 rounded-full bg-gradient-to-r from-indigo/15 to-violet/15 text-indigo font-semibold text-[10px]">
+                  {currentWeek}주차 진행 중
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="flex-shrink-0 text-xs text-ink/50 hover:text-ink font-medium border border-ink/15 rounded-lg px-2.5 py-1 transition hover:bg-ink/5"
+          >
+            {expanded ? "접기" : "펼치기"}
+          </button>
         </div>
 
         {editingDate ? (
@@ -364,95 +376,131 @@ function CycleCard({
         </div>
       )}
 
-      {/* 타임라인 */}
-      <div className="relative pl-5 border-t border-ink/5 pt-1">
-        <div className="absolute left-[8px] top-4 bottom-3 w-px bg-ink/8" />
-
-        {/* ① 사전 질문지 컨설팅 (1개월차만) */}
-        {cycle === 1 && (
-          <TimelineItem
-            s={preS}
-            label="사전 질문지 컨설팅"
-            dateRange={`${fmt(preSat)} ~ ${fmt(preSun)}`}
-          />
-        )}
-
-        {/* 1주차 주간 계획표 */}
-        <TimelineItem
-          s={w1PlanSt}
-          label={`${cumulativeWeek(cycle, 1)}주차 주간 계획표`}
-          dateRange={`${fmt(preSat)} ~ ${fmt(wS[0])}`}
-          links={[
-            {
-              label: `${cumulativeWeek(cycle, 1)}주차 계획표`,
-              href: `/mentor/students/${studentId}/plan?cycle=${cycle}&week=1`,
-            },
-          ]}
-        />
-
-        {/* ②~⑦ 1~3주차 코칭 + 레포트/계획표 전환 */}
-        {[0, 1, 2].map((wi) => {
-          const w = wi + 1;
-          const cum = cumulativeWeek(cycle, w);
-          return (
-            <div key={wi}>
-              <TimelineItem
-                s={weekSt[wi]}
-                label={`${cum}주차 코칭 진행 중`}
-                dateRange={`${fmt(wS[wi])} ~ ${fmt(wE[wi])}`}
-              />
-              <TimelineItem
-                s={transSt[wi]}
-                label={`${cum}주차 주간 레포트 + ${cum + 1}주차 주간 계획표`}
-                dateRange={`${fmt(wE[wi])} ~ ${fmt(wS[wi + 1])}`}
-                links={[
-                  {
-                    label: `${cum}주차 레포트`,
-                    href: `/mentor/students/${studentId}/weekly?cycle=${cycle}&week=${w}`,
-                  },
-                  {
-                    label: `${cum + 1}주차 계획표`,
-                    href: `/mentor/students/${studentId}/plan?cycle=${cycle}&week=${w + 1}`,
-                  },
-                ]}
-              />
-            </div>
-          );
-        })}
-
-        {/* ⑧ 4주차 코칭 진행 중 */}
-        <TimelineItem
-          s={weekSt[3]}
-          label={`${cumulativeWeek(cycle, 4)}주차 코칭 진행 중`}
-          dateRange={`${fmt(wS[3])} ~ ${fmt(wE[3])}`}
-        />
-
-        {/* 월간 컨설팅 (연장 시에만 표시) */}
-        {hasNextCycle && (
-          <TimelineItem
-            s={mcSt}
-            label="월간 컨설팅"
-            dateRange={`${fmt(mcSat)} ~ ${fmt(mcSun)}`}
-          />
-        )}
-
-        {/* ⑨ 4주차 레포트 + 월간 레포트 */}
-        <TimelineItem
-          s={finalSt}
-          label={`${cumulativeWeek(cycle, 4)}주차 주간 레포트 + ${cycle}개월차 월간 레포트`}
-          dateRange={`${fmt(finalS)} ~ ${fmt(finalE)}`}
-          links={[
-            {
-              label: `${cumulativeWeek(cycle, 4)}주차 레포트`,
-              href: `/mentor/students/${studentId}/weekly?cycle=${cycle}&week=4`,
-            },
-            {
-              label: `${cycle}개월차 월간 레포트`,
-              href: `/mentor/students/${studentId}/monthly?cycle=${cycle}`,
-            },
-          ]}
-        />
+      {/* 콤팩트 주차 버튼 */}
+      <div className="border-t border-ink/5 pt-3 space-y-2">
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="text-[10px] text-ink/40 font-medium shrink-0 w-10">계획표</span>
+          {[1, 2, 3, 4].map((w) => (
+            <Link
+              key={w}
+              href={`/mentor/students/${studentId}/plan?cycle=${cycle}&week=${w}`}
+              className="text-[11px] rounded-full px-2.5 py-0.5 font-semibold border bg-indigo/10 text-indigo border-indigo/20 hover:bg-indigo/20 transition"
+            >
+              {cumulativeWeek(cycle, w)}주차 계획표
+            </Link>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="text-[10px] text-ink/40 font-medium shrink-0 w-10">레포트</span>
+          {[1, 2, 3, 4].map((w) => (
+            <Link
+              key={w}
+              href={`/mentor/students/${studentId}/weekly?cycle=${cycle}&week=${w}`}
+              className="text-[11px] rounded-full px-2.5 py-0.5 font-semibold border bg-indigo/10 text-indigo border-indigo/20 hover:bg-indigo/20 transition"
+            >
+              {cumulativeWeek(cycle, w)}주차 레포트
+            </Link>
+          ))}
+          <Link
+            href={`/mentor/students/${studentId}/monthly?cycle=${cycle}`}
+            className="text-[11px] rounded-full px-2.5 py-0.5 font-semibold border bg-fuchsia/10 text-fuchsia border-fuchsia/20 hover:bg-fuchsia/20 transition"
+          >
+            {cycle}개월차 월간
+          </Link>
+        </div>
       </div>
+
+      {/* 타임라인 (펼치기) */}
+      {expanded && (
+        <div className="relative pl-5 border-t border-ink/5 pt-1 mt-3">
+          <div className="absolute left-[8px] top-4 bottom-3 w-px bg-ink/8" />
+
+          {/* ① 사전 질문지 컨설팅 (1개월차만) */}
+          {cycle === 1 && (
+            <TimelineItem
+              s={preS}
+              label="사전 질문지 컨설팅"
+              dateRange={`${fmt(preSat)} ~ ${fmt(preSun)}`}
+            />
+          )}
+
+          {/* 1주차 주간 계획표 */}
+          <TimelineItem
+            s={w1PlanSt}
+            label={`${cumulativeWeek(cycle, 1)}주차 주간 계획표`}
+            dateRange={`${fmt(preSat)} ~ ${fmt(wS[0])}`}
+            links={[
+              {
+                label: `${cumulativeWeek(cycle, 1)}주차 계획표`,
+                href: `/mentor/students/${studentId}/plan?cycle=${cycle}&week=1`,
+              },
+            ]}
+          />
+
+          {/* ②~⑦ 1~3주차 코칭 + 레포트/계획표 전환 */}
+          {[0, 1, 2].map((wi) => {
+            const w = wi + 1;
+            const cum = cumulativeWeek(cycle, w);
+            return (
+              <div key={wi}>
+                <TimelineItem
+                  s={weekSt[wi]}
+                  label={`${cum}주차 코칭 진행 중`}
+                  dateRange={`${fmt(wS[wi])} ~ ${fmt(wE[wi])}`}
+                />
+                <TimelineItem
+                  s={transSt[wi]}
+                  label={`${cum}주차 주간 레포트 + ${cum + 1}주차 주간 계획표`}
+                  dateRange={`${fmt(wE[wi])} ~ ${fmt(wS[wi + 1])}`}
+                  links={[
+                    {
+                      label: `${cum}주차 레포트`,
+                      href: `/mentor/students/${studentId}/weekly?cycle=${cycle}&week=${w}`,
+                    },
+                    {
+                      label: `${cum + 1}주차 계획표`,
+                      href: `/mentor/students/${studentId}/plan?cycle=${cycle}&week=${w + 1}`,
+                    },
+                  ]}
+                />
+              </div>
+            );
+          })}
+
+          {/* ⑧ 4주차 코칭 진행 중 */}
+          <TimelineItem
+            s={weekSt[3]}
+            label={`${cumulativeWeek(cycle, 4)}주차 코칭 진행 중`}
+            dateRange={`${fmt(wS[3])} ~ ${fmt(wE[3])}`}
+          />
+
+          {/* 월간 컨설팅 (연장 시에만 표시) */}
+          {hasNextCycle && (
+            <TimelineItem
+              s={mcSt}
+              label="월간 컨설팅"
+              dateRange={`${fmt(mcSat)} ~ ${fmt(mcSun)}`}
+            />
+          )}
+
+          {/* ⑨ 4주차 레포트 + 월간 레포트 */}
+          <TimelineItem
+            s={finalSt}
+            label={`${cumulativeWeek(cycle, 4)}주차 주간 레포트 + ${cycle}개월차 월간 레포트`}
+            dateRange={`${fmt(finalS)} ~ ${fmt(finalE)}`}
+            links={[
+              {
+                label: `${cumulativeWeek(cycle, 4)}주차 레포트`,
+                href: `/mentor/students/${studentId}/weekly?cycle=${cycle}&week=4`,
+              },
+              {
+                label: `${cycle}개월차 월간 레포트`,
+                href: `/mentor/students/${studentId}/monthly?cycle=${cycle}`,
+              },
+            ]}
+          />
+        </div>
+      )}
     </div>
   );
 }
