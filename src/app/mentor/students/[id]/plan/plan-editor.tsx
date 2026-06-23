@@ -97,11 +97,14 @@ export function WeeklyPlanEditor({
   return (
     <div className="space-y-4" id="plan-capture-root">
       {/* PNG 전용 헤더 — 웹에서는 숨김, PNG 캡처 시에만 표시 */}
-      <div className="png-only" style={{ display: "none", padding: "8px 4px 4px" }}>
-        <div style={{ fontSize: 20, fontWeight: 800, color: "#111111", lineHeight: 1.3 }}>
+      <div className="png-only" style={{ display: "none", padding: "12px 4px 8px" }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.25em", marginBottom: 4 }}>
+          Weekly Plan · {weekLabel}주차
+        </div>
+        <div style={{ fontSize: 28, fontWeight: 800, color: "#0ea5e9", lineHeight: 1.25 }}>
           {studentName} · {weekLabel}주차 주간계획표
         </div>
-        <div style={{ fontSize: 13, color: "#444444", marginTop: 4 }}>
+        <div style={{ fontSize: 13, color: "rgba(11,16,32,0.55)", marginTop: 6 }}>
           코칭 {cycle}개월차 · {dates[0]} ~ {dates[6]}
         </div>
       </div>

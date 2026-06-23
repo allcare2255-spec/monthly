@@ -61,7 +61,7 @@ export function SendButton({
     });
 
     try {
-      const dataUrl = await domtoimage.default.toPng(root, { scale: 2 });
+      const dataUrl = await domtoimage.default.toPng(root, { scale: 2, bgcolor: "#ffffff" });
       const link = document.createElement("a");
       link.download = `${studentName}_${weekLabel}주차_주간계획표.png`;
       link.href = dataUrl;
