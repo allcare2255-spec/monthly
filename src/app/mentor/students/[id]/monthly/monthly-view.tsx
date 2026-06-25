@@ -374,9 +374,10 @@ function CommentField({
         value={text}
         onChange={(e) => setText(e.target.value)}
         onBlur={() => text !== initial && onSave(text)}
-        className="mt-2 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm leading-relaxed"
+        className="mt-2 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm leading-relaxed print:hidden"
         placeholder="자유롭게 작성하세요. 학부모에게 전달되는 내용입니다."
       />
+      <div className="hidden print:block mt-2 text-sm text-ink/80 leading-relaxed whitespace-pre-wrap">{text}</div>
     </div>
   );
 }

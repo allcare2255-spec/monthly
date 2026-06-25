@@ -365,11 +365,25 @@ function DayCard({
   );
   const studyFocused = useRef(false);
 
+  const [targetStudyHLocal, setTargetStudyHLocal] = useState(() =>
+    day.target_study_minutes != null ? String(Math.floor(day.target_study_minutes / 60)) : ""
+  );
+  const [targetStudyMLocal, setTargetStudyMLocal] = useState(() =>
+    day.target_study_minutes != null ? String(day.target_study_minutes % 60) : ""
+  );
+  const targetStudyFocused = useRef(false);
+
   useEffect(() => {
     if (studyFocused.current) return;
     setStudyHLocal(day.study_minutes != null ? String(Math.floor(day.study_minutes / 60)) : "");
     setStudyMLocal(day.study_minutes != null ? String(day.study_minutes % 60) : "");
   }, [day.study_minutes]);
+
+  useEffect(() => {
+    if (targetStudyFocused.current) return;
+    setTargetStudyHLocal(day.target_study_minutes != null ? String(Math.floor(day.target_study_minutes / 60)) : "");
+    setTargetStudyMLocal(day.target_study_minutes != null ? String(day.target_study_minutes % 60) : "");
+  }, [day.target_study_minutes]);
 
   function commitStudy() {
     const hh = studyHLocal === "" ? null : Number(studyHLocal);
@@ -380,6 +394,16 @@ function DayCard({
     }
     const total = (hh || 0) * 60 + (mm || 0);
     onChange({ study_minutes: total, status: day.status === "paused" ? "paused" : "submitted" });
+  }
+
+  function commitTargetStudy() {
+    const hh = targetStudyHLocal === "" ? null : Number(targetStudyHLocal);
+    const mm = targetStudyMLocal === "" ? null : Number(targetStudyMLocal);
+    if (hh == null && mm == null) {
+      onChange({ target_study_minutes: null });
+      return;
+    }
+    onChange({ target_study_minutes: (hh || 0) * 60 + (mm || 0) });
   }
 
   return (
@@ -405,18 +429,45 @@ function DayCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
           <label className="text-xs text-ink/55 font-medium">기상 시간</label>
-          {/* [수정 2] 시/분 직접 타이핑 + 기상 인증 X 토글 */}
           <WakeTimeInput
             value={day.wake_up_time}
-            certOff={!!day.wake_cert_off}
             onChange={onChange}
           />
         </div>
         <div>
-          <label className="text-xs text-ink/55 font-medium">순공 시간</label>
+          <label className="text-xs text-ink/55 font-medium">목표 순공 시간</label>
+          <div className="mt-1 flex gap-2 items-center">
+            <input
+              type="number"
+              min="0"
+              max="24"
+              value={targetStudyHLocal}
+              onChange={(e) => setTargetStudyHLocal(e.target.value)}
+              onFocus={() => { targetStudyFocused.current = true; }}
+              onBlur={() => { targetStudyFocused.current = false; commitTargetStudy(); }}
+              className="w-16 rounded-xl border border-ink/10 px-2 py-1.5 text-center outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
+              placeholder="0"
+            />
+            <span className="text-sm text-ink/55">시간</span>
+            <input
+              type="number"
+              min="0"
+              max="59"
+              value={targetStudyMLocal}
+              onChange={(e) => setTargetStudyMLocal(e.target.value)}
+              onFocus={() => { targetStudyFocused.current = true; }}
+              onBlur={() => { targetStudyFocused.current = false; commitTargetStudy(); }}
+              className="w-16 rounded-xl border border-ink/10 px-2 py-1.5 text-center outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition"
+              placeholder="0"
+            />
+            <span className="text-sm text-ink/55">분</span>
+          </div>
+        </div>
+        <div>
+          <label className="text-xs text-ink/55 font-medium">실제 순공 시간</label>
           <div className="mt-1 flex gap-2 items-center">
             <input
               type="number"
@@ -446,7 +497,7 @@ function DayCard({
         </div>
       </div>
 
-      {/* [수정 3] 학생 셀프 피드백 */}
+      {/* 학생 셀프 피드백 */}
       <div className="mt-3">
         <label className="text-xs text-ink/55 font-medium">학생 셀프 피드백</label>
         <AutoTextarea
@@ -456,7 +507,7 @@ function DayCard({
         />
       </div>
 
-      {/* [수정 3] 멘토 피드백 요약 */}
+      {/* 멘토 피드백 요약 */}
       <div className="mt-3">
         <label className="text-xs text-ink/55 font-medium">멘토 피드백 요약</label>
         <AutoTextarea
@@ -464,6 +515,29 @@ function DayCard({
           onChange={(v) => onChange({ mentor_memo: v || null })}
           className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm"
         />
+      </div>
+
+      {/* Q&A */}
+      <div className="mt-3">
+        <div className="text-xs text-ink/55 font-medium mb-2">Q&amp;A</div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-ink/55 font-medium">학생 질문</label>
+            <AutoTextarea
+              value={day.student_question || ""}
+              onChange={(v) => onChange({ student_question: v || null })}
+              className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ink/55 font-medium">멘토 답변</label>
+            <AutoTextarea
+              value={day.mentor_answer || ""}
+              onChange={(v) => onChange({ mentor_answer: v || null })}
+              className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm"
+            />
+          </div>
+        </div>
       </div>
 
       {/* [수정 5] 공부 인증 사진 (최대 4장) */}
@@ -594,15 +668,12 @@ function PhotoSection({
   );
 }
 
-// [수정 2] 기상 시간 — 시/분 숫자 직접 입력 + 기상 인증 X
-// 로컬 state로 관리하여 서버 응답이 입력 중 값을 덮어쓰지 않도록 처리
+// 기상 시간 — 시/분 숫자 직접 입력
 function WakeTimeInput({
   value,
-  certOff,
   onChange,
 }: {
   value: string | null;
-  certOff: boolean;
   onChange: (patch: Partial<DayData>) => void;
 }) {
   const [localH, setLocalH] = useState(() => {
@@ -615,7 +686,6 @@ function WakeTimeInput({
   });
   const focused = useRef(false);
 
-  // 포커스 없을 때만 서버 데이터로 싱크
   useEffect(() => {
     if (focused.current) return;
     const min = hmToMinutes(value);
@@ -631,22 +701,6 @@ function WakeTimeInput({
       return;
     }
     onChange({ wake_up_time: `${pad2(hv || 0)}:${pad2(mv || 0)}` });
-  }
-
-  // [수정 2/6] 기상 인증 X 상태 → 배지로 전환 (클릭 시 시간 입력으로 복귀)
-  if (certOff) {
-    return (
-      <div className="mt-1">
-        <button
-          type="button"
-          onClick={() => onChange({ wake_cert_off: false })}
-          title="클릭하면 기상 시간 입력으로 돌아갑니다"
-          className="text-xs inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border font-medium bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200 transition"
-        >
-          기상 인증 X
-        </button>
-      </div>
-    );
   }
 
   return (
@@ -675,13 +729,6 @@ function WakeTimeInput({
         placeholder="00"
       />
       <span className="text-sm text-ink/55">분</span>
-      <button
-        type="button"
-        onClick={() => onChange({ wake_up_time: null, wake_cert_off: true })}
-        className="text-xs px-2.5 py-1.5 rounded-xl border font-medium transition text-ink/55 border-ink/15 hover:bg-rose/5 hover:text-rose hover:border-rose/30"
-      >
-        기상 인증 X
-      </button>
     </div>
   );
 }
@@ -762,8 +809,6 @@ type StatsShape = {
 } | null;
 
 function wakeText(day: DayData): string | null {
-  // 기상 인증 X → "기상 인증 X", 시간 입력 → "7시 00분", 둘 다 없으면 null(미표시)
-  if (day.wake_cert_off) return "기상 인증 X";
   const min = hmToMinutes(day.wake_up_time);
   if (min == null) return null;
   return `${Math.floor(min / 60)}시 ${pad2(min % 60)}분`;
@@ -882,9 +927,12 @@ function PreviewStat({ label, value, sub }: { label: string; value: string; sub?
 
 function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
   const wake = wakeText(day);
+  const targetStudy = day.target_study_minutes != null ? minutesToHm(day.target_study_minutes) : null;
   const study = day.study_minutes != null ? minutesToHm(day.study_minutes) : null;
   const memo = (day.memo || "").trim();
   const mentorMemo = (day.mentor_memo || "").trim();
+  const studentQuestion = (day.student_question || "").trim();
+  const mentorAnswer = (day.mentor_answer || "").trim();
   const photos = day.photos || [];
 
   return (
@@ -894,9 +942,7 @@ function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
           {weekday}
         </div>
         <div>
-          {/* [수정 1] 날짜 검정 */}
           <div className="text-xs text-ink">{day.date}</div>
-          {/* [수정 5] 정적 배지 (클릭 불가) */}
           <span className={`text-xs inline-block mt-0.5 px-2 py-0.5 rounded-full border font-medium ${STATUS_STYLES[day.status]}`}>
             {STATUS_LABEL[day.status]}
           </span>
@@ -904,21 +950,24 @@ function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        {/* [수정 6] 기상 시간은 항상 표시 */}
         <div>
           <div className="text-xs text-ink/55 font-medium">기상 시간</div>
           <div className="mt-1 text-sm text-ink">{wake ?? "-"}</div>
         </div>
-        {/* [수정 6] 순공 시간 없으면 숨김 */}
+        {targetStudy && (
+          <div>
+            <div className="text-xs text-ink/55 font-medium">목표 순공 시간</div>
+            <div className="mt-1 text-sm text-ink">{targetStudy}</div>
+          </div>
+        )}
         {study && (
           <div>
-            <div className="text-xs text-ink/55 font-medium">순공 시간</div>
+            <div className="text-xs text-ink/55 font-medium">실제 순공 시간</div>
             <div className="mt-1 text-sm text-ink">{study}</div>
           </div>
         )}
       </div>
 
-      {/* [수정 3·6] 학생 셀프 피드백 — 비어있으면 숨김 */}
       {memo && (
         <div className="mt-3">
           <div className="text-xs text-ink/55 font-medium">학생 셀프 피드백</div>
@@ -926,7 +975,6 @@ function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
         </div>
       )}
 
-      {/* [수정 3·6] 멘토 피드백 요약 — 비어있으면 숨김 */}
       {mentorMemo && (
         <div className="mt-3">
           <div className="text-xs text-ink/55 font-medium">멘토 피드백 요약</div>
@@ -934,7 +982,26 @@ function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
         </div>
       )}
 
-      {/* [수정 6] 공부 인증 사진 없으면 섹션 숨김 */}
+      {(studentQuestion || mentorAnswer) && (
+        <div className="mt-3">
+          <div className="text-xs text-ink/55 font-medium mb-1.5">Q&amp;A</div>
+          <div className="grid grid-cols-2 gap-3">
+            {studentQuestion && (
+              <div>
+                <div className="text-xs text-ink/55 font-medium">학생 질문</div>
+                <div className="mt-1 text-sm text-ink/80 leading-relaxed whitespace-pre-wrap">{studentQuestion}</div>
+              </div>
+            )}
+            {mentorAnswer && (
+              <div>
+                <div className="text-xs text-ink/55 font-medium">멘토 답변</div>
+                <div className="mt-1 text-sm text-ink/80 leading-relaxed whitespace-pre-wrap">{mentorAnswer}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {photos.length > 0 && (
         <div className="mt-3">
           <div className="text-xs text-ink/55 font-medium">공부 인증 사진</div>

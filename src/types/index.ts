@@ -63,14 +63,17 @@ export type DayPhoto = {
 };
 
 export type DayData = {
-  date: string;                  // "2026-05-27"
-  wake_up_time: string | null;   // "06:30"
-  wake_cert_off?: boolean;       // [수정 4] 기상 인증 X (시간 입력 비활성 토글)
-  study_minutes: number | null;
-  memo: string | null;           // [수정 3] 학생 셀프 피드백
-  mentor_memo?: string | null;   // [수정 3] 멘토 피드백 요약
+  date: string;                        // "2026-05-27"
+  wake_up_time: string | null;         // "06:30"
+  wake_cert_off?: boolean;             // 기상 인증 X (레거시, 미사용)
+  study_minutes: number | null;        // 실제 순공 시간 (분)
+  target_study_minutes?: number | null; // 목표 순공 시간 (분)
+  memo: string | null;                 // 학생 셀프 피드백
+  mentor_memo?: string | null;         // 멘토 피드백 요약
+  student_question?: string | null;    // Q&A - 학생 질문
+  mentor_answer?: string | null;       // Q&A - 멘토 답변
   status: DayStatus;
-  photos?: DayPhoto[];           // [수정 5] 일별 공부 인증 사진 (최대 4장/일)
+  photos?: DayPhoto[];                 // 일별 공부 인증 사진 (최대 4장/일)
 };
 
 export type WeeklyReport = {

@@ -146,6 +146,15 @@ html, body {
   /* [수정 5] 일별 기록 카드가 페이지 중간에서 잘리지 않도록 */
   .preview-day-card { page-break-inside: avoid; }
 
+  /* 월간 레포트: print-target 내 gradient 텍스트를 검정으로 (주간 레포트와 통일) */
+  .print-target .text-gradient,
+  .print-target .text-gradient-warm {
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    color: #0B1020 !important;
+  }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
