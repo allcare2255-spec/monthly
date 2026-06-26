@@ -26,7 +26,7 @@ function emptyDayData(dates: string[]): DayData[] {
     wake_up_time: null,
     study_minutes: null,
     memo: null,
-    status: "missed",
+    status: "unset",
   }));
 }
 

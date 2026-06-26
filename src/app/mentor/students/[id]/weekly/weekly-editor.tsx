@@ -30,6 +30,7 @@ export function WeeklyReportEditor({
   const [savingField, setSavingField] = useState<string | null>(null);
   // [수정 4] 학생에게 보내기 → 완성 레포트 미리보기 화면
   const [preview, setPreview] = useState(false);
+  const [validationModal, setValidationModal] = useState<string[] | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -79,7 +80,7 @@ export function WeeklyReportEditor({
   const stats = useMemo(() => {
     if (!report) return null;
     const days = report.day_data;
-    const counted = days.filter((d) => d.status !== "paused");
+    const counted = days.filter((d) => d.status !== "paused" && d.status !== "unset");
     const submitted = days.filter((d) => d.status === "submitted").length;
     const totalDay = counted.length;
     const studyDays = counted.filter((d) => d.study_minutes != null);
@@ -116,7 +117,18 @@ export function WeeklyReportEditor({
       <div className="flex justify-end no-print">
         {/* [수정 4] PDF로 저장 → 학생에게 보내기 (미리보기 화면 표시) */}
         <button
-          onClick={() => setPreview(true)}
+          onClick={() => {
+            if (!report) return;
+            const unselected = report.day_data
+              .map((d, idx) => ({ d, label: `${WEEKDAY_KO[idx]}요일 (${d.date})` }))
+              .filter(({ d }) => d.status !== "paused" && d.status === "unset")
+              .map(({ label }) => label);
+            if (unselected.length > 0) {
+              setValidationModal(unselected);
+              return;
+            }
+            setPreview(true);
+          }}
           className="btn-gradient rounded-xl font-semibold px-5 py-2.5"
         >
           학생에게 보내기
@@ -174,6 +186,29 @@ export function WeeklyReportEditor({
           ))}
         </div>
       </section>
+
+      {/* 제출 상태 미선택 유효성 모달 */}
+      {validationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 no-print">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4">
+            <h3 className="text-base font-bold text-ink mb-2">제출 상태 미선택</h3>
+            <p className="text-sm text-ink/70 mb-3">
+              아직 선택하지 않은 날짜가 있어요. 모든 날짜의 제출 상태를 선택해주세요.
+            </p>
+            <ul className="text-sm text-rose space-y-1 mb-4">
+              {validationModal.map((day) => (
+                <li key={day}>· {day}</li>
+              ))}
+            </ul>
+            <button
+              onClick={() => setValidationModal(null)}
+              className="w-full rounded-xl border border-ink/15 px-4 py-2 text-sm font-semibold text-ink/70 hover:bg-ink/5 transition"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* [수정 4·5·6] 완성 레포트 미리보기 (학생에게 보내기) */}
       {preview &&
@@ -320,24 +355,20 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
 
 const STATUS_STYLES: Record<DayStatus, string> = {
   submitted: "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 border-emerald-200",
-  // [수정 3] 과제 미흡 — 분홍색
   incomplete: "bg-pink-100 text-pink-600 border-pink-300",
   missed: "bg-gradient-to-r from-rose-50 to-pink-50 text-rose border-rose/30",
   paused: "bg-slate-100 text-slate-600 border-slate-200",
+  unset: "bg-slate-100 text-slate-400 border-slate-200",
 };
 const STATUS_LABEL: Record<DayStatus, string> = {
   submitted: "제출 완료",
   incomplete: "과제 미흡",
   missed: "미제출",
   paused: "일시 정지",
+  unset: "미선택",
 };
 
-// [수정 3] 상태 순환: 제출 완료 → 과제 미흡 → 미제출 → 제출 완료 …
-const STATUS_CYCLE: DayStatus[] = ["submitted", "incomplete", "missed"];
-function nextStatus(s: DayStatus): DayStatus {
-  const i = STATUS_CYCLE.indexOf(s);
-  return STATUS_CYCLE[(i + 1) % STATUS_CYCLE.length];
-}
+const STATUS_RADIO: DayStatus[] = ["submitted", "incomplete", "missed"];
 
 function DayCard({
   day,
@@ -408,24 +439,34 @@ function DayCard({
 
   return (
     <div className="bg-white border border-ink/5 rounded-2xl p-4 shadow-sm hover:shadow-md transition">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo to-violet text-white flex items-center justify-center font-bold shadow-sm shadow-indigo/30">
-            {weekday}
-          </div>
-          <div>
-            {/* [수정 1] 일별 날짜 색상 회색 → 검정 */}
-            <div className="text-xs text-ink">{day.date}</div>
-            {/* [수정 3] 배지 클릭 시 상태 순환 (오른쪽 버튼 3개 제거) */}
-            <button
-              type="button"
-              onClick={() => onChange({ status: nextStatus(day.status) })}
-              title="클릭하면 상태가 바뀝니다 (제출 완료 → 과제 미흡 → 미제출)"
-              className={`text-xs inline-block mt-0.5 px-2 py-0.5 rounded-full border font-medium cursor-pointer transition hover:brightness-95 ${STATUS_STYLES[day.status]}`}
-            >
-              {STATUS_LABEL[day.status]}
-            </button>
-          </div>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo to-violet text-white flex items-center justify-center font-bold shadow-sm shadow-indigo/30 flex-shrink-0">
+          {weekday}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-xs text-ink mb-1">{day.date}</div>
+          {day.status === "paused" ? (
+            <span className={`text-xs inline-block px-2 py-0.5 rounded-full border font-medium ${STATUS_STYLES.paused}`}>
+              {STATUS_LABEL.paused}
+            </span>
+          ) : (
+            <div className="flex gap-1.5">
+              {STATUS_RADIO.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => onChange({ status: s })}
+                  className={`text-xs px-2.5 py-0.5 rounded-full border font-semibold transition
+                    ${day.status === s
+                      ? STATUS_STYLES[s]
+                      : "bg-slate-100 text-slate-400 border-slate-200 hover:bg-slate-200"
+                    }`}
+                >
+                  {STATUS_LABEL[s]}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

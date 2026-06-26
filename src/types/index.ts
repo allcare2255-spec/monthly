@@ -55,7 +55,7 @@ export type CoachingCycle = {
   updated_at: string;
 };
 
-export type DayStatus = "submitted" | "incomplete" | "missed" | "paused";
+export type DayStatus = "submitted" | "incomplete" | "missed" | "paused" | "unset";
 
 export type DayPhoto = {
   url: string;   // public URL
