@@ -31,6 +31,8 @@ export function WeeklyReportEditor({
   // [수정 4] 학생에게 보내기 → 완성 레포트 미리보기 화면
   const [preview, setPreview] = useState(false);
   const [validationModal, setValidationModal] = useState<string[] | null>(null);
+  // 마지막으로 발행한 저장 요청 번호 — 오래된 응답이 최신 편집을 덮어쓰지 않도록 가드
+  const writeSeq = useRef(0);
 
   useEffect(() => {
     setLoading(true);
@@ -51,6 +53,7 @@ export function WeeklyReportEditor({
 
   async function patch(patchObj: Partial<WeeklyReport>, fieldKey: string) {
     if (!report) return;
+    const seq = ++writeSeq.current;
     setSavingField(fieldKey);
     const res = await fetch("/api/reports/weekly", {
       method: "PATCH",
@@ -58,6 +61,8 @@ export function WeeklyReportEditor({
       body: JSON.stringify({ id: report.id, student_id: studentId, ...patchObj }),
     });
     const data = await res.json();
+    // 이 응답 이후에 더 새로운 저장이 시작됐다면, 오래된 응답으로 상태를 덮어쓰지 않는다
+    if (seq !== writeSeq.current) return;
     setSavingField(null);
     if (res.ok) setReport(data.report);
   }
@@ -262,7 +267,7 @@ function StatCard({
 // [수정 2] 도넛 차트 2개 — 일별 기록 데이터 기반 자동 계산
 type Seg = { label: string; count: number; color: string };
 
-function Donut({ title, segments }: { title: string; segments: Seg[] }) {
+function Donut({ title, segments, preview }: { title: string; segments: Seg[]; preview?: boolean }) {
   const total = segments.reduce((s, x) => s + x.count, 0);
   const R = 54;
   const STROKE = 22;
@@ -270,7 +275,13 @@ function Donut({ title, segments }: { title: string; segments: Seg[] }) {
   let offset = 0;
 
   return (
-    <div className="rounded-2xl bg-white border border-ink/5 p-5 shadow-sm">
+    <div
+      className={
+        preview
+          ? "rounded-3xl bg-[#f8fafc] border border-[#e8eef6] p-6 shadow-sm"
+          : "rounded-2xl bg-white border border-ink/5 p-5 shadow-sm"
+      }
+    >
       <div className="text-sm font-bold text-ink mb-3 text-center">{title}</div>
       <div className="flex items-center justify-center gap-5">
         <svg viewBox="0 0 160 160" className="w-32 h-32 -rotate-90">
@@ -322,7 +333,7 @@ const C_ORANGE = "#f97316";
 const C_RED = "#F43F5E";
 const C_GRAY = "#94A3B8";
 
-function DonutCharts({ report }: { report: WeeklyReport }) {
+function DonutCharts({ report, preview }: { report: WeeklyReport; preview?: boolean }) {
   const days = report.day_data;
   // 차트 1 — 제출 과제 인증
   const submitted = days.filter((d) => d.status === "submitted").length;
@@ -333,9 +344,10 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
   const wakeOff = days.length - wakeOn;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className={`grid grid-cols-1 sm:grid-cols-2 ${preview ? "gap-4" : "gap-3"}`}>
       <Donut
         title="제출 과제 인증"
+        preview={preview}
         segments={[
           { label: "제출 완료", count: submitted, color: C_GREEN },
           { label: "과제 미흡", count: incomplete, color: C_ORANGE },
@@ -344,6 +356,7 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
       />
       <Donut
         title="기상 인증"
+        preview={preview}
         segments={[
           { label: "기상 인증", count: wakeOn, color: C_GREEN },
           { label: "기상 인증 X", count: wakeOff, color: C_GRAY },
@@ -541,9 +554,9 @@ function DayCard({
       {/* 학생 셀프 피드백 */}
       <div className="mt-3">
         <label className="text-xs text-ink/55 font-medium">학생 셀프 피드백</label>
-        <AutoTextarea
+        <BufferedTextarea
           value={day.memo || ""}
-          onChange={(v) => onChange({ memo: v || null })}
+          onCommit={(v) => onChange({ memo: v || null })}
           className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm"
         />
       </div>
@@ -551,9 +564,9 @@ function DayCard({
       {/* 멘토 피드백 요약 */}
       <div className="mt-3">
         <label className="text-xs text-ink/55 font-medium">멘토 피드백 요약</label>
-        <AutoTextarea
+        <BufferedTextarea
           value={day.mentor_memo || ""}
-          onChange={(v) => onChange({ mentor_memo: v || null })}
+          onCommit={(v) => onChange({ mentor_memo: v || null })}
           className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm"
         />
       </div>
@@ -564,17 +577,17 @@ function DayCard({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs text-ink/55 font-medium">학생 질문</label>
-            <AutoTextarea
+            <BufferedTextarea
               value={day.student_question || ""}
-              onChange={(v) => onChange({ student_question: v || null })}
+              onCommit={(v) => onChange({ student_question: v || null })}
               className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm"
             />
           </div>
           <div>
             <label className="text-xs text-ink/55 font-medium">멘토 답변</label>
-            <AutoTextarea
+            <BufferedTextarea
               value={day.mentor_answer || ""}
-              onChange={(v) => onChange({ mentor_answer: v || null })}
+              onCommit={(v) => onChange({ mentor_answer: v || null })}
               className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm"
             />
           </div>
@@ -596,6 +609,41 @@ function DayCard({
 }
 
 const MAX_PHOTOS = 4;
+
+// 업로드 전 이미지 다운스케일 — 휴대폰 원본(수 MB)을 줄여 저장/인쇄(PDF) 부담을 낮춘다.
+// 디코드 불가(HEIC 등)나 실패 시에는 원본을 그대로 사용한다.
+async function downscaleImage(file: File, maxDim = 1200, quality = 0.7): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const longest = Math.max(bitmap.width, bitmap.height);
+    const scale = Math.min(1, maxDim / longest);
+    // 이미 충분히 작으면(축소 불필요 + 300KB 미만) 원본 유지
+    if (scale >= 1 && file.size < 300_000) {
+      bitmap.close?.();
+      return file;
+    }
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close?.();
+      return file;
+    }
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    const blob: Blob | null = await new Promise((res) =>
+      canvas.toBlob(res, "image/jpeg", quality),
+    );
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
 
 function PhotoSection({
   day,
@@ -635,7 +683,8 @@ function PhotoSection({
 
     setBusy(true);
     const uploaded: DayPhoto[] = [];
-    for (const file of picked) {
+    for (const original of picked) {
+      const file = await downscaleImage(original);
       const fd = new FormData();
       fd.append("file", file);
       fd.append("student_id", studentId);
@@ -807,12 +856,14 @@ function CommentBlock({
 function AutoTextarea({
   value,
   onChange,
+  onFocus,
   onBlur,
   className,
   placeholder,
 }: {
   value: string;
   onChange: (v: string) => void;
+  onFocus?: () => void;
   onBlur?: () => void;
   className?: string;
   placeholder?: string;
@@ -830,9 +881,45 @@ function AutoTextarea({
       rows={2}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onFocus={onFocus}
       onBlur={onBlur}
       placeholder={placeholder}
       className={`resize-none overflow-hidden ${className || ""}`}
+    />
+  );
+}
+
+// 일별 텍스트 입력 — 타이핑 중에는 로컬 상태만 갱신하고, 포커스를 잃을 때만 저장.
+// (글자마다 서버 PATCH + 전체 상태 교체로 인한 렉/입력 유실 방지)
+function BufferedTextarea({
+  value,
+  onCommit,
+  className,
+  placeholder,
+}: {
+  value: string;
+  onCommit: (v: string) => void;
+  className?: string;
+  placeholder?: string;
+}) {
+  const [text, setText] = useState(value);
+  const focused = useRef(false);
+  // 포커스 중이 아닐 때만 서버 값으로 동기화 (입력 중 덮어쓰기 방지)
+  useEffect(() => {
+    if (focused.current) return;
+    setText(value);
+  }, [value]);
+  return (
+    <AutoTextarea
+      value={text}
+      onChange={setText}
+      onFocus={() => { focused.current = true; }}
+      onBlur={() => {
+        focused.current = false;
+        if (text !== value) onCommit(text);
+      }}
+      className={className}
+      placeholder={placeholder}
     />
   );
 }
@@ -874,11 +961,55 @@ function ReportPreview({
   stats: StatsShape;
   onClose: () => void;
 }) {
+  const [preparing, setPreparing] = useState(false);
+
+  async function handleSavePdf() {
+    setPreparing(true);
+    try {
+      // 미리보기 안의 모든 이미지 디코딩 완료까지 대기 → 인쇄 중 멈춤(렉) 방지
+      const root = document.querySelector("[data-preview-root]");
+      if (root) {
+        const imgs = Array.from(root.querySelectorAll("img"));
+        await Promise.all(
+          imgs.map((img) =>
+            img.complete
+              ? img.decode().catch(() => {})
+              : new Promise<void>((res) => {
+                  img.onload = () => res();
+                  img.onerror = () => res();
+                }),
+          ),
+        );
+      }
+    } finally {
+      setPreparing(false);
+    }
+
+    // PDF 파일명 자동 설정: "홍길동 1주차 주간 레포트" (파일명 금지문자 제거)
+    const fileName = `${studentName} ${cumWeek}주차 주간 레포트`
+      .replace(/[\\/:*?"<>|]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const prevTitle = document.title;
+    document.title = fileName;
+    const restore = () => {
+      document.title = prevTitle;
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+    window.print();
+  }
+
   const comments = [
     { label: "이번 주에 잘 한 것", value: report.good_points },
     { label: "이번 주에 아쉬운 것", value: report.improvement_points },
     { label: "다음 주에 하면 좋을 것", value: report.next_week_actions },
   ].filter((c) => (c.value || "").trim());
+
+  // 표시용 기간 포맷팅 (데이터 변경 아님) — "2026-06-01" → "2026.06.01"
+  const fmtDot = (d: string) => (d || "").replace(/-/g, ".");
+  const [periodYear, periodMonth] = (weekStart || "").split("-");
+  const periodTitle = periodYear && periodMonth ? `${periodYear}년 ${Number(periodMonth)}월` : "";
 
   return (
     <div
@@ -895,38 +1026,61 @@ function ReportPreview({
         </button>
         <div className="text-sm font-semibold text-ink/60">완성 레포트 미리보기</div>
         <button
-          onClick={() => window.print()}
-          className="btn-gradient rounded-xl font-semibold px-5 py-2.5"
+          onClick={handleSavePdf}
+          disabled={preparing}
+          className="btn-gradient rounded-xl font-semibold px-5 py-2.5 disabled:opacity-60"
         >
-          PDF로 저장
+          {preparing ? "준비 중..." : "PDF로 저장"}
         </button>
       </div>
 
       {/* 완성 문서 */}
-      <div className="preview-doc mx-auto max-w-[820px] px-8 py-10">
-        <header className="mb-8">
-          <div className="text-[11px] uppercase tracking-[0.25em] text-indigo font-semibold">
-            Weekly · {cumWeek}주차
+      <div className="preview-doc mx-auto max-w-[860px] px-4 sm:px-6 py-6 sm:py-8">
+        {/* [신규] 상단 브랜드 헤더 배너 — 남색 그라데이션 */}
+        <header className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#1e293b] via-[#1e3a8a] to-[#1e40af] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#1e3a8a]/20">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            {/* 좌측: 심볼 로고 + 브랜드명 + 부제목 */}
+            <div className="flex items-center gap-3.5">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/15 text-2xl font-black ring-1 ring-white/25">
+                S
+              </div>
+              <div>
+                <div className="text-xl font-extrabold tracking-tight">SKY MATE</div>
+                <div className="mt-0.5 text-[13px] font-medium text-white/70">주간 학습코칭 레포트</div>
+              </div>
+            </div>
+            {/* 우측: 기간(년/월) + 정확한 범위 + 코칭 월차 */}
+            <div className="text-right">
+              <div className="text-2xl font-extrabold sm:text-[26px]">{periodTitle}</div>
+              <div className="mt-1.5 text-[12px] leading-relaxed text-white/70">
+                <div>기간: {fmtDot(weekStart)} ~ {fmtDot(weekEnd)}</div>
+                <div>코칭 {cycle}개월차 · {cumWeek}주차</div>
+              </div>
+            </div>
           </div>
-          <h1 className="text-3xl font-extrabold text-ink mt-1">
-            {studentName} <span className="text-ink/30 font-bold">·</span> {cumWeek}주차 주간 레포트
-          </h1>
-          {/* [수정 1] 날짜 검정 */}
-          <p className="text-ink mt-2 text-sm">
-            코칭 {cycle}개월차 · {weekStart} ~ {weekEnd}
-          </p>
         </header>
 
-        {/* [수정 1] 1. 통계 요약 */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <PreviewStat label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
-          <PreviewStat label="평균 순공" value={minutesToHm(stats?.avgStudy)} />
-          <PreviewStat label="평균 기상" value={stats?.avgWake || "-"} />
+        {/* [신규] 헤더 아래 학생명 영역 (흰 배경, 헤더와 분리) */}
+        <div className="px-1 pt-7 pb-6 sm:pt-8">
+          <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#1e3a8a]">
+            코칭 {cycle}개월차 · Weekly
+          </div>
+          <h1 className="mt-1.5 text-3xl font-extrabold text-ink">
+            {studentName} <span className="text-ink/25 font-bold">·</span> {cumWeek}주차 주간 레포트
+          </h1>
+          <p className="mt-2 text-sm text-ink/55">{fmtDot(weekStart)} ~ {fmtDot(weekEnd)}</p>
+        </div>
+
+        {/* [수정 1] 1. 통계 요약 — 카드별 파스텔 톤 */}
+        <div className="grid grid-cols-1 gap-4 mb-7 sm:grid-cols-3">
+          <PreviewStat tone="sky" label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
+          <PreviewStat tone="lavender" label="평균 순공" value={minutesToHm(stats?.avgStudy)} />
+          <PreviewStat tone="slate" label="평균 기상" value={stats?.avgWake || "-"} />
         </div>
 
         {/* [수정 1·2] 2. 도넛 차트 2개 */}
         <div className="mb-8">
-          <DonutCharts report={report} />
+          <DonutCharts report={report} preview />
         </div>
 
         {/* [수정 1] 3. 멘토 총평 — 내용 있는 항목만 */}
@@ -956,12 +1110,30 @@ function ReportPreview({
   );
 }
 
-function PreviewStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+// 카드별 파스텔 톤 (배경 / 테두리 / 라벨 색 / 숫자 색)
+const STAT_TONES: Record<"sky" | "lavender" | "slate", { bg: string; border: string; label: string; value: string }> = {
+  sky:      { bg: "bg-[#eef6fd]", border: "border-[#d4e8f7]", label: "text-[#0369a1]", value: "text-[#0b3a66]" },
+  lavender: { bg: "bg-[#eef0fb]", border: "border-[#dcdcf4]", label: "text-[#6d4ed6]", value: "text-[#352a78]" },
+  slate:    { bg: "bg-[#f2f4f8]", border: "border-[#e2e7ef]", label: "text-[#64748b]", value: "text-[#334155]" },
+};
+
+function PreviewStat({
+  label,
+  value,
+  sub,
+  tone = "sky",
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  tone?: "sky" | "lavender" | "slate";
+}) {
+  const t = STAT_TONES[tone];
   return (
-    <div className="rounded-2xl border border-ink/10 p-4">
-      <div className="text-[11px] text-ink/55 uppercase tracking-[0.15em] font-semibold">{label}</div>
-      <div className="text-2xl font-extrabold mt-1 tabular-nums text-ink">{value}</div>
-      {sub && <div className="text-[11px] text-ink/45 mt-0.5">{sub}</div>}
+    <div className={`rounded-3xl border ${t.border} ${t.bg} px-5 py-5 text-center`}>
+      <div className={`text-[12px] font-bold tracking-[0.06em] ${t.label}`}>{label}</div>
+      <div className={`mt-1.5 text-3xl font-black tabular-nums ${t.value}`}>{value}</div>
+      {sub && <div className="mt-1 text-[11px] text-ink/45">{sub}</div>}
     </div>
   );
 }
