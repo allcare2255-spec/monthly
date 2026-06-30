@@ -132,8 +132,20 @@ html, body {
     backdrop-filter: none !important;
     border-color: rgba(0, 0, 0, 0.08) !important;
   }
-  @page { size: A4; margin: 14mm; }
+  /* PDF 여백 0 — 배너 풀블리드용. 본문/월간은 요소 패딩으로 여백 보정 */
+  @page { size: A4; margin: 0; }
   .print-page-break { page-break-before: always; }
+
+  /* [주간 미리보기] 문서 패딩 제거 → 배너가 페이지 가장자리까지 꽉 차게 */
+  [data-preview-root] .preview-doc {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  /* 배너는 풀블리드(라운드 제거), 본문에는 좌우/하단 여백 */
+  [data-preview-root] .preview-banner { border-radius: 0 !important; }
+  [data-preview-root] .preview-body { padding: 0 12mm 14mm !important; }
+  /* [월간 레포트] @page 여백이 0이 되었으므로 카드에 여백 부여 */
+  .print-target { margin: 14mm !important; }
 
   /* [수정 4] 미리보기가 열린 상태에서 인쇄 → 미리보기 문서만 출력 */
   body.preview-active > :not([data-preview-root]) { display: none !important; }

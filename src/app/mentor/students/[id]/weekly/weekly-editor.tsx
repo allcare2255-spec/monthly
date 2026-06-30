@@ -1144,7 +1144,7 @@ function ReportPreview({
       {/* 완성 문서 */}
       <div className="preview-doc mx-auto max-w-[860px] px-4 sm:px-6 py-6 sm:py-8">
         {/* 상단 브랜드 헤더 배너 */}
-        <header className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#38bdf8] via-[#0ea5e9] to-[#0284c7] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25">
+        <header className="preview-banner overflow-hidden rounded-3xl bg-gradient-to-r from-[#38bdf8] via-[#0ea5e9] to-[#0284c7] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25">
           <div className="flex flex-wrap items-start justify-between gap-4">
             {/* 좌측: 심볼 로고 + 브랜드명 + 부제목 */}
             <div className="flex items-center gap-3.5">
@@ -1168,7 +1168,9 @@ function ReportPreview({
           </div>
         </header>
 
-        {/* [신규] 헤더 아래 학생명 영역 (흰 배경, 헤더와 분리) */}
+        {/* 본문 (인쇄 시 좌우/하단 여백 — 배너만 풀블리드) */}
+        <div className="preview-body">
+        {/* 헤더 아래 학생명 영역 */}
         <div className="px-1 pt-7 pb-6 sm:pt-8">
           <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#0284c7]">
             코칭 {cycle}개월차 · Weekly
@@ -1213,6 +1215,7 @@ function ReportPreview({
             <PreviewDayCard key={day.date} day={day} weekday={WEEKDAY_KO[idx]} />
           ))}
         </div>
+        </div>{/* preview-body */}
       </div>
     </div>
   );
