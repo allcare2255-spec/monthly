@@ -344,7 +344,7 @@ function gaugeArc(cx: number, cy: number, r: number, startAngle: number, endAngl
 function WakeGauge({ value, total }: { value: number; total: number }) {
   const pct = total > 0 ? value / total : 0;
   const CX = 80, CY = 80, R = 58, STROKE = 16;
-  const START = 225, SWEEP = 270;
+  const START = 210, SWEEP = 300;
   const end = START + SWEEP * pct;
   const dot = gaugePoint(CX, CY, R, end);
   return (
@@ -378,10 +378,8 @@ function WakeGauge({ value, total }: { value: number; total: number }) {
                 strokeLinecap="round"
               />
             )}
-            {/* 끝점 흰 점 */}
-            {pct > 0 && (
-              <circle cx={dot.x} cy={dot.y} r={STROKE / 2} fill="#ffffff" stroke="#7c6cf6" strokeWidth="2.5" />
-            )}
+            {/* 끝점 — 작은 흰 점 (레퍼런스처럼 둥근 호 끝 안에 들어가게) */}
+            {pct > 0 && <circle cx={dot.x} cy={dot.y} r="5" fill="#ffffff" />}
           </svg>
           {/* 중앙 텍스트 */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
