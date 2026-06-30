@@ -286,22 +286,28 @@ function SubmitStreak({ days, submitted }: { days: DayData[]; submitted: number 
         </div>
         <div className="flex items-end justify-center gap-1.5 sm:gap-2">
           {days.map((d, i) => {
-            const active = d.status === "submitted";
+            // 3단계: 제출 완료=진한 하늘 / 과제 미흡=연한 하늘 / 그 외(미제출·일시정지·미선택)=회색
+            const s =
+              d.status === "submitted"
+                ? { bg: "bg-sky-100", icon: "text-sky-500", label: "text-sky-600" }
+                : d.status === "incomplete"
+                  ? { bg: "bg-sky-50", icon: "text-sky-300", label: "text-sky-400" }
+                  : { bg: "bg-slate-100", icon: "text-slate-300", label: "text-ink/40" };
             return (
               <div key={d.date} className="flex flex-col items-center gap-1.5">
-                <div
-                  className={`grid h-9 w-9 place-items-center rounded-full ${
-                    active ? "bg-sky-100" : "bg-slate-100"
-                  }`}
-                >
-                  <CloudIcon className={`h-5 w-5 ${active ? "text-sky-500" : "text-slate-300"}`} />
+                <div className={`grid h-9 w-9 place-items-center rounded-full ${s.bg}`}>
+                  <CloudIcon className={`h-5 w-5 ${s.icon}`} />
                 </div>
-                <span className={`text-[11px] font-semibold ${active ? "text-sky-600" : "text-ink/40"}`}>
-                  {WEEKDAY_KO[i]}
-                </span>
+                <span className={`text-[11px] font-semibold ${s.label}`}>{WEEKDAY_KO[i]}</span>
               </div>
             );
           })}
+        </div>
+        {/* 범례 */}
+        <div className="mt-3 flex items-center justify-center gap-3 text-[10px] text-ink/45">
+          <span className="flex items-center gap-1"><CloudIcon className="h-3 w-3 text-sky-500" />제출 완료</span>
+          <span className="flex items-center gap-1"><CloudIcon className="h-3 w-3 text-sky-300" />과제 미흡</span>
+          <span className="flex items-center gap-1"><CloudIcon className="h-3 w-3 text-slate-300" />미제출</span>
         </div>
       </div>
     </div>
