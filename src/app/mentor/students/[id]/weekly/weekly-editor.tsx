@@ -2,8 +2,8 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { DayData, DayPhoto, DayStatus, WeeklyReport } from "@/types";
-import { hmToMinutes, minutesToHm } from "@/lib/dates";
+import type { DayData, DayPhoto, DayStatus, WeeklyReport, WeeklyPlanData, WeekdayKey } from "@/types";
+import { addDays, hmToMinutes, minutesToHm } from "@/lib/dates";
 
 const WEEKDAY_KO = ["월", "화", "수", "목", "금", "토", "일"];
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -35,6 +35,7 @@ export function WeeklyReportEditor({
   cycleEnd: string;
 }) {
   const [report, setReport] = useState<WeeklyReport | null>(null);
+  const [plan, setPlan] = useState<WeeklyPlanData | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingField, setSavingField] = useState<string | null>(null);
   // [수정 4] 학생에게 보내기 → 완성 레포트 미리보기 화면
@@ -52,6 +53,22 @@ export function WeeklyReportEditor({
         setLoading(false);
       });
   }, [studentId, cycle, week]);
+
+  // 해당 주차의 주간 계획표 (레포트에 함께 표시)
+  useEffect(() => {
+    setPlan(null);
+    fetch(`/api/plans?student_id=${studentId}&cycle=${cycle}&week=${week}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.plan?.plan_data) setPlan(d.plan.plan_data as WeeklyPlanData);
+      })
+      .catch(() => {});
+  }, [studentId, cycle, week]);
+
+  const planDates = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
+    [weekStart],
+  );
 
   // [수정 4] 미리보기가 열려 있는 동안 body에 클래스 부여 → 인쇄 시 미리보기만 출력
   useEffect(() => {
@@ -159,6 +176,9 @@ export function WeeklyReportEditor({
       {/* [수정 1·2] 2. 도넛 차트 2개 */}
       <DonutCharts report={report} />
 
+      {/* 해당 주차 주간 계획표 */}
+      {plan && <WeeklyPlanView plan={plan} dates={planDates} weekLabel={cumWeek} />}
+
       {/* [수정 1] 3. 멘토 총평 */}
       <section className="space-y-3">
         <h2 className="text-base font-bold text-ink">멘토 총평</h2>
@@ -239,6 +259,8 @@ export function WeeklyReportEditor({
             cycleEnd={cycleEnd}
             report={report}
             stats={stats}
+            plan={plan}
+            planDates={planDates}
             onClose={() => setPreview(false)}
           />,
           document.body,
@@ -455,6 +477,131 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
         ]}
       />
     </div>
+  );
+}
+
+// ── 주간 계획표 (읽기 전용 — 레포트에 표시) ──
+const PLAN_WEEKDAYS: { key: WeekdayKey; ko: string }[] = [
+  { key: "mon", ko: "월" },
+  { key: "tue", ko: "화" },
+  { key: "wed", ko: "수" },
+  { key: "thu", ko: "목" },
+  { key: "fri", ko: "금" },
+  { key: "sat", ko: "토" },
+  { key: "sun", ko: "일" },
+];
+
+function PlanCheck({ done, small }: { done: boolean; small?: boolean }) {
+  const sz = small ? "h-3.5 w-3.5 text-[8px]" : "h-4 w-4 text-[9px]";
+  return done ? (
+    <span className={`${sz} mt-0.5 grid shrink-0 place-items-center rounded-[4px] bg-sky-500 font-bold text-white`}>
+      ✓
+    </span>
+  ) : (
+    <span className={`${sz} mt-0.5 shrink-0 rounded-[4px] border border-ink/25`} />
+  );
+}
+
+function WeeklyPlanView({
+  plan,
+  dates,
+  weekLabel,
+}: {
+  plan: WeeklyPlanData;
+  dates: string[];
+  weekLabel: number;
+}) {
+  const dayTasks = PLAN_WEEKDAYS.flatMap((wd) => plan.days[wd.key]?.tasks || []);
+  const total = dayTasks.length;
+  const done = dayTasks.filter((t) => t.done).length;
+  const achievement = total ? Math.round((done / total) * 100) : 0;
+
+  const hasContent =
+    plan.weekly_goals.some((t) => t.text.trim()) ||
+    plan.main_test.some((x) => x.trim()) ||
+    PLAN_WEEKDAYS.some(
+      (wd) =>
+        (plan.days[wd.key]?.notes || "").trim() ||
+        (plan.days[wd.key]?.tasks || []).some((t) => t.text.trim()),
+    );
+  if (!hasContent) return null;
+
+  return (
+    <section>
+      <h2 className="text-base font-bold text-ink mb-3">{weekLabel}주차 주간 계획표</h2>
+      <div className="space-y-3">
+        {/* Weekly Goals + Main Test */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="preview-day-card rounded-2xl border border-ink/10 p-4">
+            <div className={`${SECTION_LABEL} mb-2`}>Weekly Goals</div>
+            {plan.weekly_goals.some((t) => t.text.trim()) ? (
+              <ul className="space-y-1">
+                {plan.weekly_goals
+                  .filter((t) => t.text.trim())
+                  .map((t) => (
+                    <li key={t.id} className="flex items-start gap-2 text-sm text-ink/80">
+                      <PlanCheck done={t.done} />
+                      <span className={t.done ? "line-through text-ink/40" : ""}>{t.text}</span>
+                    </li>
+                  ))}
+              </ul>
+            ) : (
+              <div className="text-xs text-ink/35">-</div>
+            )}
+          </div>
+          <div className="preview-day-card rounded-2xl border border-ink/10 p-4">
+            <div className={`${SECTION_LABEL} mb-2`}>Main Test</div>
+            {plan.main_test.some((x) => x.trim()) ? (
+              <ol className="list-decimal space-y-1 pl-5 text-sm text-ink/80">
+                {plan.main_test
+                  .filter((x) => x.trim())
+                  .map((x, i) => (
+                    <li key={i}>{x}</li>
+                  ))}
+              </ol>
+            ) : (
+              <div className="text-xs text-ink/35">-</div>
+            )}
+          </div>
+        </div>
+
+        {/* 요일별 */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {PLAN_WEEKDAYS.map((wd, i) => {
+            const d = plan.days[wd.key];
+            const tasks = (d?.tasks || []).filter((t) => t.text.trim());
+            return (
+              <div key={wd.key} className="preview-day-card rounded-2xl border border-ink/10 p-3">
+                <div className="mb-1.5 flex items-baseline justify-between">
+                  <span className="text-sm font-bold text-ink">{wd.ko}</span>
+                  <span className="text-[10px] text-ink/45">{dates[i] ? dates[i].slice(5) : ""}</span>
+                </div>
+                {(d?.notes || "").trim() && (
+                  <div className="mb-1.5 whitespace-pre-wrap text-[11px] text-ink/55">{d.notes}</div>
+                )}
+                {tasks.length > 0 && (
+                  <ul className="space-y-0.5">
+                    {tasks.map((t) => (
+                      <li key={t.id} className="flex items-start gap-1.5 text-[12px] text-ink/80">
+                        <PlanCheck done={t.done} small />
+                        <span className={t.done ? "line-through text-ink/40" : ""}>{t.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 달성률 */}
+        <div className="preview-day-card rounded-2xl border border-ink/10 p-4 text-center">
+          <div className={`${SECTION_LABEL} mb-1`}>주간 계획 달성률</div>
+          <div className="text-3xl font-extrabold tabular-nums text-gradient">{achievement}%</div>
+          <div className="mt-0.5 text-[11px] text-ink/45">할 일 {done}/{total} 완료</div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -1045,6 +1192,8 @@ function ReportPreview({
   cycleEnd,
   report,
   stats,
+  plan,
+  planDates,
   onClose,
 }: {
   studentName: string;
@@ -1057,6 +1206,8 @@ function ReportPreview({
   cycleEnd: string;
   report: WeeklyReport;
   stats: StatsShape;
+  plan: WeeklyPlanData | null;
+  planDates: string[];
   onClose: () => void;
 }) {
   const [preparing, setPreparing] = useState(false);
@@ -1183,6 +1334,13 @@ function ReportPreview({
         <div className="mb-8">
           <DonutCharts report={report} />
         </div>
+
+        {/* 해당 주차 주간 계획표 */}
+        {plan && (
+          <div className="mb-8">
+            <WeeklyPlanView plan={plan} dates={planDates} weekLabel={cumWeek} />
+          </div>
+        )}
 
         {/* [수정 1] 3. 멘토 총평 — 내용 있는 항목만 */}
         {comments.length > 0 && (
