@@ -327,11 +327,11 @@ function Donut({ title, segments, preview }: { title: string; segments: Seg[]; p
   );
 }
 
-// 색상 (Tailwind 팔레트와 동일 톤)
-const C_GREEN = "#10B981";
-const C_ORANGE = "#f97316";
-const C_RED = "#F43F5E";
-const C_GRAY = "#94A3B8";
+// 색상 — 하늘색·분홍색 계열로 통일 (브랜드 팔레트)
+const C_SKY = "#0ea5e9"; // 긍정/완료 (하늘색)
+const C_PINK = "#f472b6"; // 중간/미흡 (분홍)
+const C_PINK_DEEP = "#ec4899"; // 부정/미제출 (진한 분홍)
+const C_PINK_SOFT = "#f9c6dd"; // 미인증/없음 (연한 분홍)
 
 function DonutCharts({ report, preview }: { report: WeeklyReport; preview?: boolean }) {
   const days = report.day_data;
@@ -349,17 +349,17 @@ function DonutCharts({ report, preview }: { report: WeeklyReport; preview?: bool
         title="제출 과제 인증"
         preview={preview}
         segments={[
-          { label: "제출 완료", count: submitted, color: C_GREEN },
-          { label: "과제 미흡", count: incomplete, color: C_ORANGE },
-          { label: "미제출", count: missed, color: C_RED },
+          { label: "제출 완료", count: submitted, color: C_SKY },
+          { label: "과제 미흡", count: incomplete, color: C_PINK },
+          { label: "미제출", count: missed, color: C_PINK_DEEP },
         ]}
       />
       <Donut
         title="기상 인증"
         preview={preview}
         segments={[
-          { label: "기상 인증", count: wakeOn, color: C_GREEN },
-          { label: "기상 인증 X", count: wakeOff, color: C_GRAY },
+          { label: "기상 인증", count: wakeOn, color: C_SKY },
+          { label: "기상 인증 X", count: wakeOff, color: C_PINK_SOFT },
         ]}
       />
     </div>
@@ -367,7 +367,7 @@ function DonutCharts({ report, preview }: { report: WeeklyReport; preview?: bool
 }
 
 const STATUS_STYLES: Record<DayStatus, string> = {
-  submitted: "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 border-emerald-200",
+  submitted: "bg-gradient-to-r from-sky-100 to-cyan-100 text-sky-800 border-sky-200",
   incomplete: "bg-pink-100 text-pink-600 border-pink-300",
   missed: "bg-gradient-to-r from-rose-50 to-pink-50 text-rose border-rose/30",
   paused: "bg-slate-100 text-slate-600 border-slate-200",
@@ -1074,8 +1074,8 @@ function ReportPreview({
         {/* [수정 1] 1. 통계 요약 — 카드별 파스텔 톤 */}
         <div className="grid grid-cols-1 gap-4 mb-7 sm:grid-cols-3">
           <PreviewStat tone="sky" label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
-          <PreviewStat tone="lavender" label="평균 순공" value={minutesToHm(stats?.avgStudy)} />
-          <PreviewStat tone="slate" label="평균 기상" value={stats?.avgWake || "-"} />
+          <PreviewStat tone="pink" label="평균 순공" value={minutesToHm(stats?.avgStudy)} />
+          <PreviewStat tone="sky2" label="평균 기상" value={stats?.avgWake || "-"} />
         </div>
 
         {/* [수정 1·2] 2. 도넛 차트 2개 */}
@@ -1110,11 +1110,11 @@ function ReportPreview({
   );
 }
 
-// 카드별 파스텔 톤 (배경 / 테두리 / 라벨 색 / 숫자 색)
-const STAT_TONES: Record<"sky" | "lavender" | "slate", { bg: string; border: string; label: string; value: string }> = {
-  sky:      { bg: "bg-[#eef6fd]", border: "border-[#d4e8f7]", label: "text-[#0369a1]", value: "text-[#0b3a66]" },
-  lavender: { bg: "bg-[#eef0fb]", border: "border-[#dcdcf4]", label: "text-[#6d4ed6]", value: "text-[#352a78]" },
-  slate:    { bg: "bg-[#f2f4f8]", border: "border-[#e2e7ef]", label: "text-[#64748b]", value: "text-[#334155]" },
+// 카드별 파스텔 톤 — 하늘색·분홍색 계열로 통일 (배경 / 테두리 / 라벨 색 / 숫자 색)
+const STAT_TONES: Record<"sky" | "pink" | "sky2", { bg: string; border: string; label: string; value: string }> = {
+  sky:  { bg: "bg-[#eef6fd]", border: "border-[#d4e8f7]", label: "text-[#0369a1]", value: "text-[#0b3a66]" },
+  pink: { bg: "bg-[#fdeef6]", border: "border-[#fbd5e8]", label: "text-[#db2777]", value: "text-[#9d174d]" },
+  sky2: { bg: "bg-[#ecfbff]", border: "border-[#cdeefb]", label: "text-[#0891b2]", value: "text-[#0e5b73]" },
 };
 
 function PreviewStat({
@@ -1126,7 +1126,7 @@ function PreviewStat({
   label: string;
   value: string;
   sub?: string;
-  tone?: "sky" | "lavender" | "slate";
+  tone?: "sky" | "pink" | "sky2";
 }) {
   const t = STAT_TONES[tone];
   return (

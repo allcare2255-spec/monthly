@@ -17,10 +17,10 @@ import type { DayData, MonthlyReport, WeeklyReport } from "@/types";
 import { addDays, hmToMinutes, minutesToHm } from "@/lib/dates";
 
 const STATUS_COLOR: Record<string, string> = {
-  submitted: "#10B981",   // emerald
-  missed: "#EF4444",      // red
-  paused: "#94A3B8",      // slate
-  empty: "#E5E7EB",       // gray-200
+  submitted: "#0ea5e9",   // 하늘색 (정상 인증)
+  missed: "#ec4899",      // 진한 분홍 (미제출)
+  paused: "#94A3B8",      // slate (일시 정지 — 중립)
+  empty: "#E5E7EB",       // gray-200 (미입력 — 중립)
 };
 
 export function MonthlyReportView({
@@ -152,7 +152,7 @@ export function MonthlyReportView({
       <div className="print-target relative overflow-hidden bg-white border border-ink/5 rounded-3xl p-8 space-y-8 shadow-sm">
         {/* 인쇄 외 장식 */}
         <div className="no-print absolute -top-24 -right-24 w-72 h-72 rounded-full bg-gradient-to-br from-indigo/15 via-violet/10 to-fuchsia/15 blur-3xl pointer-events-none" />
-        <div className="no-print absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-gradient-to-br from-fuchsia/10 via-rose/8 to-sunset/12 blur-3xl pointer-events-none" />
+        <div className="no-print absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-gradient-to-br from-fuchsia/10 via-rose/8 to-indigo/12 blur-3xl pointer-events-none" />
 
         {/* 헤더 */}
         <header className="relative border-b border-ink/10 pb-6">
@@ -254,7 +254,7 @@ export function MonthlyReportView({
         </section>
 
         {!hasData && (
-          <p className="text-xs rounded-lg bg-gradient-to-r from-sunset/10 to-rose/10 border border-sunset/30 text-ink/80 px-3 py-2">
+          <p className="text-xs rounded-lg bg-gradient-to-r from-rose/10 to-fuchsia/10 border border-rose/30 text-ink/80 px-3 py-2">
             ※ 아직 작성된 주차가 없습니다. 위쪽 1~4주차 탭에서 일별 데이터를 먼저 입력해주세요.
           </p>
         )}
