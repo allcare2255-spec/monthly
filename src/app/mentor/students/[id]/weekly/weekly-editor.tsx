@@ -13,6 +13,7 @@ export function WeeklyReportEditor({
   cycle,
   week,
   studentName,
+  mentorName,
   cumWeek,
   weekStart,
   weekEnd,
@@ -21,6 +22,7 @@ export function WeeklyReportEditor({
   cycle: number;
   week: number;
   studentName: string;
+  mentorName: string;
   cumWeek: number;
   weekStart: string;
   weekEnd: string;
@@ -221,6 +223,7 @@ export function WeeklyReportEditor({
         createPortal(
           <ReportPreview
             studentName={studentName}
+            mentorName={mentorName}
             cycle={cycle}
             cumWeek={cumWeek}
             weekStart={weekStart}
@@ -1027,6 +1030,7 @@ function wakeText(day: DayData): string | null {
 
 function ReportPreview({
   studentName,
+  mentorName,
   cycle,
   cumWeek,
   weekStart,
@@ -1036,6 +1040,7 @@ function ReportPreview({
   onClose,
 }: {
   studentName: string;
+  mentorName: string;
   cycle: number;
   cumWeek: number;
   weekStart: string;
@@ -1134,16 +1139,27 @@ function ReportPreview({
                     <img src="/logo.jpg" alt="SKY MATE 로고" className="h-9 w-9 object-contain" />
                   </div>
                   <div>
-                    <div className="text-xl font-extrabold tracking-tight">SKY MATE</div>
+                    <div className={`${bannerIdx === 0 ? "text-3xl sm:text-4xl" : "text-xl"} font-extrabold tracking-tight`}>
+                      SKY MATE
+                    </div>
                     <div className="mt-0.5 text-[13px] font-medium text-white/70">주간 학습코칭 레포트</div>
                   </div>
                 </div>
-                {/* 우측: 기간(년/월) + 정확한 범위 + 코칭 월차 */}
+                {/* 우측: 기간(년/월) + 코칭 월차 (+ 첫 배너는 기간 대신 멘토) */}
                 <div className="text-right">
                   <div className="text-2xl font-extrabold sm:text-[26px]">{periodTitle}</div>
                   <div className="mt-1.5 text-[12px] leading-relaxed text-white/70">
-                    <div>기간: {fmtDot(weekStart)} ~ {fmtDot(weekEnd)}</div>
-                    <div>코칭 {cycle}개월차 · {cumWeek}주차</div>
+                    {bannerIdx === 0 ? (
+                      <>
+                        <div>코칭 {cycle}개월차 · {cumWeek}주차</div>
+                        <div>담당 멘토: {mentorName || "-"}</div>
+                      </>
+                    ) : (
+                      <>
+                        <div>기간: {fmtDot(weekStart)} ~ {fmtDot(weekEnd)}</div>
+                        <div>코칭 {cycle}개월차 · {cumWeek}주차</div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

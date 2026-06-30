@@ -29,7 +29,7 @@ export default async function WeeklyReportPage({
   const supabase = getServiceClient();
   const { data: student } = await supabase
     .from("coaching_students")
-    .select("id, name, high_school, coaching_start_date, mentor_id")
+    .select("id, name, high_school, coaching_start_date, mentor_id, mentor:coaching_mentors(name)")
     .eq("id", id)
     .maybeSingle();
   if (!student) return notFound();
@@ -128,6 +128,7 @@ export default async function WeeklyReportPage({
         cycle={cycle}
         week={week}
         studentName={student.name}
+        mentorName={(student as any).mentor?.name || ""}
         cumWeek={cumulativeWeek(cycle, week)}
         weekStart={weekStart}
         weekEnd={weekEnd}
