@@ -273,26 +273,44 @@ function CloudIcon({ className }: { className?: string }) {
   );
 }
 
-function SubmitStreak({ days, submitted }: { days: DayData[]; submitted: number }) {
+type CloudTone = "full" | "partial" | "none";
+const CLOUD_TONE_STYLE: Record<CloudTone, { bg: string; icon: string; label: string }> = {
+  full: { bg: "bg-sky-100", icon: "text-sky-500", label: "text-sky-600" },
+  partial: { bg: "bg-sky-50", icon: "text-sky-300", label: "text-sky-400" },
+  none: { bg: "bg-slate-100", icon: "text-slate-300", label: "text-ink/40" },
+};
+
+// 게이지 + 요일별 구름 스트릭 카드 (제출 과제 인증 / 기상 인증 공통)
+function CertCard({
+  title,
+  value,
+  total,
+  gaugeLabel,
+  gradId,
+  days,
+  tones,
+  legend,
+}: {
+  title: string;
+  value: number;
+  total: number;
+  gaugeLabel: string;
+  gradId: string;
+  days: DayData[];
+  tones: CloudTone[];
+  legend: { tone: CloudTone; label: string }[];
+}) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-5 shadow-md">
       <div className="absolute inset-0 bg-gradient-to-br from-indigo/20 via-transparent via-20% to-transparent" />
       <div className="relative">
-        <div className="text-sm font-bold text-ink mb-3 text-center">제출 과제 인증</div>
-        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-8">
-          {/* 왼쪽: 게이지바 (기상 인증과 동일 디자인) */}
-          <SemiGauge value={submitted} total={days.length} label="제출 일수" gradId="submitGrad" />
-          {/* 오른쪽: 요일별 구름 스트릭 + 범례 */}
-          <div>
-            <div className="flex items-end justify-center gap-1.5 sm:gap-2">
+        <div className="text-sm font-bold text-ink mb-3 text-center">{title}</div>
+        {/* 게이지바 */}
+        <SemiGauge value={value} total={total} label={gaugeLabel} gradId={gradId} />
+        {/* 요일별 구름 스트릭 */}
+        <div className="mt-4 flex items-end justify-center gap-1 sm:gap-1.5">
           {days.map((d, i) => {
-            // 3단계: 제출 완료=진한 하늘 / 과제 미흡=연한 하늘 / 그 외(미제출·일시정지·미선택)=회색
-            const s =
-              d.status === "submitted"
-                ? { bg: "bg-sky-100", icon: "text-sky-500", label: "text-sky-600" }
-                : d.status === "incomplete"
-                  ? { bg: "bg-sky-50", icon: "text-sky-300", label: "text-sky-400" }
-                  : { bg: "bg-slate-100", icon: "text-slate-300", label: "text-ink/40" };
+            const s = CLOUD_TONE_STYLE[tones[i]];
             return (
               <div key={d.date} className="flex flex-col items-center gap-1.5">
                 <div className={`grid h-9 w-9 place-items-center rounded-full ${s.bg}`}>
@@ -303,13 +321,14 @@ function SubmitStreak({ days, submitted }: { days: DayData[]; submitted: number 
             );
           })}
         </div>
-            {/* 범례 */}
-            <div className="mt-3 flex items-center justify-center gap-3 text-[10px] text-ink/45">
-              <span className="flex items-center gap-1"><CloudIcon className="h-3 w-3 text-sky-500" />제출 완료</span>
-              <span className="flex items-center gap-1"><CloudIcon className="h-3 w-3 text-sky-300" />과제 미흡</span>
-              <span className="flex items-center gap-1"><CloudIcon className="h-3 w-3 text-slate-300" />미제출</span>
-            </div>
-          </div>
+        {/* 범례 */}
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-ink/45">
+          {legend.map((l) => (
+            <span key={l.label} className="flex items-center gap-1">
+              <CloudIcon className={`h-3 w-3 ${CLOUD_TONE_STYLE[l.tone].icon}`} />
+              {l.label}
+            </span>
+          ))}
         </div>
       </div>
     </div>
@@ -386,29 +405,46 @@ function SemiGauge({
   );
 }
 
-function WakeGauge({ value, total }: { value: number; total: number }) {
-  return (
-    <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-5 shadow-md">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo/20 via-transparent via-20% to-transparent" />
-      <div className="relative">
-        <div className="text-sm font-bold text-ink mb-3 text-center">기상 인증</div>
-        <SemiGauge value={value} total={total} label="기상 일수" gradId="wakeGrad" />
-      </div>
-    </div>
-  );
-}
-
 function DonutCharts({ report }: { report: WeeklyReport }) {
   const days = report.day_data;
-  // 차트 1 — 제출 과제 인증 (제출 완료 일수)
+  // 제출 과제 인증 (제출 완료 일수) + 요일별 톤
   const submitted = days.filter((d) => d.status === "submitted").length;
-  // 차트 2 — 기상 인증 (기상 시간 입력 여부)
+  const submitTones: CloudTone[] = days.map((d) =>
+    d.status === "submitted" ? "full" : d.status === "incomplete" ? "partial" : "none",
+  );
+  // 기상 인증 (기상 시간 입력 여부) + 요일별 톤
   const wakeOn = days.filter((d) => !!d.wake_up_time).length;
+  const wakeTones: CloudTone[] = days.map((d) => (d.wake_up_time ? "full" : "none"));
 
   return (
-    <div className="space-y-3">
-      <SubmitStreak days={days} submitted={submitted} />
-      <WakeGauge value={wakeOn} total={days.length} />
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <CertCard
+        title="제출 과제 인증"
+        value={submitted}
+        total={days.length}
+        gaugeLabel="제출 일수"
+        gradId="submitGrad"
+        days={days}
+        tones={submitTones}
+        legend={[
+          { tone: "full", label: "제출 완료" },
+          { tone: "partial", label: "과제 미흡" },
+          { tone: "none", label: "미제출" },
+        ]}
+      />
+      <CertCard
+        title="기상 인증"
+        value={wakeOn}
+        total={days.length}
+        gaugeLabel="기상 일수"
+        gradId="wakeGrad"
+        days={days}
+        tones={wakeTones}
+        legend={[
+          { tone: "full", label: "기상 인증" },
+          { tone: "none", label: "미인증" },
+        ]}
+      />
     </div>
   );
 }
