@@ -1124,8 +1124,9 @@ function ReportPreview({
           <div className="flex flex-wrap items-start justify-between gap-4">
             {/* 좌측: 심볼 로고 + 브랜드명 + 부제목 */}
             <div className="flex items-center gap-3.5">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/15 text-2xl font-black ring-1 ring-white/25">
-                S
+              <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white ring-1 ring-white/40">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.jpg" alt="SKY MATE 로고" className="h-9 w-9 object-contain" />
               </div>
               <div>
                 <div className="text-xl font-extrabold tracking-tight">SKY MATE</div>
