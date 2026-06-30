@@ -1129,7 +1129,7 @@ function ReportPreview({
           {[0, 1, 2].map((bannerIdx) => (
             <header
               key={bannerIdx}
-              className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#38bdf8] via-[#0ea5e9] to-[#0284c7] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25"
+              className={`overflow-hidden rounded-3xl ${bannerIdx === 1 ? "bg-gradient-to-br" : "bg-gradient-to-r"} from-[#38bdf8] via-[#0ea5e9] to-[#0284c7] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25`}
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 {/* 좌측: 심볼 로고 + 브랜드명 + 부제목 */}
@@ -1139,17 +1139,27 @@ function ReportPreview({
                     <img src="/logo.jpg" alt="SKY MATE 로고" className="h-9 w-9 object-contain" />
                   </div>
                   <div>
-                    <div className={`${bannerIdx === 0 ? "text-3xl sm:text-4xl" : "text-xl"} font-extrabold tracking-tight`}>
+                    <div
+                      className={`font-extrabold ${
+                        bannerIdx === 0
+                          ? "text-3xl sm:text-4xl tracking-tight"
+                          : bannerIdx === 1
+                            ? "text-2xl tracking-[0.25em]"
+                            : "text-xl tracking-tight"
+                      }`}
+                    >
                       SKY MATE
                     </div>
-                    <div className="mt-0.5 text-[13px] font-medium text-white/70">주간 학습코칭 레포트</div>
+                    {bannerIdx !== 1 && (
+                      <div className="mt-0.5 text-[13px] font-medium text-white/70">주간 학습코칭 레포트</div>
+                    )}
                   </div>
                 </div>
                 {/* 우측: 기간(년/월) + 코칭 월차 (+ 첫 배너는 기간 대신 멘토) */}
                 <div className="text-right">
                   <div className="text-2xl font-extrabold sm:text-[26px]">{periodTitle}</div>
                   <div className="mt-1.5 text-[12px] leading-relaxed text-white/70">
-                    {bannerIdx === 0 ? (
+                    {bannerIdx !== 2 ? (
                       <>
                         <div>코칭 {cycle}개월차 · {cumWeek}주차</div>
                         <div>담당 멘토: {mentorName || "-"}</div>
