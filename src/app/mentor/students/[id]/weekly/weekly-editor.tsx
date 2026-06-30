@@ -343,8 +343,9 @@ function gaugeArc(cx: number, cy: number, r: number, startAngle: number, endAngl
 
 function WakeGauge({ value, total }: { value: number; total: number }) {
   const pct = total > 0 ? value / total : 0;
-  const CX = 80, CY = 80, R = 58, STROKE = 16;
-  const START = 210, SWEEP = 300;
+  // 반원(180°) 게이지 — 왼쪽에서 위로 둥글게 떠서 오른쪽으로
+  const CX = 80, CY = 84, R = 64, STROKE = 18;
+  const START = 270, SWEEP = 180;
   const end = START + SWEEP * pct;
   const dot = gaugePoint(CX, CY, R, end);
   return (
@@ -352,15 +353,15 @@ function WakeGauge({ value, total }: { value: number; total: number }) {
       <div className="absolute inset-0 bg-gradient-to-br from-indigo/20 via-transparent via-20% to-transparent" />
       <div className="relative">
         <div className="text-sm font-bold text-ink mb-3 text-center">기상 인증</div>
-        <div className="relative mx-auto h-40 w-40">
-          <svg viewBox="0 0 160 160" className="h-full w-full">
+        <div className="relative mx-auto h-28 w-48">
+          <svg viewBox="0 0 160 100" className="h-full w-full">
             <defs>
-              <linearGradient id="wakeGaugeGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+              <linearGradient id="wakeGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#38bdf8" />
                 <stop offset="100%" stopColor="#7c6cf6" />
               </linearGradient>
             </defs>
-            {/* 배경 트랙 */}
+            {/* 배경 트랙 (반원) */}
             <path
               d={gaugeArc(CX, CY, R, START, START + SWEEP)}
               fill="none"
@@ -378,13 +379,13 @@ function WakeGauge({ value, total }: { value: number; total: number }) {
                 strokeLinecap="round"
               />
             )}
-            {/* 끝점 — 작은 흰 점 (레퍼런스처럼 둥근 호 끝 안에 들어가게) */}
+            {/* 끝점 — 작은 흰 점 */}
             {pct > 0 && <circle cx={dot.x} cy={dot.y} r="5" fill="#ffffff" />}
           </svg>
-          {/* 중앙 텍스트 */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-xl leading-none">⏰</div>
-            <div className="mt-1 text-[11px] font-medium text-ink/55">기상 일수</div>
+          {/* 중앙 텍스트 (반원 안쪽) */}
+          <div className="absolute inset-x-0 top-[34%] flex flex-col items-center">
+            <div className="text-lg leading-none">⏰</div>
+            <div className="mt-0.5 text-[11px] font-medium text-ink/55">기상 일수</div>
             <div className="text-2xl font-extrabold tabular-nums text-gradient">{value}일</div>
           </div>
         </div>
