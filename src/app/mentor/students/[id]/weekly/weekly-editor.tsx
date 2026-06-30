@@ -267,7 +267,7 @@ function StatCard({
 // [수정 2] 도넛 차트 2개 — 일별 기록 데이터 기반 자동 계산
 type Seg = { label: string; count: number; color: string };
 
-function Donut({ title, segments, preview }: { title: string; segments: Seg[]; preview?: boolean }) {
+function Donut({ title, segments }: { title: string; segments: Seg[] }) {
   const total = segments.reduce((s, x) => s + x.count, 0);
   const R = 54;
   const STROKE = 22;
@@ -275,13 +275,7 @@ function Donut({ title, segments, preview }: { title: string; segments: Seg[]; p
   let offset = 0;
 
   return (
-    <div
-      className={
-        preview
-          ? "rounded-3xl bg-[#f8fafc] border border-[#e8eef6] p-6 shadow-sm"
-          : "rounded-2xl bg-white border border-ink/5 p-5 shadow-sm"
-      }
-    >
+    <div className="rounded-2xl bg-white border border-ink/5 p-5 shadow-sm">
       <div className="text-sm font-bold text-ink mb-3 text-center">{title}</div>
       <div className="flex items-center justify-center gap-5">
         <svg viewBox="0 0 160 160" className="w-32 h-32 -rotate-90">
@@ -333,7 +327,7 @@ const C_PINK = "#f472b6"; // 중간/미흡 (분홍)
 const C_PINK_DEEP = "#ec4899"; // 부정/미제출 (진한 분홍)
 const C_PINK_SOFT = "#f9c6dd"; // 미인증/없음 (연한 분홍)
 
-function DonutCharts({ report, preview }: { report: WeeklyReport; preview?: boolean }) {
+function DonutCharts({ report }: { report: WeeklyReport }) {
   const days = report.day_data;
   // 차트 1 — 제출 과제 인증
   const submitted = days.filter((d) => d.status === "submitted").length;
@@ -344,10 +338,9 @@ function DonutCharts({ report, preview }: { report: WeeklyReport; preview?: bool
   const wakeOff = days.length - wakeOn;
 
   return (
-    <div className={`grid grid-cols-1 sm:grid-cols-2 ${preview ? "gap-4" : "gap-3"}`}>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <Donut
         title="제출 과제 인증"
-        preview={preview}
         segments={[
           { label: "제출 완료", count: submitted, color: C_SKY },
           { label: "과제 미흡", count: incomplete, color: C_PINK },
@@ -356,7 +349,6 @@ function DonutCharts({ report, preview }: { report: WeeklyReport; preview?: bool
       />
       <Donut
         title="기상 인증"
-        preview={preview}
         segments={[
           { label: "기상 인증", count: wakeOn, color: C_SKY },
           { label: "기상 인증 X", count: wakeOff, color: C_PINK_SOFT },
@@ -1080,7 +1072,7 @@ function ReportPreview({
 
         {/* [수정 1·2] 2. 도넛 차트 2개 */}
         <div className="mb-8">
-          <DonutCharts report={report} preview />
+          <DonutCharts report={report} />
         </div>
 
         {/* [수정 1] 3. 멘토 총평 — 내용 있는 항목만 */}
