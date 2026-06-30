@@ -329,7 +329,77 @@ function Donut({ title, segments }: { title: string; segments: Seg[] }) {
 const C_SKY = "#0ea5e9"; // 긍정/완료 (하늘색)
 const C_PINK = "#f472b6"; // 중간/미흡 (분홍)
 const C_PINK_DEEP = "#ec4899"; // 부정/미제출 (진한 분홍)
-const C_PINK_SOFT = "#f9c6dd"; // 미인증/없음 (연한 분홍)
+// ⏰ 기상 인증 게이지 (반원형 게이지 차트 — 그라데이션 호 + 둥근 끝점)
+function gaugePoint(cx: number, cy: number, r: number, angleDeg: number) {
+  const rad = (angleDeg * Math.PI) / 180;
+  return { x: cx + r * Math.sin(rad), y: cy - r * Math.cos(rad) };
+}
+function gaugeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
+  const s = gaugePoint(cx, cy, r, startAngle);
+  const e = gaugePoint(cx, cy, r, endAngle);
+  const large = endAngle - startAngle > 180 ? 1 : 0;
+  return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
+}
+
+function WakeGauge({ value, total }: { value: number; total: number }) {
+  const pct = total > 0 ? value / total : 0;
+  const CX = 80, CY = 80, R = 58, STROKE = 16;
+  const START = 225, SWEEP = 270;
+  const end = START + SWEEP * pct;
+  const dot = gaugePoint(CX, CY, R, end);
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-5 shadow-md">
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo/20 via-transparent via-20% to-transparent" />
+      <div className="relative">
+        <div className="text-sm font-bold text-ink mb-3 text-center">기상 인증</div>
+        <div className="relative mx-auto h-40 w-40">
+          <svg viewBox="0 0 160 160" className="h-full w-full">
+            <defs>
+              <linearGradient id="wakeGaugeGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#38bdf8" />
+                <stop offset="100%" stopColor="#7c6cf6" />
+              </linearGradient>
+            </defs>
+            {/* 배경 트랙 */}
+            <path
+              d={gaugeArc(CX, CY, R, START, START + SWEEP)}
+              fill="none"
+              stroke="#EceEF3"
+              strokeWidth={STROKE}
+              strokeLinecap="round"
+            />
+            {/* 진행 호 */}
+            {pct > 0 && (
+              <path
+                d={gaugeArc(CX, CY, R, START, end)}
+                fill="none"
+                stroke="url(#wakeGaugeGrad)"
+                strokeWidth={STROKE}
+                strokeLinecap="round"
+              />
+            )}
+            {/* 끝점 흰 점 */}
+            {pct > 0 && (
+              <circle cx={dot.x} cy={dot.y} r={STROKE / 2} fill="#ffffff" stroke="#7c6cf6" strokeWidth="2.5" />
+            )}
+          </svg>
+          {/* 중앙 텍스트 */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="text-xl leading-none">⏰</div>
+            <div className="mt-1 text-[11px] font-medium text-ink/55">기상 일수</div>
+            <div className="text-2xl font-extrabold tabular-nums text-ink">
+              {value}
+              <span className="text-sm font-bold">일</span>
+            </div>
+          </div>
+        </div>
+        <div className="mt-2 text-center text-xs tabular-nums text-ink/50">
+          총 {total}일 중 {value}일 ({Math.round(pct * 100)}%)
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function DonutCharts({ report }: { report: WeeklyReport }) {
   const days = report.day_data;
@@ -339,7 +409,6 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
   const missed = days.filter((d) => d.status === "missed").length;
   // 차트 2 — 기상 인증 (기상 시간 입력 여부)
   const wakeOn = days.filter((d) => !!d.wake_up_time).length;
-  const wakeOff = days.length - wakeOn;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -351,13 +420,7 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
           { label: "미제출", count: missed, color: C_PINK_DEEP },
         ]}
       />
-      <Donut
-        title="기상 인증"
-        segments={[
-          { label: "기상 인증", count: wakeOn, color: C_SKY },
-          { label: "기상 인증 X", count: wakeOff, color: C_PINK_SOFT },
-        ]}
-      />
+      <WakeGauge value={wakeOn} total={days.length} />
     </div>
   );
 }
