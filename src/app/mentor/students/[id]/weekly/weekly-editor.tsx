@@ -293,11 +293,11 @@ const CLOUD_TONE_STYLE: Record<CloudTone, { bg: string; icon: string; label: str
 function submitTone(status: DayStatus): CloudTone {
   return status === "submitted" ? "full" : status === "incomplete" ? "partial" : "none";
 }
-// 일별 기록 요일 배지 색 — 배경은 구름 동그라미 배경과 동일, 글씨는 가독성 위해 진하게
-const DAY_BADGE_STYLE: Record<CloudTone, string> = {
-  full: "bg-sky-100 text-sky-700",
-  partial: "bg-sky-50 text-sky-500",
-  none: "bg-slate-100 text-slate-500",
+// 일별 기록 요일 구름 색 — 흰 글씨가 잘 보이도록 채도 있는 톤 (미흡은 같은 하늘 계열로 살짝 진하게)
+const DAY_CLOUD_COLOR: Record<CloudTone, string> = {
+  full: "text-sky-500",
+  partial: "text-sky-400",
+  none: "text-slate-400",
 };
 
 // 게이지 + 요일별 구름 스트릭 카드 (제출 과제 인증 / 기상 인증 공통)
@@ -1245,8 +1245,11 @@ function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
   return (
     <div className="preview-day-card border border-ink/10 rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${DAY_BADGE_STYLE[submitTone(day.status)]}`}>
-          {weekday}
+        <div className="relative w-10 h-10 shrink-0">
+          <CloudIcon className={`absolute inset-0 h-full w-full ${DAY_CLOUD_COLOR[submitTone(day.status)]}`} />
+          <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold translate-y-[2px]">
+            {weekday}
+          </span>
         </div>
         <div>
           <div className="text-xs text-ink">{day.date}</div>
