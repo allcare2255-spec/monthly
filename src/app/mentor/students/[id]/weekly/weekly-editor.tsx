@@ -357,9 +357,9 @@ function WakeGauge({ value, total }: { value: number; total: number }) {
           <svg viewBox="0 0 160 100" className="h-full w-full">
             <defs>
               <linearGradient id="wakeGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#0ea5e9" />
-                <stop offset="55%" stopColor="#0284c7" />
-                <stop offset="100%" stopColor="#0369a1" />
+                <stop offset="0%" stopColor="#a5dffb" />
+                <stop offset="55%" stopColor="#5fc4f2" />
+                <stop offset="100%" stopColor="#38bdf8" />
               </linearGradient>
             </defs>
             {/* 배경 트랙 (반원) */}
