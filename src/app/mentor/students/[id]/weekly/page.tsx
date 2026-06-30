@@ -59,6 +59,8 @@ export default async function WeeklyReportPage({
   // [수정 5] 월차 전체가 아닌 "해당 주차" 날짜 범위
   const weekStart = addDays(effectiveStart, (week - 1) * 7);
   const weekEnd = addDays(weekStart, 6);
+  // N개월차(사이클) 전체 기간 — 4주(28일) 또는 오버라이드된 종료일
+  const cycleEndDate = cycleRow?.end_date || addDays(effectiveStart, 27);
   const notes = (cycleRow?.notes as CycleNote[]) || [];
 
   // 5단계 — 이 주차의 주간 성장 코칭 폼 제출(있으면 참고용 표시)
@@ -132,6 +134,8 @@ export default async function WeeklyReportPage({
         cumWeek={cumulativeWeek(cycle, week)}
         weekStart={weekStart}
         weekEnd={weekEnd}
+        cycleStart={effectiveStart}
+        cycleEnd={cycleEndDate}
       />
     </div>
   );
