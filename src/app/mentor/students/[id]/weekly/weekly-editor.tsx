@@ -279,10 +279,12 @@ function SubmitStreak({ days, submitted }: { days: DayData[]; submitted: number 
       <div className="absolute inset-0 bg-gradient-to-br from-indigo/20 via-transparent via-20% to-transparent" />
       <div className="relative">
         <div className="text-sm font-bold text-ink mb-3 text-center">제출 과제 인증</div>
-        {/* 게이지바 (기상 인증과 동일 디자인) */}
-        <SemiGauge value={submitted} total={days.length} label="제출 일수" />
-        {/* 요일별 구름 스트릭 */}
-        <div className="mt-4 flex items-end justify-center gap-1.5 sm:gap-2">
+        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-8">
+          {/* 왼쪽: 게이지바 (기상 인증과 동일 디자인) */}
+          <SemiGauge value={submitted} total={days.length} label="제출 일수" gradId="submitGrad" />
+          {/* 오른쪽: 요일별 구름 스트릭 + 범례 */}
+          <div>
+            <div className="flex items-end justify-center gap-1.5 sm:gap-2">
           {days.map((d, i) => {
             // 3단계: 제출 완료=진한 하늘 / 과제 미흡=연한 하늘 / 그 외(미제출·일시정지·미선택)=회색
             const s =
@@ -301,11 +303,13 @@ function SubmitStreak({ days, submitted }: { days: DayData[]; submitted: number 
             );
           })}
         </div>
-        {/* 범례 */}
-        <div className="mt-3 flex items-center justify-center gap-3 text-[10px] text-ink/45">
-          <span className="flex items-center gap-1"><CloudIcon className="h-3 w-3 text-sky-500" />제출 완료</span>
-          <span className="flex items-center gap-1"><CloudIcon className="h-3 w-3 text-sky-300" />과제 미흡</span>
-          <span className="flex items-center gap-1"><CloudIcon className="h-3 w-3 text-slate-300" />미제출</span>
+            {/* 범례 */}
+            <div className="mt-3 flex items-center justify-center gap-3 text-[10px] text-ink/45">
+              <span className="flex items-center gap-1"><CloudIcon className="h-3 w-3 text-sky-500" />제출 완료</span>
+              <span className="flex items-center gap-1"><CloudIcon className="h-3 w-3 text-sky-300" />과제 미흡</span>
+              <span className="flex items-center gap-1"><CloudIcon className="h-3 w-3 text-slate-300" />미제출</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -325,7 +329,17 @@ function gaugeArc(cx: number, cy: number, r: number, startAngle: number, endAngl
 }
 
 // 반원(180°) 게이지 — 재사용 (기상 인증 / 제출 과제 인증 공통)
-function SemiGauge({ value, total, label }: { value: number; total: number; label: string }) {
+function SemiGauge({
+  value,
+  total,
+  label,
+  gradId,
+}: {
+  value: number;
+  total: number;
+  label: string;
+  gradId: string;
+}) {
   const pct = total > 0 ? value / total : 0;
   // 왼쪽에서 위로 둥글게 떠서 오른쪽으로
   const CX = 80, CY = 84, R = 64, STROKE = 18;
@@ -333,10 +347,10 @@ function SemiGauge({ value, total, label }: { value: number; total: number; labe
   const end = START + SWEEP * pct;
   const dot = gaugePoint(CX, CY, R, end);
   return (
-    <div className="relative mx-auto h-28 w-48">
+    <div className="relative mx-auto h-28 w-48 shrink-0">
       <svg viewBox="0 0 160 100" className="h-full w-full">
         <defs>
-          <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#a5dffb" />
             <stop offset="55%" stopColor="#5fc4f2" />
             <stop offset="100%" stopColor="#38bdf8" />
@@ -355,7 +369,7 @@ function SemiGauge({ value, total, label }: { value: number; total: number; labe
           <path
             d={gaugeArc(CX, CY, R, START, end)}
             fill="none"
-            stroke="url(#gaugeGrad)"
+            stroke={`url(#${gradId})`}
             strokeWidth={STROKE}
             strokeLinecap="round"
           />
@@ -378,7 +392,7 @@ function WakeGauge({ value, total }: { value: number; total: number }) {
       <div className="absolute inset-0 bg-gradient-to-br from-indigo/20 via-transparent via-20% to-transparent" />
       <div className="relative">
         <div className="text-sm font-bold text-ink mb-3 text-center">기상 인증</div>
-        <SemiGauge value={value} total={total} label="기상 일수" />
+        <SemiGauge value={value} total={total} label="기상 일수" gradId="wakeGrad" />
       </div>
     </div>
   );
@@ -392,7 +406,7 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
   const wakeOn = days.filter((d) => !!d.wake_up_time).length;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="space-y-3">
       <SubmitStreak days={days} submitted={submitted} />
       <WakeGauge value={wakeOn} total={days.length} />
     </div>
