@@ -275,7 +275,9 @@ function Donut({ title, segments }: { title: string; segments: Seg[] }) {
   let offset = 0;
 
   return (
-    <div className="rounded-2xl bg-white border border-ink/5 p-5 shadow-sm">
+    <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-5 shadow-sm">
+      <div className="absolute inset-x-0 -top-8 h-24 bg-gradient-to-br from-indigo/10 via-violet/8 to-fuchsia/10 blur-xl" />
+      <div className="relative">
       <div className="text-sm font-bold text-ink mb-3 text-center">{title}</div>
       <div className="flex items-center justify-center gap-5">
         <svg viewBox="0 0 160 160" className="w-32 h-32 -rotate-90">
@@ -316,6 +318,7 @@ function Donut({ title, segments }: { title: string; segments: Seg[] }) {
             );
           })}
         </div>
+      </div>
       </div>
     </div>
   );
