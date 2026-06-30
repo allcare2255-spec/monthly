@@ -379,18 +379,14 @@ function WakeGauge({ value, total }: { value: number; total: number }) {
                 strokeLinecap="round"
               />
             )}
-            {/* 끝점 — 작은 흰 점 */}
-            {pct > 0 && <circle cx={dot.x} cy={dot.y} r="5" fill="#ffffff" />}
+            {/* 끝점 — 아주 작은 흰 점 */}
+            {pct > 0 && <circle cx={dot.x} cy={dot.y} r="2.5" fill="#ffffff" />}
           </svg>
           {/* 중앙 텍스트 (반원 안쪽) */}
-          <div className="absolute inset-x-0 top-[34%] flex flex-col items-center">
-            <div className="text-lg leading-none">⏰</div>
-            <div className="mt-0.5 text-[11px] font-medium text-ink/55">기상 일수</div>
+          <div className="absolute inset-x-0 top-[40%] flex flex-col items-center">
+            <div className="text-[11px] font-medium text-ink/55">기상 일수</div>
             <div className="text-2xl font-extrabold tabular-nums text-gradient">{value}일</div>
           </div>
-        </div>
-        <div className="mt-2 text-center text-xs tabular-nums text-ink/50">
-          총 {total}일 중 {value}일 ({Math.round(pct * 100)}%)
         </div>
       </div>
     </div>
