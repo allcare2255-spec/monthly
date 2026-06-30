@@ -293,11 +293,11 @@ const CLOUD_TONE_STYLE: Record<CloudTone, { bg: string; icon: string; label: str
 function submitTone(status: DayStatus): CloudTone {
   return status === "submitted" ? "full" : status === "incomplete" ? "partial" : "none";
 }
-// 요일 네모 배경 — 구름색(채도 있는 톤)에 좌상단 햇빛 드는 듯한 대각선 그라데이션
+// 요일 네모 배경 — 구름색(채도 있는 톤)에 좌상단 햇빛 드는 듯한 대각선 그라데이션 (반 단계씩 연하게)
 const DAY_RECT_GRADIENT: Record<CloudTone, string> = {
-  full: "bg-gradient-to-br from-sky-400 via-sky-500 to-sky-600",
-  partial: "bg-gradient-to-br from-sky-300 via-sky-400 to-sky-500",
-  none: "bg-gradient-to-br from-slate-300 via-slate-400 to-slate-500",
+  full: "bg-gradient-to-br from-[#5ac8fa] via-[#23b1f0] to-[#0894d8]",
+  partial: "bg-gradient-to-br from-[#9bdcfc] via-[#5ac8fa] to-[#23b1f0]",
+  none: "bg-gradient-to-br from-[#d6dee8] via-[#afbccc] to-[#7c8ba1]",
 };
 
 // 게이지 + 요일별 구름 스트릭 카드 (제출 과제 인증 / 기상 인증 공통)
