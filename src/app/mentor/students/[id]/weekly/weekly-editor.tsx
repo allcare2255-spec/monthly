@@ -299,6 +299,12 @@ const DAY_CLOUD_COLOR: Record<CloudTone, string> = {
   partial: "text-sky-400",
   none: "text-slate-400",
 };
+// 요일 직사각형 배경 — 좌상단에서 햇빛이 드는 듯한 대각선 그라데이션 (밝은 흰빛 → 상태색)
+const DAY_RECT_GRADIENT: Record<CloudTone, string> = {
+  full: "bg-gradient-to-br from-white via-sky-50 to-sky-200",
+  partial: "bg-gradient-to-br from-white via-sky-50 to-sky-100",
+  none: "bg-gradient-to-br from-white via-slate-50 to-slate-200",
+};
 
 // 게이지 + 요일별 구름 스트릭 카드 (제출 과제 인증 / 기상 인증 공통)
 function CertCard({
@@ -1245,7 +1251,7 @@ function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
   return (
     <div className="preview-day-card border border-ink/10 rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-3">
-        <div className={`relative w-10 h-10 shrink-0 rounded-xl ${CLOUD_TONE_STYLE[submitTone(day.status)].bg}`}>
+        <div className={`relative w-10 h-10 shrink-0 rounded-xl ${DAY_RECT_GRADIENT[submitTone(day.status)]}`}>
           <CloudIcon className={`absolute inset-1 h-8 w-8 ${DAY_CLOUD_COLOR[submitTone(day.status)]}`} />
           <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold translate-y-[2px]">
             {weekday}
