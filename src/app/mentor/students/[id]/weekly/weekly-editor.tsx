@@ -1073,9 +1073,9 @@ function ReportPreview({
 
         {/* [수정 1] 1. 통계 요약 — 카드별 파스텔 톤 */}
         <div className="grid grid-cols-1 gap-4 mb-7 sm:grid-cols-3">
-          <PreviewStat tone="sky" label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
-          <PreviewStat tone="pink" label="평균 순공" value={minutesToHm(stats?.avgStudy)} />
-          <PreviewStat tone="sky2" label="평균 기상" value={stats?.avgWake || "-"} />
+          <PreviewStat label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
+          <PreviewStat label="평균 순공" value={minutesToHm(stats?.avgStudy)} />
+          <PreviewStat label="평균 기상" value={stats?.avgWake || "-"} />
         </div>
 
         {/* [수정 1·2] 2. 도넛 차트 2개 */}
@@ -1110,30 +1110,16 @@ function ReportPreview({
   );
 }
 
-// 카드별 파스텔 톤 — 하늘색·분홍색 계열로 통일 (배경 / 테두리 / 라벨 색 / 숫자 색)
-const STAT_TONES: Record<"sky" | "pink" | "sky2", { bg: string; border: string; label: string; value: string }> = {
-  sky:  { bg: "bg-[#eef6fd]", border: "border-[#d4e8f7]", label: "text-[#0369a1]", value: "text-[#0b3a66]" },
-  pink: { bg: "bg-[#fdeef6]", border: "border-[#fbd5e8]", label: "text-[#db2777]", value: "text-[#9d174d]" },
-  sky2: { bg: "bg-[#ecfbff]", border: "border-[#cdeefb]", label: "text-[#0891b2]", value: "text-[#0e5b73]" },
-};
-
-function PreviewStat({
-  label,
-  value,
-  sub,
-  tone = "sky",
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  tone?: "sky" | "pink" | "sky2";
-}) {
-  const t = STAT_TONES[tone];
+// 멘토 편집 화면의 StatCard와 동일한 디자인 (흰 카드 + 그라데이션 블러 + 하늘색 그라데이션 숫자)
+function PreviewStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className={`rounded-3xl border ${t.border} ${t.bg} px-5 py-5 text-center`}>
-      <div className={`text-[12px] font-bold tracking-[0.06em] ${t.label}`}>{label}</div>
-      <div className={`mt-1.5 text-3xl font-black tabular-nums ${t.value}`}>{value}</div>
-      {sub && <div className="mt-1 text-[11px] text-ink/45">{sub}</div>}
+    <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-4 shadow-sm">
+      <div className="absolute inset-x-0 -top-8 h-24 bg-gradient-to-br from-indigo/10 via-violet/8 to-fuchsia/10 blur-xl" />
+      <div className="relative">
+        <div className="text-[11px] text-ink/55 uppercase tracking-[0.15em] font-semibold">{label}</div>
+        <div className="text-2xl font-extrabold mt-1 tabular-nums text-gradient">{value}</div>
+        {sub && <div className="text-[11px] text-ink/45 mt-0.5">{sub}</div>}
+      </div>
     </div>
   );
 }
