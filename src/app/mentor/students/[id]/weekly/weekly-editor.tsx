@@ -279,12 +279,10 @@ function SubmitStreak({ days, submitted }: { days: DayData[]; submitted: number 
       <div className="absolute inset-0 bg-gradient-to-br from-indigo/20 via-transparent via-20% to-transparent" />
       <div className="relative">
         <div className="text-sm font-bold text-ink mb-3 text-center">제출 과제 인증</div>
-        <div className="mb-4 text-center">
-          <span className="text-lg align-middle">☁️</span>{" "}
-          <span className="text-lg font-extrabold text-gradient align-middle">{submitted}일</span>{" "}
-          <span className="text-sm font-medium text-ink/70 align-middle">제출 완료!</span>
-        </div>
-        <div className="flex items-end justify-center gap-1.5 sm:gap-2">
+        {/* 게이지바 (기상 인증과 동일 디자인) */}
+        <SemiGauge value={submitted} total={days.length} label="제출 일수" />
+        {/* 요일별 구름 스트릭 */}
+        <div className="mt-4 flex items-end justify-center gap-1.5 sm:gap-2">
           {days.map((d, i) => {
             // 3단계: 제출 완료=진한 하늘 / 과제 미흡=연한 하늘 / 그 외(미제출·일시정지·미선택)=회색
             const s =
@@ -326,54 +324,61 @@ function gaugeArc(cx: number, cy: number, r: number, startAngle: number, endAngl
   return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
 }
 
-function WakeGauge({ value, total }: { value: number; total: number }) {
+// 반원(180°) 게이지 — 재사용 (기상 인증 / 제출 과제 인증 공통)
+function SemiGauge({ value, total, label }: { value: number; total: number; label: string }) {
   const pct = total > 0 ? value / total : 0;
-  // 반원(180°) 게이지 — 왼쪽에서 위로 둥글게 떠서 오른쪽으로
+  // 왼쪽에서 위로 둥글게 떠서 오른쪽으로
   const CX = 80, CY = 84, R = 64, STROKE = 18;
   const START = 270, SWEEP = 180;
   const end = START + SWEEP * pct;
   const dot = gaugePoint(CX, CY, R, end);
   return (
+    <div className="relative mx-auto h-28 w-48">
+      <svg viewBox="0 0 160 100" className="h-full w-full">
+        <defs>
+          <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#a5dffb" />
+            <stop offset="55%" stopColor="#5fc4f2" />
+            <stop offset="100%" stopColor="#38bdf8" />
+          </linearGradient>
+        </defs>
+        {/* 배경 트랙 (반원) */}
+        <path
+          d={gaugeArc(CX, CY, R, START, START + SWEEP)}
+          fill="none"
+          stroke="#EceEF3"
+          strokeWidth={STROKE}
+          strokeLinecap="round"
+        />
+        {/* 진행 호 */}
+        {pct > 0 && (
+          <path
+            d={gaugeArc(CX, CY, R, START, end)}
+            fill="none"
+            stroke="url(#gaugeGrad)"
+            strokeWidth={STROKE}
+            strokeLinecap="round"
+          />
+        )}
+        {/* 끝점 — 아주 작은 흰 점 */}
+        {pct > 0 && <circle cx={dot.x} cy={dot.y} r="2.5" fill="#ffffff" />}
+      </svg>
+      {/* 중앙 텍스트 (반원 안쪽) */}
+      <div className="absolute inset-x-0 top-[40%] flex flex-col items-center">
+        <div className="text-[11px] font-medium text-ink/55">{label}</div>
+        <div className="text-2xl font-extrabold tabular-nums text-gradient">{value}일</div>
+      </div>
+    </div>
+  );
+}
+
+function WakeGauge({ value, total }: { value: number; total: number }) {
+  return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-5 shadow-md">
       <div className="absolute inset-0 bg-gradient-to-br from-indigo/20 via-transparent via-20% to-transparent" />
       <div className="relative">
         <div className="text-sm font-bold text-ink mb-3 text-center">기상 인증</div>
-        <div className="relative mx-auto h-28 w-48">
-          <svg viewBox="0 0 160 100" className="h-full w-full">
-            <defs>
-              <linearGradient id="wakeGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#a5dffb" />
-                <stop offset="55%" stopColor="#5fc4f2" />
-                <stop offset="100%" stopColor="#38bdf8" />
-              </linearGradient>
-            </defs>
-            {/* 배경 트랙 (반원) */}
-            <path
-              d={gaugeArc(CX, CY, R, START, START + SWEEP)}
-              fill="none"
-              stroke="#EceEF3"
-              strokeWidth={STROKE}
-              strokeLinecap="round"
-            />
-            {/* 진행 호 */}
-            {pct > 0 && (
-              <path
-                d={gaugeArc(CX, CY, R, START, end)}
-                fill="none"
-                stroke="url(#wakeGaugeGrad)"
-                strokeWidth={STROKE}
-                strokeLinecap="round"
-              />
-            )}
-            {/* 끝점 — 아주 작은 흰 점 */}
-            {pct > 0 && <circle cx={dot.x} cy={dot.y} r="2.5" fill="#ffffff" />}
-          </svg>
-          {/* 중앙 텍스트 (반원 안쪽) */}
-          <div className="absolute inset-x-0 top-[40%] flex flex-col items-center">
-            <div className="text-[11px] font-medium text-ink/55">기상 일수</div>
-            <div className="text-2xl font-extrabold tabular-nums text-gradient">{value}일</div>
-          </div>
-        </div>
+        <SemiGauge value={value} total={total} label="기상 일수" />
       </div>
     </div>
   );
