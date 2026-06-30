@@ -8,6 +8,9 @@ import { hmToMinutes, minutesToHm } from "@/lib/dates";
 const WEEKDAY_KO = ["월", "화", "수", "목", "금", "토", "일"];
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
+// 지표/차트 제목 통일 서식 (평균 기상 시간·평균 순공 시간·과제 달성률·기상 인증·과제 제출 공통)
+const SECTION_LABEL = "text-[12px] font-bold uppercase tracking-[0.12em] text-ink/55";
+
 export function WeeklyReportEditor({
   studentId,
   cycle,
@@ -148,9 +151,9 @@ export function WeeklyReportEditor({
 
       {/* [수정 1] 1. 통계 요약 — 3분할 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <StatCard label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
-        <StatCard label="평균 순공 시간" value={minutesToHm(stats?.avgStudy)} />
         <StatCard label="평균 기상 시간" value={stats?.avgWake || "-"} />
+        <StatCard label="평균 순공 시간" value={minutesToHm(stats?.avgStudy)} />
+        <StatCard label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
       </div>
 
       {/* [수정 1·2] 2. 도넛 차트 2개 */}
@@ -261,7 +264,7 @@ function StatCard({
         tone === "muted" ? "from-ink/5 to-ink/0" : "from-indigo/25 via-transparent via-40% to-transparent"
       } blur-xl`} />
       <div className="relative">
-        <div className="text-[11px] text-ink/55 uppercase tracking-[0.15em] font-semibold">{label}</div>
+        <div className={SECTION_LABEL}>{label}</div>
         <div className={`text-2xl font-extrabold mt-1 tabular-nums ${
           tone === "muted" ? "text-ink/40" : "text-gradient"
         }`}>
@@ -322,7 +325,7 @@ function CertCard({
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-5 shadow-md">
       <div className="absolute inset-0 bg-gradient-to-br from-indigo/20 via-transparent via-20% to-transparent" />
       <div className="relative">
-        <div className="text-sm font-bold text-ink mb-3 text-center">{title}</div>
+        <div className={`${SECTION_LABEL} mb-3 text-center`}>{title}</div>
         {/* 게이지바 */}
         <SemiGauge value={value} total={total} label={gaugeLabel} />
         {/* 요일별 구름 스트릭 */}
@@ -427,19 +430,6 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <CertCard
-        title="제출 과제 인증"
-        value={submitted}
-        total={days.length}
-        gaugeLabel="제출 일수"
-        days={days}
-        tones={submitTones}
-        legend={[
-          { tone: "full", label: "제출 완료" },
-          { tone: "partial", label: "과제 미흡" },
-          { tone: "none", label: "미제출" },
-        ]}
-      />
-      <CertCard
         title="기상 인증"
         value={wakeOn}
         total={days.length}
@@ -449,6 +439,19 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
         legend={[
           { tone: "full", label: "기상 인증" },
           { tone: "none", label: "미인증" },
+        ]}
+      />
+      <CertCard
+        title="과제 제출"
+        value={submitted}
+        total={days.length}
+        gaugeLabel="제출 일수"
+        days={days}
+        tones={submitTones}
+        legend={[
+          { tone: "full", label: "제출 완료" },
+          { tone: "partial", label: "과제 미흡" },
+          { tone: "none", label: "미제출" },
         ]}
       />
     </div>
@@ -1171,9 +1174,9 @@ function ReportPreview({
 
         {/* [수정 1] 1. 통계 요약 — 카드별 파스텔 톤 */}
         <div className="grid grid-cols-1 gap-4 mb-7 sm:grid-cols-3">
-          <PreviewStat label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
-          <PreviewStat label="평균 순공 시간" value={minutesToHm(stats?.avgStudy)} />
           <PreviewStat label="평균 기상 시간" value={stats?.avgWake || "-"} />
+          <PreviewStat label="평균 순공 시간" value={minutesToHm(stats?.avgStudy)} />
+          <PreviewStat label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
         </div>
 
         {/* [수정 1·2] 2. 도넛 차트 2개 */}
@@ -1215,7 +1218,7 @@ function PreviewStat({ label, value, sub }: { label: string; value: string; sub?
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-4 shadow-sm">
       <div className="absolute inset-x-0 -top-8 h-24 bg-gradient-to-br from-indigo/25 via-transparent via-40% to-transparent blur-xl" />
       <div className="relative">
-        <div className="text-[11px] text-ink/55 uppercase tracking-[0.15em] font-semibold">{label}</div>
+        <div className={SECTION_LABEL}>{label}</div>
         <div className="text-2xl font-extrabold mt-1 tabular-nums text-gradient">{value}</div>
         {sub && <div className="text-[11px] text-ink/45 mt-0.5">{sub}</div>}
       </div>
