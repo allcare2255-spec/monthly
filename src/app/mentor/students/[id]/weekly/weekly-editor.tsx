@@ -387,10 +387,7 @@ function WakeGauge({ value, total }: { value: number; total: number }) {
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <div className="text-xl leading-none">⏰</div>
             <div className="mt-1 text-[11px] font-medium text-ink/55">기상 일수</div>
-            <div className="text-2xl font-extrabold tabular-nums text-ink">
-              {value}
-              <span className="text-sm font-bold">일</span>
-            </div>
+            <div className="text-2xl font-extrabold tabular-nums text-gradient">{value}일</div>
           </div>
         </div>
         <div className="mt-2 text-center text-xs tabular-nums text-ink/50">
