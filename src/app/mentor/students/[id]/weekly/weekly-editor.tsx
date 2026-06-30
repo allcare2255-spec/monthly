@@ -1245,8 +1245,8 @@ function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
   return (
     <div className="preview-day-card border border-ink/10 rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-3">
-        <div className="relative w-10 h-10 shrink-0">
-          <CloudIcon className={`absolute inset-0 h-full w-full ${DAY_CLOUD_COLOR[submitTone(day.status)]}`} />
+        <div className={`relative w-10 h-10 shrink-0 rounded-xl ${CLOUD_TONE_STYLE[submitTone(day.status)].bg}`}>
+          <CloudIcon className={`absolute inset-1 h-8 w-8 ${DAY_CLOUD_COLOR[submitTone(day.status)]}`} />
           <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold translate-y-[2px]">
             {weekday}
           </span>
