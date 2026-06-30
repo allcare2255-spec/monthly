@@ -1119,30 +1119,37 @@ function ReportPreview({
 
       {/* 완성 문서 */}
       <div className="preview-doc mx-auto max-w-[860px] px-4 sm:px-6 py-6 sm:py-8">
-        {/* [신규] 상단 브랜드 헤더 배너 — 남색 그라데이션 */}
-        <header className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#38bdf8] via-[#0ea5e9] to-[#0284c7] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            {/* 좌측: 심볼 로고 + 브랜드명 + 부제목 */}
-            <div className="flex items-center gap-3.5">
-              <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white ring-1 ring-white/40">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.jpg" alt="SKY MATE 로고" className="h-9 w-9 object-contain" />
+        {/* [신규] 상단 브랜드 헤더 배너 — 동일 배너 3개 */}
+        <div className="space-y-3">
+          {[0, 1, 2].map((bannerIdx) => (
+            <header
+              key={bannerIdx}
+              className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#38bdf8] via-[#0ea5e9] to-[#0284c7] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                {/* 좌측: 심볼 로고 + 브랜드명 + 부제목 */}
+                <div className="flex items-center gap-3.5">
+                  <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white ring-1 ring-white/40">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/logo.jpg" alt="SKY MATE 로고" className="h-9 w-9 object-contain" />
+                  </div>
+                  <div>
+                    <div className="text-xl font-extrabold tracking-tight">SKY MATE</div>
+                    <div className="mt-0.5 text-[13px] font-medium text-white/70">주간 학습코칭 레포트</div>
+                  </div>
+                </div>
+                {/* 우측: 기간(년/월) + 정확한 범위 + 코칭 월차 */}
+                <div className="text-right">
+                  <div className="text-2xl font-extrabold sm:text-[26px]">{periodTitle}</div>
+                  <div className="mt-1.5 text-[12px] leading-relaxed text-white/70">
+                    <div>기간: {fmtDot(weekStart)} ~ {fmtDot(weekEnd)}</div>
+                    <div>코칭 {cycle}개월차 · {cumWeek}주차</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="text-xl font-extrabold tracking-tight">SKY MATE</div>
-                <div className="mt-0.5 text-[13px] font-medium text-white/70">주간 학습코칭 레포트</div>
-              </div>
-            </div>
-            {/* 우측: 기간(년/월) + 정확한 범위 + 코칭 월차 */}
-            <div className="text-right">
-              <div className="text-2xl font-extrabold sm:text-[26px]">{periodTitle}</div>
-              <div className="mt-1.5 text-[12px] leading-relaxed text-white/70">
-                <div>기간: {fmtDot(weekStart)} ~ {fmtDot(weekEnd)}</div>
-                <div>코칭 {cycle}개월차 · {cumWeek}주차</div>
-              </div>
-            </div>
-          </div>
-        </header>
+            </header>
+          ))}
+        </div>
 
         {/* [신규] 헤더 아래 학생명 영역 (흰 배경, 헤더와 분리) */}
         <div className="px-1 pt-7 pb-6 sm:pt-8">
