@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { DayData, DayPhoto, DayStatus, WeeklyReport } from "@/types";
 import { hmToMinutes, minutesToHm } from "@/lib/dates";
@@ -306,7 +306,6 @@ function CertCard({
   value,
   total,
   gaugeLabel,
-  gradId,
   days,
   tones,
   legend,
@@ -315,7 +314,6 @@ function CertCard({
   value: number;
   total: number;
   gaugeLabel: string;
-  gradId: string;
   days: DayData[];
   tones: CloudTone[];
   legend: { tone: CloudTone; label: string }[];
@@ -326,7 +324,7 @@ function CertCard({
       <div className="relative">
         <div className="text-sm font-bold text-ink mb-3 text-center">{title}</div>
         {/* 게이지바 */}
-        <SemiGauge value={value} total={total} label={gaugeLabel} gradId={gradId} />
+        <SemiGauge value={value} total={total} label={gaugeLabel} />
         {/* 요일별 구름 스트릭 */}
         <div className="mt-6 flex items-end justify-center gap-1.5 sm:gap-2">
           {days.map((d, i) => {
@@ -368,17 +366,9 @@ function gaugeArc(cx: number, cy: number, r: number, startAngle: number, endAngl
 }
 
 // 반원(180°) 게이지 — 재사용 (기상 인증 / 제출 과제 인증 공통)
-function SemiGauge({
-  value,
-  total,
-  label,
-  gradId,
-}: {
-  value: number;
-  total: number;
-  label: string;
-  gradId: string;
-}) {
+function SemiGauge({ value, total, label }: { value: number; total: number; label: string }) {
+  // 인쇄 시 편집화면/미리보기 간 그라데이션 id 충돌로 색이 사라지는 문제 방지 — 인스턴스별 고유 id
+  const gradId = `gaugeGrad-${useId().replace(/:/g, "")}`;
   const pct = total > 0 ? value / total : 0;
   // 왼쪽에서 위로 둥글게 떠서 오른쪽으로
   const CX = 80, CY = 84, R = 64, STROKE = 18;
@@ -441,7 +431,6 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
         value={submitted}
         total={days.length}
         gaugeLabel="제출 일수"
-        gradId="submitGrad"
         days={days}
         tones={submitTones}
         legend={[
@@ -455,7 +444,6 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
         value={wakeOn}
         total={days.length}
         gaugeLabel="기상 일수"
-        gradId="wakeGrad"
         days={days}
         tones={wakeTones}
         legend={[
