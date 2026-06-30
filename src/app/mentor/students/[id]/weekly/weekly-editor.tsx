@@ -143,8 +143,8 @@ export function WeeklyReportEditor({
       {/* [수정 1] 1. 통계 요약 — 3분할 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
-        <StatCard label="평균 순공" value={minutesToHm(stats?.avgStudy)} />
-        <StatCard label="평균 기상" value={stats?.avgWake || "-"} />
+        <StatCard label="평균 순공 시간" value={minutesToHm(stats?.avgStudy)} />
+        <StatCard label="평균 기상 시간" value={stats?.avgWake || "-"} />
       </div>
 
       {/* [수정 1·2] 2. 도넛 차트 2개 */}
@@ -1070,8 +1070,8 @@ function ReportPreview({
         {/* [수정 1] 1. 통계 요약 — 카드별 파스텔 톤 */}
         <div className="grid grid-cols-1 gap-4 mb-7 sm:grid-cols-3">
           <PreviewStat label="과제 달성률" value={`${stats?.taskRate || 0}%`} sub={`${stats?.submitted}/${stats?.totalDay}일`} />
-          <PreviewStat label="평균 순공" value={minutesToHm(stats?.avgStudy)} />
-          <PreviewStat label="평균 기상" value={stats?.avgWake || "-"} />
+          <PreviewStat label="평균 순공 시간" value={minutesToHm(stats?.avgStudy)} />
+          <PreviewStat label="평균 기상 시간" value={stats?.avgWake || "-"} />
         </div>
 
         {/* [수정 1·2] 2. 도넛 차트 2개 */}
