@@ -249,7 +249,7 @@ function StatCard({
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-4 shadow-sm">
       <div className={`absolute inset-x-0 -top-8 h-24 bg-gradient-to-br ${
-        tone === "muted" ? "from-ink/5 to-ink/0" : "from-indigo/10 via-violet/8 to-fuchsia/10"
+        tone === "muted" ? "from-ink/5 to-ink/0" : "from-indigo/15 to-transparent"
       } blur-xl`} />
       <div className="relative">
         <div className="text-[11px] text-ink/55 uppercase tracking-[0.15em] font-semibold">{label}</div>
@@ -277,7 +277,7 @@ function Donut({ title, segments }: { title: string; segments: Seg[] }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-5 shadow-md">
       {/* 카드 전체에 깔리는 그라데이션 (지표 카드와 통일) */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo/10 via-violet/8 to-fuchsia/10" />
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo/15 to-transparent" />
       <div className="relative">
       <div className="text-sm font-bold text-ink mb-3 text-center">{title}</div>
       <div className="flex items-center justify-center gap-5">
@@ -1110,7 +1110,7 @@ function ReportPreview({
 function PreviewStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-4 shadow-sm">
-      <div className="absolute inset-x-0 -top-8 h-24 bg-gradient-to-br from-indigo/10 via-violet/8 to-fuchsia/10 blur-xl" />
+      <div className="absolute inset-x-0 -top-8 h-24 bg-gradient-to-br from-indigo/15 to-transparent blur-xl" />
       <div className="relative">
         <div className="text-[11px] text-ink/55 uppercase tracking-[0.15em] font-semibold">{label}</div>
         <div className="text-2xl font-extrabold mt-1 tabular-nums text-gradient">{value}</div>
