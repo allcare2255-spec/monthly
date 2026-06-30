@@ -277,7 +277,7 @@ type CloudTone = "full" | "partial" | "none";
 const CLOUD_TONE_STYLE: Record<CloudTone, { bg: string; icon: string; label: string }> = {
   full: { bg: "bg-sky-100", icon: "text-sky-500", label: "text-sky-600" },
   partial: { bg: "bg-sky-50", icon: "text-sky-300", label: "text-sky-400" },
-  none: { bg: "bg-slate-200", icon: "text-slate-400", label: "text-ink/40" },
+  none: { bg: "bg-slate-100", icon: "text-slate-400", label: "text-ink/40" },
 };
 
 // 게이지 + 요일별 구름 스트릭 카드 (제출 과제 인증 / 기상 인증 공통)
@@ -1120,7 +1120,7 @@ function ReportPreview({
       {/* 완성 문서 */}
       <div className="preview-doc mx-auto max-w-[860px] px-4 sm:px-6 py-6 sm:py-8">
         {/* [신규] 상단 브랜드 헤더 배너 — 남색 그라데이션 */}
-        <header className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#0ea5e9] via-[#0284c7] to-[#0369a1] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25">
+        <header className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#38bdf8] via-[#0ea5e9] to-[#0284c7] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25">
           <div className="flex flex-wrap items-start justify-between gap-4">
             {/* 좌측: 심볼 로고 + 브랜드명 + 부제목 */}
             <div className="flex items-center gap-3.5">
