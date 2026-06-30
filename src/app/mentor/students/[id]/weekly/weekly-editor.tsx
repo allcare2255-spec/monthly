@@ -277,7 +277,7 @@ function Donut({ title, segments }: { title: string; segments: Seg[] }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-5 shadow-md">
       {/* 카드 전체에 깔리는 그라데이션 (지표 카드와 통일) */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo/25 via-transparent via-40% to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo/20 via-transparent via-20% to-transparent" />
       <div className="relative">
       <div className="text-sm font-bold text-ink mb-3 text-center">{title}</div>
       <div className="flex items-center justify-center gap-5">
