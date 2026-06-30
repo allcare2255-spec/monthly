@@ -289,6 +289,17 @@ const CLOUD_TONE_STYLE: Record<CloudTone, { bg: string; icon: string; label: str
   none: { bg: "bg-slate-100", icon: "text-slate-400", label: "text-ink/40" },
 };
 
+// 상태 → 톤 (구름/요일 배지 공통)
+function submitTone(status: DayStatus): CloudTone {
+  return status === "submitted" ? "full" : status === "incomplete" ? "partial" : "none";
+}
+// 일별 기록 요일 배지 색 — 배경은 구름 동그라미 배경과 동일, 글씨는 가독성 위해 진하게
+const DAY_BADGE_STYLE: Record<CloudTone, string> = {
+  full: "bg-sky-100 text-sky-700",
+  partial: "bg-sky-50 text-sky-500",
+  none: "bg-slate-100 text-slate-500",
+};
+
 // 게이지 + 요일별 구름 스트릭 카드 (제출 과제 인증 / 기상 인증 공통)
 function CertCard({
   title,
@@ -418,9 +429,7 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
   const days = report.day_data;
   // 제출 과제 인증 (제출 완료 일수) + 요일별 톤
   const submitted = days.filter((d) => d.status === "submitted").length;
-  const submitTones: CloudTone[] = days.map((d) =>
-    d.status === "submitted" ? "full" : d.status === "incomplete" ? "partial" : "none",
-  );
+  const submitTones: CloudTone[] = days.map((d) => submitTone(d.status));
   // 기상 인증 (기상 시간 입력 여부) + 요일별 톤
   const wakeOn = days.filter((d) => !!d.wake_up_time).length;
   const wakeTones: CloudTone[] = days.map((d) => (d.wake_up_time ? "full" : "none"));
@@ -1236,14 +1245,11 @@ function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
   return (
     <div className="preview-day-card border border-ink/10 rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo to-violet text-white flex items-center justify-center font-bold">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${DAY_BADGE_STYLE[submitTone(day.status)]}`}>
           {weekday}
         </div>
         <div>
           <div className="text-xs text-ink">{day.date}</div>
-          <span className={`text-xs inline-block mt-0.5 px-2 py-0.5 rounded-full border font-medium ${STATUS_STYLES[day.status]}`}>
-            {STATUS_LABEL[day.status]}
-          </span>
         </div>
       </div>
 
