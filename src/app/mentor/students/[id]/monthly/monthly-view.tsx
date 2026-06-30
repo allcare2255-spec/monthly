@@ -281,7 +281,7 @@ function BigStat({
   return (
     <div className="relative overflow-hidden rounded-2xl border border-ink/5 p-4 bg-gradient-to-br from-white to-cream-light/30">
       <div className={`absolute inset-x-0 -top-8 h-24 ${
-        tone === "muted" ? "bg-ink/5" : "bg-gradient-to-br from-indigo/15 to-transparent"
+        tone === "muted" ? "bg-ink/5" : "bg-gradient-to-br from-indigo/25 via-transparent via-40% to-transparent"
       } blur-2xl`} />
       <div className="relative">
         <div className="text-[11px] text-ink/55 uppercase tracking-[0.15em] font-semibold">{label}</div>
