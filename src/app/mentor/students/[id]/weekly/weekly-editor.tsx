@@ -264,71 +264,50 @@ function StatCard({
   );
 }
 
-// [수정 2] 도넛 차트 2개 — 일별 기록 데이터 기반 자동 계산
-type Seg = { label: string; count: number; color: string };
+// ☁️ 제출 과제 인증 — 요일별 구름 아이콘 스트릭 (제출한 날 = 하늘색 구름)
+function CloudIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" />
+    </svg>
+  );
+}
 
-function Donut({ title, segments }: { title: string; segments: Seg[] }) {
-  const total = segments.reduce((s, x) => s + x.count, 0);
-  const R = 54;
-  const STROKE = 22;
-  const C = 2 * Math.PI * R;
-  let offset = 0;
-
+function SubmitStreak({ days, submitted }: { days: DayData[]; submitted: number }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-5 shadow-md">
-      {/* 카드 전체에 깔리는 그라데이션 (지표 카드와 통일) */}
       <div className="absolute inset-0 bg-gradient-to-br from-indigo/20 via-transparent via-20% to-transparent" />
       <div className="relative">
-      <div className="text-sm font-bold text-ink mb-3 text-center">{title}</div>
-      <div className="flex items-center justify-center gap-5">
-        <svg viewBox="0 0 160 160" className="w-32 h-32 -rotate-90">
-          {/* 배경 트랙 */}
-          <circle cx="80" cy="80" r={R} fill="none" stroke="#EceEF3" strokeWidth={STROKE} />
-          {total > 0 &&
-            segments.map((s) => {
-              if (s.count <= 0) return null;
-              const len = (s.count / total) * C;
-              const seg = (
-                <circle
-                  key={s.label}
-                  cx="80"
-                  cy="80"
-                  r={R}
-                  fill="none"
-                  stroke={s.color}
-                  strokeWidth={STROKE}
-                  strokeDasharray={`${len} ${C - len}`}
-                  strokeDashoffset={-offset}
-                />
-              );
-              offset += len;
-              return seg;
-            })}
-        </svg>
-        <div className="space-y-1.5">
-          {segments.map((s) => {
-            const pct = total > 0 ? Math.round((s.count / total) * 100) : 0;
+        <div className="text-sm font-bold text-ink mb-3 text-center">제출 과제 인증</div>
+        <div className="mb-4 text-center">
+          <span className="text-lg align-middle">☁️</span>{" "}
+          <span className="text-lg font-extrabold text-gradient align-middle">{submitted}일</span>{" "}
+          <span className="text-sm font-medium text-ink/70 align-middle">제출 완료!</span>
+        </div>
+        <div className="flex items-end justify-center gap-1.5 sm:gap-2">
+          {days.map((d, i) => {
+            const active = d.status === "submitted";
             return (
-              <div key={s.label} className="flex items-center gap-2 text-xs">
-                <span className="w-3 h-3 rounded-full" style={{ background: s.color }} />
-                <span className="text-ink/70 font-medium">{s.label}</span>
-                <span className="text-ink/50 tabular-nums">
-                  {s.count}개 ({pct}%)
+              <div key={d.date} className="flex flex-col items-center gap-1.5">
+                <div
+                  className={`grid h-9 w-9 place-items-center rounded-full ${
+                    active ? "bg-sky-100" : "bg-slate-100"
+                  }`}
+                >
+                  <CloudIcon className={`h-5 w-5 ${active ? "text-sky-500" : "text-slate-300"}`} />
+                </div>
+                <span className={`text-[11px] font-semibold ${active ? "text-sky-600" : "text-ink/40"}`}>
+                  {WEEKDAY_KO[i]}
                 </span>
               </div>
             );
           })}
         </div>
       </div>
-      </div>
     </div>
   );
 }
 
-// 색상 — 하늘색·분홍색 계열로 통일 (브랜드 팔레트)
-const C_SKY = "#0ea5e9"; // 긍정/완료 (하늘색)
-const C_PINK = "#f472b6"; // 중간/미흡 (분홍)
-const C_PINK_DEEP = "#ec4899"; // 부정/미제출 (진한 분홍)
 // ⏰ 기상 인증 게이지 (반원형 게이지 차트 — 그라데이션 호 + 둥근 끝점)
 function gaugePoint(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = (angleDeg * Math.PI) / 180;
@@ -396,23 +375,14 @@ function WakeGauge({ value, total }: { value: number; total: number }) {
 
 function DonutCharts({ report }: { report: WeeklyReport }) {
   const days = report.day_data;
-  // 차트 1 — 제출 과제 인증
+  // 차트 1 — 제출 과제 인증 (제출 완료 일수)
   const submitted = days.filter((d) => d.status === "submitted").length;
-  const incomplete = days.filter((d) => d.status === "incomplete").length;
-  const missed = days.filter((d) => d.status === "missed").length;
   // 차트 2 — 기상 인증 (기상 시간 입력 여부)
   const wakeOn = days.filter((d) => !!d.wake_up_time).length;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <Donut
-        title="제출 과제 인증"
-        segments={[
-          { label: "제출 완료", count: submitted, color: C_SKY },
-          { label: "과제 미흡", count: incomplete, color: C_PINK },
-          { label: "미제출", count: missed, color: C_PINK_DEEP },
-        ]}
-      />
+      <SubmitStreak days={days} submitted={submitted} />
       <WakeGauge value={wakeOn} total={days.length} />
     </div>
   );
