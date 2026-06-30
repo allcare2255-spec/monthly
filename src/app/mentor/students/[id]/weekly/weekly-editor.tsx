@@ -277,7 +277,7 @@ type CloudTone = "full" | "partial" | "none";
 const CLOUD_TONE_STYLE: Record<CloudTone, { bg: string; icon: string; label: string }> = {
   full: { bg: "bg-sky-100", icon: "text-sky-500", label: "text-sky-600" },
   partial: { bg: "bg-sky-50", icon: "text-sky-300", label: "text-sky-400" },
-  none: { bg: "bg-slate-100", icon: "text-slate-300", label: "text-ink/40" },
+  none: { bg: "bg-slate-200", icon: "text-slate-400", label: "text-ink/40" },
 };
 
 // 게이지 + 요일별 구름 스트릭 카드 (제출 과제 인증 / 기상 인증 공통)
@@ -308,7 +308,7 @@ function CertCard({
         {/* 게이지바 */}
         <SemiGauge value={value} total={total} label={gaugeLabel} gradId={gradId} />
         {/* 요일별 구름 스트릭 */}
-        <div className="mt-4 flex items-end justify-center gap-1 sm:gap-1.5">
+        <div className="mt-6 flex items-end justify-center gap-1.5 sm:gap-2">
           {days.map((d, i) => {
             const s = CLOUD_TONE_STYLE[tones[i]];
             return (
