@@ -1037,7 +1037,7 @@ function ReportPreview({
       {/* 완성 문서 */}
       <div className="preview-doc mx-auto max-w-[860px] px-4 sm:px-6 py-6 sm:py-8">
         {/* [신규] 상단 브랜드 헤더 배너 — 남색 그라데이션 */}
-        <header className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#1e293b] via-[#1e3a8a] to-[#1e40af] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#1e3a8a]/20">
+        <header className="overflow-hidden rounded-3xl bg-gradient-to-r from-[#0ea5e9] via-[#0284c7] to-[#0369a1] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25">
           <div className="flex flex-wrap items-start justify-between gap-4">
             {/* 좌측: 심볼 로고 + 브랜드명 + 부제목 */}
             <div className="flex items-center gap-3.5">
@@ -1062,7 +1062,7 @@ function ReportPreview({
 
         {/* [신규] 헤더 아래 학생명 영역 (흰 배경, 헤더와 분리) */}
         <div className="px-1 pt-7 pb-6 sm:pt-8">
-          <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#1e3a8a]">
+          <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#0284c7]">
             코칭 {cycle}개월차 · Weekly
           </div>
           <h1 className="mt-1.5 text-3xl font-extrabold text-ink">
