@@ -445,9 +445,14 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
   // 제출 과제 인증 (제출 완료 일수) + 요일별 톤
   const submitted = days.filter((d) => d.status === "submitted").length;
   const submitTones: CloudTone[] = days.map((d) => submitTone(d.status));
-  // 기상 인증 (기상 시간 입력 여부) + 요일별 톤
-  const wakeOn = days.filter((d) => !!d.wake_up_time).length;
-  const wakeTones: CloudTone[] = days.map((d) => (d.wake_up_time ? "full" : "none"));
+  // 기상 인증: 09:00 이내=인증 완료(full), 09:00 초과=지각 인증(partial), 미입력=미인증(none)
+  const wakeTone = (t: string | null): CloudTone => {
+    const m = hmToMinutes(t);
+    if (m == null) return "none";
+    return m <= 9 * 60 ? "full" : "partial";
+  };
+  const wakeTones: CloudTone[] = days.map((d) => wakeTone(d.wake_up_time));
+  const wakeOn = wakeTones.filter((t) => t === "full").length;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -459,7 +464,8 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
         days={days}
         tones={wakeTones}
         legend={[
-          { tone: "full", label: "기상 인증" },
+          { tone: "full", label: "인증 완료" },
+          { tone: "partial", label: "지각 인증" },
           { tone: "none", label: "미인증" },
         ]}
       />
