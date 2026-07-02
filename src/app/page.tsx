@@ -15,7 +15,12 @@ export default async function Home() {
       className="min-h-screen flex items-center justify-center px-4"
       style={{
         background: "#f6f7f8",
+        color: "#1a1a1e",
         fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        // ERP(skymate2)와 동일한 글자 렌더링: 전역 body의 ss01/ss02·antialiased 상속 해제
+        fontFeatureSettings: "normal",
+        WebkitFontSmoothing: "auto",
+        MozOsxFontSmoothing: "auto",
       }}
     >
       <div
