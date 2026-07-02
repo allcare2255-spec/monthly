@@ -119,6 +119,7 @@ export function WeeklyPlanEditor({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SectionCard title="Weekly Goals" accent="indigo" subtitle="이번 주 목표">
           <Checklist
+            numbered
             items={plan.weekly_goals}
             onChange={(weekly_goals) => update({ ...plan, weekly_goals })}
             placeholder="목표를 입력하세요"
@@ -251,11 +252,13 @@ function Checklist({
   onChange,
   placeholder,
   compact,
+  numbered,
 }: {
   items: PlanTask[];
   onChange: (items: PlanTask[]) => void;
   placeholder?: string;
   compact?: boolean;
+  numbered?: boolean;
 }) {
   const [focusId, setFocusId] = useState<string | null>(null);
 
@@ -290,10 +293,12 @@ function Checklist({
 
   return (
     <div className="space-y-1.5">
-      {items.map((t) => (
+      {items.map((t, i) => (
         <ChecklistItem
           key={t.id}
           item={t}
+          index={i}
+          numbered={numbered}
           shouldFocus={focusId === t.id}
           onFocusConsumed={() => setFocusId(null)}
           onUpdate={(patch) => update(t.id, patch)}
@@ -316,6 +321,8 @@ function Checklist({
 
 function ChecklistItem({
   item,
+  index,
+  numbered,
   shouldFocus,
   onFocusConsumed,
   onUpdate,
@@ -325,6 +332,8 @@ function ChecklistItem({
   placeholder,
 }: {
   item: PlanTask;
+  index?: number;
+  numbered?: boolean;
   shouldFocus: boolean;
   onFocusConsumed: () => void;
   onUpdate: (patch: Partial<PlanTask>) => void;
@@ -350,12 +359,18 @@ function ChecklistItem({
 
   return (
     <div className="group flex items-center gap-2">
-      <input
-        type="checkbox"
-        checked={item.done}
-        onChange={(e) => onUpdate({ done: e.target.checked })}
-        className="h-4 w-4 shrink-0 rounded border-ink/30 text-indigo focus:ring-indigo/30 cursor-pointer accent-sky-500"
-      />
+      {numbered ? (
+        <span className="shrink-0 w-5 text-right text-sm font-semibold text-indigo/70 tabular-nums">
+          {(index ?? 0) + 1}.
+        </span>
+      ) : (
+        <input
+          type="checkbox"
+          checked={item.done}
+          onChange={(e) => onUpdate({ done: e.target.checked })}
+          className="h-4 w-4 shrink-0 rounded border-ink/30 text-indigo focus:ring-indigo/30 cursor-pointer accent-sky-500"
+        />
+      )}
       <AutoResizeTextarea
         ref={textareaRef}
         value={item.text}
@@ -372,7 +387,7 @@ function ChecklistItem({
         placeholder={placeholder}
         rows={1}
         className={`flex-1 bg-transparent border-b border-transparent hover:border-ink/10 focus:border-indigo outline-none text-sm py-0.5 transition break-words ${
-          item.done ? "line-through text-ink/40" : "text-ink/80"
+          !numbered && item.done ? "line-through text-ink/40" : "text-ink/80"
         }`}
       />
       <button

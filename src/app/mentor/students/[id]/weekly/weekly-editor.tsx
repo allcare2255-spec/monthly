@@ -541,16 +541,13 @@ function WeeklyPlanView({
           <div className="preview-day-card rounded-2xl border border-ink/10 p-4">
             <div className={`${SECTION_LABEL} mb-2`}>Weekly Goals</div>
             {plan.weekly_goals.some((t) => t.text.trim()) ? (
-              <ul className="space-y-1">
+              <ol className="list-decimal space-y-1 pl-5 text-sm text-ink/80">
                 {plan.weekly_goals
                   .filter((t) => t.text.trim())
                   .map((t) => (
-                    <li key={t.id} className="flex items-start gap-2 text-sm text-ink/80">
-                      <PlanCheck done={t.done} />
-                      <span className={t.done ? "line-through text-ink/40" : ""}>{t.text}</span>
-                    </li>
+                    <li key={t.id}>{t.text}</li>
                   ))}
-              </ul>
+              </ol>
             ) : (
               <div className="text-xs text-ink/35">-</div>
             )}
