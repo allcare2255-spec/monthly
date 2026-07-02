@@ -1,5 +1,4 @@
 import Link from "next/link";
-import SkyMateLogo from "./SkyMateLogo";
 import { LogoutButton } from "./LogoutButton";
 
 type NavItem = { href: string; label: string };
@@ -20,9 +19,13 @@ export function Shell({
       <header className="relative no-print bg-white border-b border-ink/[0.07]">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-indigo/8 border border-indigo/15 p-2">
-              <SkyMateLogo size={32} />
-            </div>
+            {/* 레포트 배너와 동일한 회사 로고 사용 */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.jpg"
+              alt="SKY MATE 로고"
+              className="h-10 w-10 rounded-[10px] object-contain"
+            />
             <div>
               <div className="text-sm font-bold tracking-wide text-ink">
                 SKY MATE 코칭 대시보드
