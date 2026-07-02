@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { GatewayForm } from "./gateway-form";
-import SkyMateLogo from "@/components/SkyMateLogo";
 
 export const dynamic = "force-dynamic";
 
@@ -11,35 +10,21 @@ export default async function Home() {
   if (session?.role === "mentor") redirect("/mentor");
 
   return (
-    <main className="mesh-bg min-h-screen relative overflow-hidden">
-      {/* 노이즈 / 별빛 느낌 */}
-      <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{
-        backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)",
-        backgroundSize: "32px 32px",
-      }} />
+    <main
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: "#f3f4f6" }}
+    >
+      <div className="w-full max-w-sm rounded-2xl bg-white px-8 py-10 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+        <div className="flex flex-col items-center">
+          {/* 회사 로고 */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.jpg" alt="SKY MATE" width={64} height={64} className="mb-4" />
+          <h1 className="text-2xl font-extrabold tracking-tight text-[#1f2937]">SKY MATE</h1>
+          <p className="mt-1 text-sm text-[#9ca3af]">고등 코칭 ERP</p>
+        </div>
 
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="flex flex-col items-center mb-10">
-            <div className="mb-5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 p-3 shadow-2xl shadow-violet/20">
-              <SkyMateLogo size={56} />
-            </div>
-            <div className="text-[11px] uppercase tracking-[0.3em] text-white/60 mb-2">
-              Premium Coaching
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-emerald-200 to-teal-300 bg-clip-text text-transparent">
-              SKY MATE
-            </h1>
-            <p className="mt-3 text-sm text-white/70">관리자 또는 멘토 코드를 입력해주세요</p>
-          </div>
-
-          <div className="glass rounded-3xl shadow-2xl shadow-indigo/20 p-7 ring-1 ring-white/30">
-            <GatewayForm />
-          </div>
-
-          <p className="mt-8 text-center text-[11px] text-white/40 tracking-wider">
-            INTERNAL · 외부 공유 금지
-          </p>
+        <div className="mt-8">
+          <GatewayForm />
         </div>
       </div>
     </main>
