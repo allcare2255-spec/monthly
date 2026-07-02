@@ -167,6 +167,16 @@ html, body {
     color: #0B1020 !important;
   }
 
+  /* 주간 레포트(미리보기 루트): gradient 텍스트를 단색 파랑으로.
+     background-clip:text + color:transparent 를 PDF로 저장할 때 값 밑에 밑줄
+     아티팩트가 생기는 문제 방지 (미리보기 화면 색감은 유지) */
+  [data-preview-root] .text-gradient {
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    color: #0284c7 !important;
+  }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
