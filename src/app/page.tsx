@@ -4,6 +4,7 @@ import { GatewayForm } from "./gateway-form";
 
 export const dynamic = "force-dynamic";
 
+// 디자인은 '고등 코칭 ERP'(skymate2) 로그인 화면과 완전히 동일하게 맞춤.
 export default async function Home() {
   const session = await getSession();
   if (session?.role === "admin") redirect("/admin");
@@ -12,20 +13,35 @@ export default async function Home() {
   return (
     <main
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: "#f3f4f6" }}
+      style={{
+        background: "#f6f7f8",
+        fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      }}
     >
-      <div className="w-full max-w-sm rounded-2xl bg-white px-8 py-10 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
-        <div className="flex flex-col items-center">
-          {/* 회사 로고 */}
+      <div
+        className="w-full max-w-sm bg-white rounded-[10px] p-10"
+        style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.07)" }}
+      >
+        {/* 로고 영역 */}
+        <div className="flex flex-col items-center gap-3 mb-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.jpg" alt="SKY MATE" width={64} height={64} className="mb-4" />
-          <h1 className="text-2xl font-extrabold tracking-tight text-[#1f2937]">SKY MATE</h1>
-          <p className="mt-1 text-sm text-[#9ca3af]">고등 코칭 ERP</p>
+          <img
+            src="/logo.jpg"
+            alt="SKY MATE 로고"
+            className="w-14 h-14 rounded-[10px] object-contain"
+          />
+          <div className="text-center">
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: "#1a1a1e" }}>
+              SKY MATE
+            </h1>
+            <p className="text-sm mt-0.5" style={{ color: "#949ba8" }}>
+              고등 코칭 ERP
+            </p>
+          </div>
         </div>
 
-        <div className="mt-8">
-          <GatewayForm />
-        </div>
+        {/* 폼 */}
+        <GatewayForm />
       </div>
     </main>
   );

@@ -35,29 +35,34 @@ export function GatewayForm() {
   }
 
   return (
-    <form onSubmit={onSubmit}>
-      <label className="mb-2 block text-center text-sm font-semibold text-[#374151]">
-        접속 코드
-      </label>
-      <input
-        type="text"
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        placeholder="접속 코드를 입력하세요"
-        autoFocus
-        className="w-full rounded-lg border border-[#e5e7eb] bg-white px-4 py-3 text-center text-base text-[#1f2937] outline-none transition focus:border-[#818cf8] focus:ring-4 focus:ring-[#818cf8]/20 placeholder:text-[#9ca3af]"
-      />
-      {error && (
-        <p className="mt-3 rounded-lg border border-rose/30 bg-rose/10 px-3 py-2.5 text-center text-xs text-rose">
-          {error}
-        </p>
-      )}
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <input
+          type="text"
+          value={code}
+          onChange={(e) => { setCode(e.target.value); setError(null); }}
+          placeholder="접속 코드를 입력하세요"
+          autoFocus
+          autoComplete="off"
+          spellCheck={false}
+          className="w-full h-12 rounded-[10px] border px-4 text-center text-base font-semibold outline-none transition-colors"
+          style={{ borderColor: error ? "#ff4d4f" : "#e6e8ea", color: "#1a1a1e" }}
+          onFocus={(e) => { if (!error) e.currentTarget.style.borderColor = "#083ccc"; }}
+          onBlur={(e) => { if (!error) e.currentTarget.style.borderColor = "#e6e8ea"; }}
+        />
+        {error && (
+          <p className="text-xs text-center" style={{ color: "#ff4d4f" }}>
+            {error}
+          </p>
+        )}
+      </div>
       <button
         type="submit"
         disabled={loading || !code.trim()}
-        className="mt-4 w-full rounded-lg bg-[#818cf8] py-3 font-semibold text-white transition hover:bg-[#6b76f0] disabled:opacity-60"
+        className="w-full h-12 rounded-[10px] font-semibold text-white text-base transition-opacity disabled:opacity-50"
+        style={{ background: "#083ccc" }}
       >
-        {loading ? "확인 중..." : "입장하기"}
+        {loading ? "입장 중..." : "입장하기"}
       </button>
     </form>
   );
