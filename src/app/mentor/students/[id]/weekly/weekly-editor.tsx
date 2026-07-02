@@ -581,7 +581,9 @@ function WeeklyPlanView({
                   <span className="text-[10px] text-ink/45">{dates[i] ? dates[i].slice(5) : ""}</span>
                 </div>
                 {(d?.notes || "").trim() && (
-                  <div className="mb-1.5 whitespace-pre-wrap text-[11px] text-ink/55">{d.notes}</div>
+                  <div className="mb-1.5 rounded-lg border border-ink/10 px-2.5 py-1.5 whitespace-pre-wrap text-[13px] text-ink/70">
+                    {d.notes}
+                  </div>
                 )}
                 {tasks.length > 0 && (
                   <ul className="space-y-0.5">
