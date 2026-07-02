@@ -489,13 +489,13 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
 
 // ── 주간 계획표 (읽기 전용 — 레포트에 표시) ──
 const PLAN_WEEKDAYS: { key: WeekdayKey; ko: string }[] = [
-  { key: "mon", ko: "월" },
-  { key: "tue", ko: "화" },
-  { key: "wed", ko: "수" },
-  { key: "thu", ko: "목" },
-  { key: "fri", ko: "금" },
-  { key: "sat", ko: "토" },
-  { key: "sun", ko: "일" },
+  { key: "mon", ko: "월요일" },
+  { key: "tue", ko: "화요일" },
+  { key: "wed", ko: "수요일" },
+  { key: "thu", ko: "목요일" },
+  { key: "fri", ko: "금요일" },
+  { key: "sat", ko: "토요일" },
+  { key: "sun", ko: "일요일" },
 ];
 
 function PlanCheck({ done, small }: { done: boolean; small?: boolean }) {
@@ -603,7 +603,10 @@ function WeeklyPlanView({
           <div className="preview-day-card rounded-2xl border border-ink/10 p-3 flex flex-col">
             <div className={`${SECTION_LABEL} mb-1`}>주간 계획 달성률</div>
             <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <div className="text-6xl font-extrabold tabular-nums text-gradient leading-none">{achievement}%</div>
+              <div className="font-extrabold tabular-nums text-gradient leading-none">
+                <span className="text-6xl tracking-tighter">{achievement}</span>
+                <span className="text-3xl">%</span>
+              </div>
               <div className="mt-2 text-[11px] text-ink/45">할 일 {done}/{total} 완료</div>
             </div>
           </div>
