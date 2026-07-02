@@ -35,50 +35,34 @@ export default async function MonthlyReportPage({
   if (session.role !== "admin" && (student as any).mentor_id !== session.mentorId) return notFound();
   if (!student.coaching_start_date) return notFound();
 
-  // 사이클 내 4주간 weekly 데이터 미리 모두 가져오기 (없으면 빈 row 생성하지 않음 — 시각화는 빈 값 처리)
-  const { data: weeklies } = await supabase
-    .from("coaching_weekly_reports")
-    .select("*")
-    .eq("student_id", id)
-    .eq("cycle_number", cycle)
-    .order("week_number");
+  // 학생 확인(auth) 후, 이 사이클에 필요한 독립 조회를 병렬 실행 (기존엔 순차 await 로 누적됐음)
+  const [
+    { data: weeklies },
+    { data: monthly },
+    { data: restarts },
+    { data: cycleRow },
+    consultingSub,
+  ] = await Promise.all([
+    // 사이클 내 4주간 weekly 데이터 (없으면 빈 값 처리)
+    supabase.from("coaching_weekly_reports").select("*").eq("student_id", id).eq("cycle_number", cycle).order("week_number"),
+    // monthly row
+    supabase.from("coaching_monthly_reports").select("*").eq("student_id", id).eq("cycle_number", cycle).maybeSingle(),
+    // [변경 3] 재시작 앵커
+    supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", id),
+    // [변경 2] 월차 오버라이드·메모
+    supabase.from("coaching_cycles").select("start_date, end_date, notes").eq("student_id", id).eq("cycle_number", cycle).maybeSingle(),
+    // 5단계 — 이 사이클 첫 주(=월간 주차)의 월간 비전 컨설팅 폼 제출(있으면 참고용 표시)
+    getSubmissionByWeek(id, cumulativeWeek(cycle, 1), "monthly").catch(() => null as ConsultingSubmission | null),
+  ]);
 
-  // monthly row 보장
-  const { data: monthly } = await supabase
-    .from("coaching_monthly_reports")
-    .select("*")
-    .eq("student_id", id)
-    .eq("cycle_number", cycle)
-    .maybeSingle();
-
-  // [변경 3] 재시작 앵커 / [변경 2] 월차 오버라이드·메모
-  const { data: restarts } = await supabase
-    .from("coaching_restarts")
-    .select("cycle_number, start_date")
-    .eq("student_id", id);
   const anchors: CycleAnchor[] = (restarts || []).map((r) => ({
     cycle: r.cycle_number,
     start_date: r.start_date,
   }));
 
-  const { data: cycleRow } = await supabase
-    .from("coaching_cycles")
-    .select("start_date, end_date, notes")
-    .eq("student_id", id)
-    .eq("cycle_number", cycle)
-    .maybeSingle();
-
   const cycleStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
   const cycleEnd = addDays(cycleStart, 27);
   const notes = (cycleRow?.notes as CycleNote[]) || [];
-
-  // 5단계 — 이 사이클 첫 주(=월간 주차)의 월간 비전 컨설팅 폼 제출(있으면 참고용 표시)
-  let consultingSub: ConsultingSubmission | null = null;
-  try {
-    consultingSub = await getSubmissionByWeek(id, cumulativeWeek(cycle, 1), "monthly");
-  } catch {
-    consultingSub = null;
-  }
 
   return (
     <div className="space-y-6">
