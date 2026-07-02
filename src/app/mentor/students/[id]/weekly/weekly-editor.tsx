@@ -577,7 +577,7 @@ function WeeklyPlanView({
             return (
               <div key={wd.key} className="preview-day-card rounded-2xl border border-ink/10 p-3">
                 <div className="mb-1.5 flex items-baseline justify-between">
-                  <span className="text-sm font-bold text-ink">{wd.ko}</span>
+                  <span className={SECTION_LABEL}>{wd.ko}</span>
                   <span className="text-[10px] text-ink/45">{dates[i] ? dates[i].slice(5) : ""}</span>
                 </div>
                 {(d?.notes || "").trim() && (
