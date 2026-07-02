@@ -597,11 +597,11 @@ function WeeklyPlanView({
             );
           })}
 
-          {/* 주간 계획 달성률 — 마지막(8번째) 칸 */}
-          <div className="preview-day-card rounded-2xl border border-ink/10 p-3 flex flex-col items-center justify-center text-center">
+          {/* 주간 계획 달성률 — 마지막(8번째) 칸 (Weekly Goals처럼 좌상단 정렬) */}
+          <div className="preview-day-card rounded-2xl border border-ink/10 p-3 flex flex-col">
             <div className={`${SECTION_LABEL} mb-1`}>주간 계획 달성률</div>
-            <div className="text-3xl font-extrabold tabular-nums text-gradient">{achievement}%</div>
-            <div className="mt-0.5 text-[11px] text-ink/45">할 일 {done}/{total} 완료</div>
+            <div className="text-6xl font-extrabold tabular-nums text-gradient leading-none">{achievement}%</div>
+            <div className="mt-2 text-[11px] text-ink/45">할 일 {done}/{total} 완료</div>
           </div>
         </div>
       </div>
