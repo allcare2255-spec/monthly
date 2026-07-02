@@ -27,31 +27,47 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
   const isAdmin = session.role === "admin";
   const start = student.coaching_start_date;
 
-  // 학생의 사이클 목록 — weekly_reports 또는 monthly_reports에 존재하는 모든 cycle_number
-  const { data: weeklyRows } = await supabase
-    .from("coaching_weekly_reports")
-    .select("cycle_number, week_number")
-    .eq("student_id", id);
-  const { data: monthlyRows } = await supabase
-    .from("coaching_monthly_reports")
-    .select("cycle_number")
-    .eq("student_id", id);
+  // 학생별 독립 조회를 병렬 실행 (기존에는 순차 await 로 DB 라운드트립이 누적됐음)
+  const [
+    { data: weeklyRows },
+    { data: monthlyRows },
+    { data: cycleRows },
+    { data: restartRows },
+    reviewSets,
+    consulting,
+  ] = await Promise.all([
+    // 사이클 목록 — weekly/monthly reports에 존재하는 모든 cycle_number
+    supabase.from("coaching_weekly_reports").select("cycle_number, week_number").eq("student_id", id),
+    supabase.from("coaching_monthly_reports").select("cycle_number").eq("student_id", id),
+    // [수정 9] 월차별 날짜 오버라이드 / 메모
+    supabase.from("coaching_cycles").select("cycle_number, start_date, end_date, memo").eq("student_id", id),
+    // [변경 3] 재시작 앵커
+    supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", id),
+    // 이 학생에게 연결된 복습 세트
+    listReviewSetsByStudent(id) as Promise<{
+      id: string; code: string; title: string; subject: string | null; created_at: string;
+    }[]>,
+    // 컨설팅 폼 — 공개 링크 토큰 + 제출 내역 (마이그레이션 미적용 시에도 페이지가 죽지 않도록 방어)
+    (async () => {
+      try {
+        const token = await ensureToken(id);
+        const subs = await listSubmissionsByStudent(id);
+        return { ready: true, token, subs };
+      } catch {
+        return {
+          ready: false,
+          token: null as string | null,
+          subs: [] as Awaited<ReturnType<typeof listSubmissionsByStudent>>,
+        };
+      }
+    })(),
+  ]);
 
-  // [수정 9] 월차별 날짜 오버라이드 / 메모
-  const { data: cycleRows } = await supabase
-    .from("coaching_cycles")
-    .select("cycle_number, start_date, end_date, memo")
-    .eq("student_id", id);
   const overrides: Record<number, { start_date: string | null; end_date: string | null; memo: string | null }> = {};
   (cycleRows || []).forEach((r) => {
     overrides[r.cycle_number] = { start_date: r.start_date, end_date: r.end_date, memo: r.memo };
   });
 
-  // [변경 3] 재시작 앵커
-  const { data: restartRows } = await supabase
-    .from("coaching_restarts")
-    .select("cycle_number, start_date")
-    .eq("student_id", id);
   const anchors: CycleAnchor[] = (restartRows || []).map((r) => ({
     cycle: r.cycle_number,
     start_date: r.start_date,
@@ -75,22 +91,10 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
     );
   });
 
-  // 이 학생에게 연결된 복습 세트
-  const reviewSets = (await listReviewSetsByStudent(id)) as {
-    id: string; code: string; title: string; subject: string | null; created_at: string;
-  }[];
+  const consultingToken: string | null = consulting.token;
+  const submissions = consulting.subs;
+  const consultingReady = consulting.ready;
 
-  // 컨설팅 폼 — 공개 링크 토큰 + 제출 내역
-  // (마이그레이션 미적용 시에도 페이지가 죽지 않도록 방어)
-  let consultingToken: string | null = null;
-  let submissions: Awaited<ReturnType<typeof listSubmissionsByStudent>> = [];
-  let consultingReady = true;
-  try {
-    consultingToken = await ensureToken(id);
-    submissions = await listSubmissionsByStudent(id);
-  } catch {
-    consultingReady = false;
-  }
   const weekState = weekStateForStudent(start);
   const consultingCurrent =
     weekState.kind === "form"
