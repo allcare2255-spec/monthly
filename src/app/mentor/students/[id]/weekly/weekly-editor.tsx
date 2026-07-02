@@ -442,9 +442,9 @@ function SemiGauge({ value, total, label }: { value: number; total: number; labe
 
 function DonutCharts({ report }: { report: WeeklyReport }) {
   const days = report.day_data;
-  // 제출 과제 인증 (제출 완료 일수) + 요일별 톤
-  const submitted = days.filter((d) => d.status === "submitted").length;
+  // 제출 과제 인증 — 게이지 '제출 일수'는 제출 완료 + 과제 미흡 (미제출만 제외)
   const submitTones: CloudTone[] = days.map((d) => submitTone(d.status));
+  const submitted = submitTones.filter((t) => t !== "none").length;
   // 기상 인증: 09:00 이내=인증 완료(full), 09:00 초과=지각 인증(partial), 미입력=미인증(none)
   const wakeTone = (t: string | null): CloudTone => {
     const m = hmToMinutes(t);
@@ -452,7 +452,8 @@ function DonutCharts({ report }: { report: WeeklyReport }) {
     return m <= 9 * 60 ? "full" : "partial";
   };
   const wakeTones: CloudTone[] = days.map((d) => wakeTone(d.wake_up_time));
-  const wakeOn = wakeTones.filter((t) => t === "full").length;
+  // 게이지 '기상 일수'는 인증 완료 + 지각 인증 (미인증만 제외)
+  const wakeOn = wakeTones.filter((t) => t !== "none").length;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
