@@ -184,6 +184,12 @@ function CycleCard({
   const cycleLastWeek = cycle * 4;
   const isCurrent = currentWeek >= cycleFirstWeek && currentWeek <= cycleLastWeek;
 
+  // 이미 지나간 주차(누적 주차 < 현재 주차)의 계획표·레포트 뱃지는 회색 처리
+  const weekBadgeCls = (cum: number) =>
+    cum < currentWeek
+      ? "bg-ink/5 text-ink/40 border-ink/10 hover:bg-ink/10"
+      : "bg-indigo/10 text-indigo border-indigo/20 hover:bg-indigo/20";
+
   const shownStart = override?.start_date || defaultStart;
   const shownEnd = override?.end_date || defaultEnd;
   const memo = override?.memo || "";
@@ -280,7 +286,7 @@ function CycleCard({
             <div className="text-xl font-extrabold text-ink mt-0.5 flex items-center flex-wrap gap-2">
               {studentName} 코칭 {cycle}개월차
               {isCurrent && (
-                <span className="inline-block px-1.5 py-0.5 rounded-full bg-gradient-to-r from-indigo/15 to-violet/15 text-indigo font-semibold text-[10px]">
+                <span className="inline-block px-2 py-0.5 rounded-full bg-fuchsia text-white font-bold text-[10px]">
                   {currentWeek}주차 진행 중
                 </span>
               )}
@@ -384,7 +390,7 @@ function CycleCard({
             <Link
               key={w}
               href={`/mentor/students/${studentId}/plan?cycle=${cycle}&week=${w}`}
-              className="text-[11px] rounded-full px-2.5 py-0.5 font-semibold border bg-indigo/10 text-indigo border-indigo/20 hover:bg-indigo/20 transition"
+              className={`text-[11px] rounded-full px-2.5 py-0.5 font-semibold border transition ${weekBadgeCls(cumulativeWeek(cycle, w))}`}
             >
               {cumulativeWeek(cycle, w)}주차 계획표
             </Link>
@@ -396,7 +402,7 @@ function CycleCard({
             <Link
               key={w}
               href={`/mentor/students/${studentId}/weekly?cycle=${cycle}&week=${w}`}
-              className="text-[11px] rounded-full px-2.5 py-0.5 font-semibold border bg-indigo/10 text-indigo border-indigo/20 hover:bg-indigo/20 transition"
+              className={`text-[11px] rounded-full px-2.5 py-0.5 font-semibold border transition ${weekBadgeCls(cumulativeWeek(cycle, w))}`}
             >
               {cumulativeWeek(cycle, w)}주차 레포트
             </Link>
