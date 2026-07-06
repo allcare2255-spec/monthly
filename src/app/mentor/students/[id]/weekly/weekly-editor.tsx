@@ -970,7 +970,7 @@ function DayCard({
       {/* Q&A */}
       <div className="mt-3">
         <div className="text-xs text-ink/55 font-medium mb-2">Q&amp;A</div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           <div>
             <label className="text-xs text-ink/55 font-medium">학생 질문</label>
             <BufferedTextarea
@@ -1622,7 +1622,7 @@ function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
       {(studentQuestion || mentorAnswer) && (
         <div className="mt-3">
           <div className="text-xs text-ink/55 font-medium mb-1.5">Q&amp;A</div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-3">
             {studentQuestion && (
               <div>
                 <div className="text-xs text-ink/55 font-medium">학생 질문</div>
