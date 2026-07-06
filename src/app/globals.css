@@ -157,8 +157,11 @@ html, body {
     z-index: auto !important;
   }
   .preview-actions { display: none !important; }
-  /* [수정 5] 일별 기록 카드가 페이지 중간에서 잘리지 않도록 */
-  .preview-day-card { page-break-inside: avoid; }
+  /* 일별 기록 카드는 페이지에 걸쳐 나뉘도록 허용 (내용이 길 때 앞 페이지에
+     큰 빈 공간이 생기는 문제 방지). 단, 사진 묶음/이미지는 반으로 잘리지 않게 보호. */
+  .preview-day-card { page-break-inside: auto; }
+  .preview-photos { page-break-inside: avoid; break-inside: avoid; }
+  .preview-day-card img { page-break-inside: avoid; break-inside: avoid; }
 
   /* 월간 레포트: print-target 내 gradient 텍스트를 검정으로 (주간 레포트와 통일) */
   .print-target .text-gradient,

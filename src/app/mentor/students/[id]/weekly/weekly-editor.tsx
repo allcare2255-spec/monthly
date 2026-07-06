@@ -1642,7 +1642,7 @@ function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
       {photos.length > 0 && (
         <div className="mt-3">
           <div className="text-xs text-ink/55 font-medium">공부 인증 사진</div>
-          <div className="mt-2 grid grid-cols-4 gap-2">
+          <div className="preview-photos mt-2 grid grid-cols-4 gap-2">
             {photos.map((p) => (
               <div key={p.path} className="aspect-square rounded-xl overflow-hidden border border-ink/10 bg-ink/5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
