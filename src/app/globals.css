@@ -132,10 +132,12 @@ html, body {
     backdrop-filter: none !important;
     border-color: rgba(0, 0, 0, 0.08) !important;
   }
-  /* PDF 여백 0 — 배너 풀블리드용. @page 여백을 주면 브라우저가 그 여백에
-     머리글/바닥글(날짜·문서제목)을 인쇄하므로 0으로 두고, 페이지 넘김 여유는
-     콘텐츠 요소(일별 카드) 상단 안여백으로 확보한다. */
-  @page { size: A4; margin: 0; }
+  /* PDF 여백 — 2페이지부터 상단 여백을 줘 페이지 넘김 시 내용이 맨 위에 붙지 않게 함.
+     1페이지는 대문 배너 풀블리드를 위해 0.
+     (브라우저는 이 여백 자리에 머리글/바닥글을 인쇄하므로, 저장 창에서
+      "머리글/바닥글"을 해제하면 날짜·제목 글자 없이 흰 여백만 남는다 — 크롬이 설정 기억) */
+  @page { size: A4; margin: 18mm 0 0 0; }
+  @page :first { margin: 0; }
   .print-page-break { page-break-before: always; }
 
   /* [주간 미리보기] 문서 패딩 제거 → 배너가 페이지 가장자리까지 꽉 차게 */
@@ -159,7 +161,7 @@ html, body {
   .preview-actions { display: none !important; }
   /* 일별 기록 카드는 페이지에 걸쳐 나뉘도록 허용 (내용이 길 때 앞 페이지에
      큰 빈 공간이 생기는 문제 방지). 단, 사진 묶음/이미지는 반으로 잘리지 않게 보호. */
-  .preview-day-card { page-break-inside: auto; padding-top: 9mm !important; }
+  .preview-day-card { page-break-inside: auto; }
   .preview-photos { page-break-inside: avoid; break-inside: avoid; }
   .preview-day-card img { page-break-inside: avoid; break-inside: avoid; }
 
