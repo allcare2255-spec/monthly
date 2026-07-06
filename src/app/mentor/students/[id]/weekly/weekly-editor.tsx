@@ -166,6 +166,9 @@ export function WeeklyReportEditor({
         </button>
       </div>
 
+      {/* 빠른 입력 표 (인쇄 제외) — 아래 "일별 기록" 카드와 데이터 공유 */}
+      <WeekQuickGrid days={report.day_data} weekLabel={cumWeek} onCellChange={commitDayByDate} />
+
       {/* [수정 1] 1. 통계 요약 — 3분할 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard label="평균 기상 시간" value={stats?.avgWake || "-"} />
@@ -632,6 +635,149 @@ const STATUS_LABEL: Record<DayStatus, string> = {
 };
 
 const STATUS_RADIO: DayStatus[] = ["submitted", "incomplete", "missed"];
+
+// ───────────────────────────────────────────────────────────
+// 빠른 입력 표 (인쇄 제외) — 요일별 기상/목표·실제 순공 시간을 한 표에서
+// 빠르게 입력. 아래 "일별 기록" 카드와 동일한 day_data 를 공유해 상호 반영됨.
+// ───────────────────────────────────────────────────────────
+function minsToHmInput(min: number | null | undefined): string {
+  if (min == null) return "";
+  return `${Math.floor(min / 60)}:${pad2(min % 60)}`;
+}
+
+// "6:30" / "06:30" → "HH:MM"(시계 시각). 빈값 null, 형식오류 undefined.
+function parseWakeInput(raw: string): string | null | undefined {
+  const t = raw.trim();
+  if (t === "") return null;
+  const min = hmToMinutes(t);
+  if (min == null) return undefined;
+  return `${pad2(Math.floor(min / 60))}:${pad2(min % 60)}`;
+}
+
+// "8" → 480분, "8:30" → 510분(소요 시간). 빈값 null, 형식오류 undefined.
+function parseDurationInput(raw: string): number | null | undefined {
+  const t = raw.trim();
+  if (t === "") return null;
+  if (/^\d+$/.test(t)) return Number(t) * 60;
+  const min = hmToMinutes(t);
+  return min == null ? undefined : min;
+}
+
+function WeekQuickGrid({
+  days,
+  weekLabel,
+  onCellChange,
+}: {
+  days: DayData[];
+  weekLabel: number;
+  onCellChange: (date: string, patch: Partial<DayData>) => void;
+}) {
+  const rows: { label: string; kind: "wake" | "target" | "actual" }[] = [
+    { label: `${weekLabel}주차 기상 시간`, kind: "wake" },
+    { label: `${weekLabel}주차 목표 순공 시간`, kind: "target" },
+    { label: `${weekLabel}주차 실제 순공 시간`, kind: "actual" },
+  ];
+  return (
+    <section className="no-print">
+      <div className="overflow-x-auto rounded-2xl border border-ink/10 bg-white shadow-sm">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr>
+              <th className="sticky left-0 z-10 bg-slate-50 border border-ink/10 px-3 py-2 min-w-[132px]" />
+              {days.map((d, i) => (
+                <th
+                  key={d.date}
+                  className="border border-ink/10 bg-slate-50 px-3 py-2 text-xs font-semibold text-ink/70 whitespace-nowrap"
+                >
+                  {`${d.date.slice(2).replace(/-/g, ".")} ${WEEKDAY_KO[i]}요일`}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.kind}>
+                <th className="sticky left-0 z-10 bg-slate-50 border border-ink/10 px-3 py-2 text-left text-xs font-semibold text-ink/70 whitespace-nowrap">
+                  {row.label}
+                </th>
+                {days.map((d) => (
+                  <QuickGridCell
+                    key={d.date}
+                    day={d}
+                    kind={row.kind}
+                    onCellChange={onCellChange}
+                  />
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function QuickGridCell({
+  day,
+  kind,
+  onCellChange,
+}: {
+  day: DayData;
+  kind: "wake" | "target" | "actual";
+  onCellChange: (date: string, patch: Partial<DayData>) => void;
+}) {
+  const serverVal =
+    kind === "wake"
+      ? day.wake_up_time || ""
+      : kind === "target"
+        ? minsToHmInput(day.target_study_minutes)
+        : minsToHmInput(day.study_minutes);
+  const [val, setVal] = useState(serverVal);
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!focused.current) setVal(serverVal);
+  }, [serverVal]);
+
+  function commit() {
+    if (kind === "wake") {
+      const parsed = parseWakeInput(val);
+      if (parsed === undefined) { setVal(serverVal); return; }
+      onCellChange(day.date, { wake_up_time: parsed });
+      return;
+    }
+    const parsed = parseDurationInput(val);
+    if (parsed === undefined) { setVal(serverVal); return; }
+    if (kind === "target") {
+      onCellChange(day.date, { target_study_minutes: parsed });
+      return;
+    }
+    // 실제 순공 시간 — 일별 카드와 동일한 상태 연동
+    if (parsed === null) {
+      onCellChange(day.date, {
+        study_minutes: null,
+        status: day.status === "submitted" ? "missed" : day.status,
+      });
+    } else {
+      onCellChange(day.date, {
+        study_minutes: parsed,
+        status: day.status === "paused" ? "paused" : "submitted",
+      });
+    }
+  }
+
+  return (
+    <td className="border border-ink/10 p-0">
+      <input
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onFocus={() => { focused.current = true; }}
+        onBlur={() => { focused.current = false; commit(); }}
+        placeholder={kind === "wake" ? "6:30" : "8:00"}
+        className="w-full min-w-[92px] px-2 py-2 text-center outline-none bg-transparent focus:bg-indigo/5 transition placeholder:text-ink/25"
+      />
+    </td>
+  );
+}
 
 function DayCard({
   day,
