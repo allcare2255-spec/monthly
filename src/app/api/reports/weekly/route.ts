@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays, weekRange, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
+import { addDays, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
 import type { DayData } from "@/types";
 
 async function ensureCanAccess(studentId: string) {
@@ -59,7 +59,17 @@ export async function GET(req: Request) {
     start_date: r.start_date,
   }));
   const cycleStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
-  const { start, end } = weekRange(cycleStart, week);
+  // 학생 상세 페이지에서 수정한 월차 시작일 오버라이드가 있으면 그것을 우선.
+  // (레포트 헤더/일별 기록 날짜가 항상 같은 기준을 쓰도록 함)
+  const { data: cycleRow } = await supabase
+    .from("coaching_cycles")
+    .select("start_date")
+    .eq("student_id", studentId)
+    .eq("cycle_number", cycle)
+    .maybeSingle();
+  const effectiveStart = cycleRow?.start_date || cycleStart;
+  const start = addDays(effectiveStart, (week - 1) * 7);
+  const end = addDays(start, 6);
   const dates = Array.from({ length: 7 }, (_, i) => addDays(start, i));
 
   const { data: existing } = await supabase
@@ -71,6 +81,24 @@ export async function GET(req: Request) {
     .maybeSingle();
 
   if (existing) {
+    // 이미 저장된 레포트의 일별 날짜가 기준(헤더)과 어긋나면 위치 그대로 날짜만 재정렬해 복구.
+    // (월요일 칸 데이터는 월요일에 그대로 남고, 날짜 라벨만 올바른 날짜로 교정됨)
+    const existingDays: DayData[] = Array.isArray(existing.day_data) ? existing.day_data : [];
+    const needsRealign =
+      existingDays.length === 7 && existingDays.some((d, i) => d.date !== dates[i]);
+    if (needsRealign) {
+      const realigned = existingDays.map((d, i) => ({ ...d, date: dates[i] }));
+      const { data: updated } = await supabase
+        .from("coaching_weekly_reports")
+        .update({ day_data: realigned, start_date: start, end_date: end })
+        .eq("id", existing.id)
+        .select()
+        .single();
+      return NextResponse.json({
+        report: updated || { ...existing, day_data: realigned, start_date: start, end_date: end },
+        dates,
+      });
+    }
     return NextResponse.json({ report: existing, dates });
   }
 
