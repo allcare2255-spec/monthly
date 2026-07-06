@@ -772,7 +772,8 @@ function QuickGridCell({
         onChange={(e) => setVal(e.target.value)}
         onFocus={() => { focused.current = true; }}
         onBlur={() => { focused.current = false; commit(); }}
-        className="w-full min-w-[92px] px-2 py-2 text-center outline-none bg-transparent focus:bg-indigo/5 transition"
+        placeholder="00:00"
+        className="w-full min-w-[92px] px-2 py-2 text-center outline-none bg-transparent focus:bg-indigo/5 transition placeholder:text-ink/25"
       />
     </td>
   );
