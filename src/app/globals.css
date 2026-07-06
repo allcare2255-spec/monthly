@@ -159,9 +159,13 @@ html, body {
     z-index: auto !important;
   }
   .preview-actions { display: none !important; }
-  /* 일별 기록 카드는 페이지에 걸쳐 나뉘도록 허용 (내용이 길 때 앞 페이지에
-     큰 빈 공간이 생기는 문제 방지). 단, 사진 묶음/이미지는 반으로 잘리지 않게 보호. */
+  /* 일별 기록 카드는 페이지에 걸쳐 나뉘도록 허용(여백 최소). 단, "항목 경계"에서만
+     나뉘게 하여 문장·사진이 중간에 잘리지 않도록 각 블록은 통째로 유지한다. */
   .preview-day-card { page-break-inside: auto; }
+  /* 카드 내부 각 블록(헤더·시간·학생/멘토 피드백·Q&A·사진)은 내부 분할 금지 */
+  .preview-day-card > div { page-break-inside: avoid; break-inside: avoid; }
+  /* 헤더(요일·날짜)만 남고 페이지가 끊기지 않도록 다음 블록과 함께 유지 */
+  .preview-day-card > div:first-child { page-break-after: avoid; break-after: avoid; }
   .preview-photos { page-break-inside: avoid; break-inside: avoid; }
   .preview-day-card img { page-break-inside: avoid; break-inside: avoid; }
 
