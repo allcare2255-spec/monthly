@@ -132,8 +132,10 @@ html, body {
     backdrop-filter: none !important;
     border-color: rgba(0, 0, 0, 0.08) !important;
   }
-  /* PDF 여백 0 — 배너 풀블리드용. 본문/월간은 요소 패딩으로 여백 보정 */
-  @page { size: A4; margin: 0; }
+  /* PDF 여백 — 1페이지는 대문 배너 풀블리드를 위해 0, 2페이지부터는 상단 여백을
+     줘서 페이지 넘김 시 내용이 맨 위에 붙지 않게 함. (좌우/하단은 요소 패딩으로 보정) */
+  @page { size: A4; margin: 15mm 0 0 0; }
+  @page :first { margin: 0; }
   .print-page-break { page-break-before: always; }
 
   /* [주간 미리보기] 문서 패딩 제거 → 배너가 페이지 가장자리까지 꽉 차게 */
