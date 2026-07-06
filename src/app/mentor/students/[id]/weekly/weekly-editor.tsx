@@ -642,7 +642,7 @@ const STATUS_RADIO: DayStatus[] = ["submitted", "incomplete", "missed"];
 // ───────────────────────────────────────────────────────────
 function minsToHmInput(min: number | null | undefined): string {
   if (min == null) return "";
-  return `${Math.floor(min / 60)}:${pad2(min % 60)}`;
+  return `${pad2(Math.floor(min / 60))}:${pad2(min % 60)}`;
 }
 
 // "6:30" / "06:30" → "HH:MM"(시계 시각). 빈값 null, 형식오류 undefined.
@@ -772,8 +772,7 @@ function QuickGridCell({
         onChange={(e) => setVal(e.target.value)}
         onFocus={() => { focused.current = true; }}
         onBlur={() => { focused.current = false; commit(); }}
-        placeholder={kind === "wake" ? "6:30" : "8:00"}
-        className="w-full min-w-[92px] px-2 py-2 text-center outline-none bg-transparent focus:bg-indigo/5 transition placeholder:text-ink/25"
+        className="w-full min-w-[92px] px-2 py-2 text-center outline-none bg-transparent focus:bg-indigo/5 transition"
       />
     </td>
   );
