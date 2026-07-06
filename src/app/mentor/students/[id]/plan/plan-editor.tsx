@@ -17,6 +17,41 @@ function uid() {
   return crypto.randomUUID();
 }
 
+// 사진을 최대 변(maxDim)으로 축소하고 JPEG 로 변환해 data URL 반환 (전송량·인식 안정성)
+function downscaleToDataUrl(file: File, maxDim: number, quality: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("이 브라우저에서 이미지 처리를 지원하지 않습니다."));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("이미지를 읽을 수 없습니다."));
+    };
+    img.src = url;
+  });
+}
+
+async function fileToImageAsset(file: File) {
+  const dataUrl = await downscaleToDataUrl(file, 1600, 0.85);
+  const comma = dataUrl.indexOf(",");
+  return { kind: "image" as const, data: dataUrl.slice(comma + 1), mediaType: "image/jpeg" };
+}
+
 export function WeeklyPlanEditor({
   studentId,
   studentName,
@@ -37,6 +72,9 @@ export function WeeklyPlanEditor({
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [importErr, setImportErr] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -69,6 +107,40 @@ export function WeeklyPlanEditor({
   }
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  // 사진 → 주간 계획표 자동 채우기
+  async function onFilesSelected(files: FileList | null) {
+    if (!files || files.length === 0 || !plan) return;
+    const hasContent =
+      plan.weekly_goals.length > 0 ||
+      plan.main_test.length > 0 ||
+      WEEKDAY_LABEL.some((wd) => (plan.days[wd.key]?.tasks?.length || 0) > 0);
+    if (
+      hasContent &&
+      !window.confirm("사진 내용으로 현재 주간 계획표를 덮어쓸까요? 기존에 입력한 내용은 사라집니다.")
+    ) {
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+    setImporting(true);
+    setImportErr(null);
+    try {
+      const assets = await Promise.all(Array.from(files).map(fileToImageAsset));
+      const res = await fetch("/api/plans/extract", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ assets }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "사진 인식에 실패했습니다.");
+      update(data.plan_data as WeeklyPlanData);
+    } catch (e: any) {
+      setImportErr(e?.message || "사진 인식 중 오류가 발생했습니다.");
+    } finally {
+      setImporting(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   if (loading) {
     return <div className="rounded-xl bg-white border border-ink/5 p-8 text-center text-ink/50">불러오는 중...</div>;
@@ -109,7 +181,24 @@ export function WeeklyPlanEditor({
         </div>
       </div>
 
-      <div className="flex justify-end no-print">
+      <div className="flex justify-end items-center gap-3 no-print">
+        {importErr && <span className="text-xs text-rose">{importErr}</span>}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          onChange={(e) => onFilesSelected(e.target.files)}
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={importing}
+          className="text-xs font-semibold rounded-lg border border-indigo/30 text-indigo px-3 py-1.5 hover:bg-indigo/5 disabled:opacity-50 transition"
+        >
+          {importing ? "인식 중…" : "📷 사진으로 채우기"}
+        </button>
         <span className="text-xs text-ink/45">
           {saveState === "saving" ? "저장 중..." : saveState === "saved" ? "자동 저장됨 ✓" : ""}
         </span>
