@@ -1285,8 +1285,8 @@ function AutoTextarea({
   );
 }
 
-// 일별 텍스트 입력 — 타이핑 중에는 로컬 상태만 갱신하고, 포커스를 잃을 때만 저장.
-// (글자마다 서버 PATCH + 전체 상태 교체로 인한 렉/입력 유실 방지)
+// 일별 텍스트 입력 — 타이핑 중에는 로컬 상태만 갱신하고, 입력을 멈춘 뒤 0.8초 후
+// 자동 저장(+ 포커스를 잃을 때 즉시 저장). 글자마다 PATCH 하지 않아 렉/입력 유실을 방지.
 function BufferedTextarea({
   value,
   onCommit,
@@ -1300,20 +1300,44 @@ function BufferedTextarea({
 }) {
   const [text, setText] = useState(value);
   const focused = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latest = useRef(value); // 최신 입력값
+  const saved = useRef(value);  // 마지막으로 저장(서버 반영)된 값
+
   // 포커스 중이 아닐 때만 서버 값으로 동기화 (입력 중 덮어쓰기 방지)
   useEffect(() => {
+    saved.current = value;
     if (focused.current) return;
     setText(value);
+    latest.current = value;
   }, [value]);
+
+  // 언마운트 시 대기 중인 저장 타이머 정리
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  // 값이 바뀐 경우에만 즉시 저장 (대기 타이머는 취소)
+  function commitNow() {
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    if (latest.current !== saved.current) {
+      saved.current = latest.current;
+      onCommit(latest.current);
+    }
+  }
+
+  // 타이핑 중: 로컬 상태만 갱신하고, 멈춘 뒤 0.8초 후 자동 저장 예약
+  function handleChange(v: string) {
+    setText(v);
+    latest.current = v;
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(commitNow, 800);
+  }
+
   return (
     <AutoTextarea
       value={text}
-      onChange={setText}
+      onChange={handleChange}
       onFocus={() => { focused.current = true; }}
-      onBlur={() => {
-        focused.current = false;
-        if (text !== value) onCommit(text);
-      }}
+      onBlur={() => { focused.current = false; commitNow(); }}
       className={className}
       placeholder={placeholder}
     />
