@@ -465,6 +465,8 @@ function ChecklistItem({
         value={item.text}
         onChange={(v) => onUpdate({ text: v })}
         onKeyDown={(e) => {
+          // 한글 등 IME 조합 중에는 Enter/Backspace 무시 (마지막 글자가 새 항목에 중복 입력되는 문제 방지)
+          if (e.nativeEvent.isComposing || e.keyCode === 229) return;
           if (e.key === "Enter") {
             e.preventDefault();
             if (item.text.trim()) onEnter();
