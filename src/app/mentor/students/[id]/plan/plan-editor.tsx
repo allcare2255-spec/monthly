@@ -457,7 +457,7 @@ function ChecklistItem({
           type="checkbox"
           checked={item.done}
           onChange={(e) => onUpdate({ done: e.target.checked })}
-          className="h-4 w-4 shrink-0 rounded border-ink/30 text-indigo focus:ring-indigo/30 cursor-pointer accent-sky-500"
+          className="h-4 w-4 shrink-0 rounded border-ink/30 text-indigo focus:ring-indigo/30 cursor-pointer accent-[#0284c7]"
         />
       )}
       <AutoResizeTextarea
