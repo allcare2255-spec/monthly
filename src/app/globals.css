@@ -188,6 +188,22 @@ html, body {
     color: #0284c7 !important;
   }
 
+  /* 월간 레포트 차트(recharts): 화면 폭 기준으로 고정 렌더된 SVG가 A4 페이지에서
+     오른쪽이 잘리는 문제 방지. beforeprint 훅이 SVG에 viewBox를 주입하고, 여기서
+     래퍼/SVG 폭을 100%로 만들어 페이지 폭에 맞게 비율 유지 축소되도록 한다. */
+  .print-target .recharts-responsive-container {
+    width: 100% !important;
+    height: auto !important;
+  }
+  .print-target .recharts-wrapper {
+    width: 100% !important;
+    height: auto !important;
+  }
+  .print-target .recharts-wrapper > svg[data-print-scaled] {
+    width: 100% !important;
+    height: auto !important;
+  }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
