@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Bar,
   BarChart,
@@ -14,7 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import type { DayData, MonthlyReport, WeeklyReport } from "@/types";
-import { addDays, hmToMinutes, minutesToHm } from "@/lib/dates";
+import { addDays, hmToMinutes } from "@/lib/dates";
 
 const STATUS_COLOR: Record<string, string> = {
   submitted: "#0ea5e9",   // 하늘색 (정상 인증)
@@ -176,7 +176,7 @@ export function MonthlyReportView({
         {/* 통계 요약 */}
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <BigStat label="종합 과제 완료율" value={`${stats.taskRate}%`} sub={`${stats.submitted}/${stats.total}일`} />
-          <BigStat label="월 평균 순공시간" value={minutesToHm(stats.avgStudy)} />
+          <BigStat label="월 평균 순공시간" value={<StudyTimeValue minutes={stats.avgStudy} />} />
           <BigStat label="월 평균 기상" value={stats.avgWake} />
           <BigStat
             label="일시 정지"
@@ -278,6 +278,21 @@ function wakeCertColor(d: DayData): string {
   return STATUS_COLOR.missed;                            // 미제출
 }
 
+// 월 평균 순공시간 값: 숫자는 크게, 단위(시간/분)는 작게, 한 줄로 표시.
+// (카드 폭이 좁아 "7시간 30분" 이 두 줄로 줄바꿈되던 문제 방지)
+function StudyTimeValue({ minutes }: { minutes: number }) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return (
+    <span className="whitespace-nowrap">
+      {h}
+      <span className="text-base font-bold">시간 </span>
+      {m}
+      <span className="text-base font-bold">분</span>
+    </span>
+  );
+}
+
 function BigStat({
   label,
   value,
@@ -285,7 +300,7 @@ function BigStat({
   tone,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   sub?: string;
   tone?: "muted";
 }) {
@@ -296,7 +311,7 @@ function BigStat({
       } blur-2xl`} />
       <div className="relative">
         <div className="text-[11px] text-ink/55 uppercase tracking-[0.15em] font-semibold">{label}</div>
-        <div className={`text-2xl font-extrabold mt-1 tabular-nums ${
+        <div className={`text-2xl font-extrabold mt-1 tabular-nums whitespace-nowrap ${
           tone === "muted" ? "text-ink/40" : "text-gradient"
         }`}>
           {value}
