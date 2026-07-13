@@ -53,41 +53,6 @@ export function MonthlyReportView({
       .then((d) => setMonthly(d.report));
   }, [monthly, studentId, cycle]);
 
-  // PDF(인쇄) 저장 시 recharts 차트가 화면 폭 기준으로 고정 렌더돼 A4 페이지에서
-  // 오른쪽이 잘리는 문제 방지. 인쇄 직전 SVG에 viewBox를 주입해 페이지 폭에 맞춰
-  // 축소되도록 하고, 인쇄가 끝나면 원상 복구한다.
-  useEffect(() => {
-    const svgs = () =>
-      document.querySelectorAll<SVGSVGElement>(
-        ".print-target .recharts-wrapper > svg",
-      );
-    const onBeforePrint = () => {
-      svgs().forEach((svg) => {
-        if (svg.getAttribute("data-print-scaled")) return;
-        const w = svg.getAttribute("width");
-        const h = svg.getAttribute("height");
-        if (!w || !h) return;
-        svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-        svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-        svg.setAttribute("data-print-scaled", "1");
-      });
-    };
-    const onAfterPrint = () => {
-      svgs().forEach((svg) => {
-        if (!svg.getAttribute("data-print-scaled")) return;
-        svg.removeAttribute("viewBox");
-        svg.removeAttribute("preserveAspectRatio");
-        svg.removeAttribute("data-print-scaled");
-      });
-    };
-    window.addEventListener("beforeprint", onBeforePrint);
-    window.addEventListener("afterprint", onAfterPrint);
-    return () => {
-      window.removeEventListener("beforeprint", onBeforePrint);
-      window.removeEventListener("afterprint", onAfterPrint);
-    };
-  }, []);
-
   async function patchMonthly(patch: Partial<MonthlyReport>) {
     if (!monthly) return;
     setMonthly({ ...monthly, ...patch });
