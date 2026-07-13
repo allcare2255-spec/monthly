@@ -267,6 +267,17 @@ function hasDataForDay(d: DayData) {
   return d.wake_up_time != null || d.study_minutes != null || d.status !== "missed";
 }
 
+// "기상 인증 현황" 달력 셀 색상.
+// status 는 submitted/incomplete/missed/paused/unset 5종이지만 STATUS_COLOR 는
+// 4종만 매핑돼 있어, incomplete/unset 이면 undefined → 배경색 없음(빈칸)이 되던 버그를 방지.
+// 기상 시간이 있으면(=기상 인증 제출) 상태와 무관하게 '정상 인증'(파랑)으로 표시한다.
+function wakeCertColor(d: DayData): string {
+  if (d.status === "paused") return STATUS_COLOR.paused; // 일시 정지
+  if (d.wake_up_time) return STATUS_COLOR.submitted;     // 기상 인증 제출 → 정상 인증
+  if (!hasDataForDay(d) || d.status === "unset") return STATUS_COLOR.empty; // 미입력
+  return STATUS_COLOR.missed;                            // 미제출
+}
+
 function BigStat({
   label,
   value,
@@ -309,9 +320,7 @@ function Calendar28({ days }: { days: DayData[] }) {
       {weeks.map((wk, i) => (
         <div key={i} className="grid grid-cols-7 gap-1.5">
           {wk.map((d) => {
-            const color = !hasDataForDay(d)
-              ? STATUS_COLOR.empty
-              : STATUS_COLOR[d.status];
+            const color = wakeCertColor(d);
             return (
               <div
                 key={d.date}
