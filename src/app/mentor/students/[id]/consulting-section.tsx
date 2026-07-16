@@ -56,8 +56,9 @@ function ShareLink({ token }: { token: string }) {
   const base = typeof window !== "undefined" ? `${window.location.origin}/c/${token}` : "";
   return (
     <div className="glass rounded-2xl p-4 space-y-3">
-      <LinkRow label="학생 제출 링크 (주차에 맞는 폼이 자동 표시됩니다)" url={base} />
       <LinkRow label="사전 질문지 링크 (가입 직후 · 주차 무시하고 사전 질문지)" url={base ? `${base}?form=pre` : ""} />
+      <LinkRow label="주간 성장 코칭 링크 (주차 무시하고 항상 주간 폼)" url={base ? `${base}?form=weekly` : ""} />
+      <LinkRow label="월간 비전 컨설팅 링크 (주차 무시하고 항상 월간 폼)" url={base ? `${base}?form=monthly` : ""} />
     </div>
   );
 }

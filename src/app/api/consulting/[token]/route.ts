@@ -38,11 +38,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
 
   const state = weekStateForStudent(student.coachingStartDate);
 
-  // 폼 지정 직접 링크 (?form=pre) — 주차/시작여부 무시
+  // 폼 지정 직접 링크 (?form=pre|weekly|monthly) — 주차 종류 무시, 항상 지정된 폼만 표시
   const forced = new URL(req.url).searchParams.get("form");
-  if (forced === "pre") {
+  if (forced === "pre" || forced === "weekly" || forced === "monthly") {
     const week = state.kind === "form" ? state.week : 1;
-    return NextResponse.json(formPayload("pre", week, prefill));
+    return NextResponse.json(formPayload(forced, week, prefill));
   }
 
   if (state.kind === "not_started") {
