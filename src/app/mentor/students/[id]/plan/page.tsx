@@ -33,17 +33,25 @@ export default async function WeeklyPlanPage({
   if (session.role !== "admin" && student.mentor_id !== session.mentorId) return notFound();
   if (!student.coaching_start_date) return notFound();
 
-  const { data: restarts } = await supabase
-    .from("coaching_restarts")
-    .select("cycle_number, start_date")
-    .eq("student_id", id);
+  const [{ data: restarts }, { data: cycleRow }] = await Promise.all([
+    supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", id),
+    // [수정] 레포트 페이지와 동일하게 월차 시작일 오버라이드를 반영
+    supabase
+      .from("coaching_cycles")
+      .select("start_date")
+      .eq("student_id", id)
+      .eq("cycle_number", cycle)
+      .maybeSingle(),
+  ]);
   const anchors: CycleAnchor[] = (restarts || []).map((r) => ({
     cycle: r.cycle_number,
     start_date: r.start_date,
   }));
 
   const cycleStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
-  const weekStart = addDays(cycleStart, (week - 1) * 7);
+  // 학생 상세 페이지에서 수정한 월차 시작일(오버라이드)이 있으면 그 날짜에 연동
+  const effectiveStart = cycleRow?.start_date || cycleStart;
+  const weekStart = addDays(effectiveStart, (week - 1) * 7);
   const dates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)); // 월~일
 
   return (
