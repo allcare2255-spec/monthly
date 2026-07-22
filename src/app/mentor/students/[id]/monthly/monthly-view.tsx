@@ -136,15 +136,15 @@ export function MonthlyReportView({
     });
   }, [weeklies]);
 
-  // 일별 순공시간 추세
+  // 일별 공부 시간 — 평균 대비 분류(평균 이상/이하/미제출)와 함께
   const studyTrend = useMemo(
     () =>
-      allDays.map((d, i) => ({
-        idx: i + 1,
+      allDays.map((d) => ({
         day: d.date.slice(5),
-        hours: (d.study_minutes || 0) / 60,
+        minutes: d.study_minutes ?? 0,
+        category: studyCategory(d, stats.avgStudy),
       })),
-    [allDays],
+    [allDays, stats.avgStudy],
   );
 
   // 배너 우측 기간 타이틀 (년/월)
@@ -228,11 +228,11 @@ export function MonthlyReportView({
               </div>
             </div>
 
-            {/* 일별 순공시간 트렌드 */}
+            {/* 일별 공부 시간 */}
             <div className="mb-8">
-              <h2 className="text-base font-bold text-ink mb-3">일별 순공시간 추이</h2>
+              <h2 className="text-base font-bold text-ink mb-3">일별 공부 시간</h2>
               <div className="preview-day-card border border-ink/10 rounded-2xl p-4 sm:p-5">
-                <StudyTrendChart data={studyTrend} />
+                <StudyTrendChart data={studyTrend} avgMin={stats.avgStudy} />
               </div>
             </div>
 
@@ -313,15 +313,39 @@ function WeekRateBars({
   );
 }
 
-// 일별 순공시간 추이 — 순수 SVG 라인 차트.
-// recharts(ResponsiveContainer)가 인쇄(PDF)·초기 렌더에서 폭 0으로 측정돼
-// 차트가 깨지던 문제를 방지하기 위해 고정 viewBox SVG 로 직접 그린다.
-function StudyTrendChart({ data }: { data: { day: string; hours: number }[] }) {
+// 일별 공부 시간 — 평균 대비 분류.
+type StudyCat = "above" | "below" | "missed";
+const STUDY_CAT_COLOR: Record<StudyCat, string> = {
+  above: "#2563eb", // 평균 이상 — 진한 파란색
+  below: "#7dd3fc", // 평균 이하 — 연한 하늘색
+  missed: "#ef4444", // 미제출 — 빨간색
+};
+function studyCategory(d: DayData, avgMin: number): StudyCat {
+  if (d.status === "paused") return "below";
+  const s = d.study_minutes ?? 0;
+  if (s <= 0) return "missed"; // 공부 시간 없음/미제출
+  return s >= avgMin ? "above" : "below";
+}
+function hmShort(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return `${h}H ${m}M`;
+}
+
+// 순수 SVG 라인 차트 — recharts(ResponsiveContainer)가 인쇄(PDF)·초기 렌더에서
+// 폭 0으로 측정돼 차트가 깨지던 문제를 방지하기 위해 고정 viewBox SVG 로 직접 그린다.
+function StudyTrendChart({
+  data,
+  avgMin,
+}: {
+  data: { day: string; minutes: number; category: StudyCat }[];
+  avgMin: number;
+}) {
   const W = 760;
   const H = 210;
-  const padL = 34;
-  const padR = 14;
-  const padT = 12;
+  const padL = 46;
+  const padR = 16;
+  const padT = 14;
   const padB = 26;
   const plotL = padL;
   const plotR = W - padR;
@@ -331,59 +355,98 @@ function StudyTrendChart({ data }: { data: { day: string; hours: number }[] }) {
   const plotH = plotB - plotT;
 
   const n = data.length;
-  const dataMax = data.reduce((mx, d) => Math.max(mx, d.hours), 0);
-  // 위쪽 여유를 둔 짝수 눈금 최대값 (최소 8)
-  const yMax = Math.max(8, Math.ceil(dataMax / 2) * 2);
+  const dataMax = data.reduce((mx, d) => Math.max(mx, d.minutes), 0);
+  // Y 최대값 = 데이터 최댓값(최소 60분). 최고점이 상단 눈금에 닿도록.
+  const yMax = Math.max(60, dataMax);
 
   const xOf = (i: number) => (n <= 1 ? plotL + plotW / 2 : plotL + (i / (n - 1)) * plotW);
-  const yOf = (h: number) => plotB - (h / yMax) * plotH;
+  const yOf = (min: number) => plotB - (min / yMax) * plotH;
 
-  const pts = data.map((d, i) => ({ x: xOf(i), y: yOf(d.hours) }));
+  const pts = data.map((d, i) => ({ x: xOf(i), y: yOf(d.minutes), category: d.category }));
   const line = pts.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+  // 라인 아래 면적(그라데이션 채움)
+  const area =
+    n > 0
+      ? `${line} L${pts[n - 1].x.toFixed(1)} ${plotB} L${pts[0].x.toFixed(1)} ${plotB} Z`
+      : "";
 
-  // Y 눈금 (0 ~ yMax, 4등분)
+  // Y 눈금 (0 ~ yMax, 4등분) — H/M 표기
   const yTicks = Array.from({ length: 5 }, (_, i) => (yMax * i) / 4);
   // X 라벨 — 과밀 방지: 최대 14개 정도만 표기
   const step = Math.max(1, Math.ceil(n / 14));
+  const avgY = yOf(avgMin);
+  const showAvg = avgMin > 0 && avgMin <= yMax;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="일별 순공시간 추이">
-      {/* 가로 그리드 + Y 라벨 */}
-      {yTicks.map((v) => {
-        const y = yOf(v);
-        return (
-          <g key={v}>
-            <line x1={plotL} y1={y} x2={plotR} y2={y} stroke="#E5E7EB" strokeWidth={1} strokeDasharray="3 3" />
-            <text x={plotL - 8} y={y + 3.5} textAnchor="end" fontSize={10} fill="#94A3B8">
-              {v}
+    <>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="일별 공부 시간">
+        <defs>
+          <linearGradient id="studyArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {/* 가로 그리드 + Y 라벨(H/M) */}
+        {yTicks.map((v) => {
+          const y = yOf(v);
+          return (
+            <g key={v}>
+              <line x1={plotL} y1={y} x2={plotR} y2={y} stroke="#E5E7EB" strokeWidth={1} strokeDasharray="3 3" />
+              <text x={plotL - 8} y={y + 3.5} textAnchor="end" fontSize={10} fill="#94A3B8">
+                {hmShort(v)}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* X 라벨 */}
+        {data.map((d, i) =>
+          i % step === 0 ? (
+            <text key={d.day} x={xOf(i)} y={plotB + 16} textAnchor="middle" fontSize={10} fill="#64748B">
+              {d.day}
+            </text>
+          ) : null,
+        )}
+
+        {/* 면적 + 라인 */}
+        {n > 0 && <path d={area} fill="url(#studyArea)" stroke="none" />}
+        {n > 0 && (
+          <path d={line} fill="none" stroke="#6366f1" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+        )}
+
+        {/* 평균선 */}
+        {showAvg && (
+          <g>
+            <line x1={plotL} y1={avgY} x2={plotR} y2={avgY} stroke="#94A3B8" strokeWidth={1.2} strokeDasharray="5 4" />
+            <text x={plotR - 2} y={avgY - 4} textAnchor="end" fontSize={9.5} fill="#94A3B8">
+              평균
             </text>
           </g>
-        );
-      })}
-      {/* X 라벨 */}
-      {data.map((d, i) =>
-        i % step === 0 ? (
-          <text
-            key={d.day}
-            x={xOf(i)}
-            y={plotB + 16}
-            textAnchor="middle"
-            fontSize={10}
-            fill="#64748B"
-          >
-            {d.day}
-          </text>
-        ) : null,
-      )}
-      {/* 라인 */}
-      {n > 0 && (
-        <path d={line} fill="none" stroke="#0ea5e9" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-      )}
-      {/* 점 */}
-      {pts.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r={3} fill="#0284c7" />
-      ))}
-    </svg>
+        )}
+
+        {/* 점 (분류별 색상 + 흰 테두리) */}
+        {pts.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r={3.6} fill={STUDY_CAT_COLOR[p.category]} stroke="#ffffff" strokeWidth={1.4} />
+        ))}
+      </svg>
+
+      {/* 범례 */}
+      <div className="mt-2 flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-[11px] text-ink/55">
+        <LegendCatDot color={STUDY_CAT_COLOR.above} label="평균 이상" />
+        <LegendCatDot color={STUDY_CAT_COLOR.below} label="평균 이하" />
+        <LegendCatDot color={STUDY_CAT_COLOR.missed} label="미제출" />
+      </div>
+    </>
+  );
+}
+
+function LegendCatDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+      {label}
+    </span>
   );
 }
 
