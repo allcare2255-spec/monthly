@@ -158,8 +158,15 @@ export function MonthlyReportView({
 
       <div data-preview-root>
         <div className="preview-doc mx-auto max-w-[860px]">
-          {/* 상단 브랜드 헤더 배너 (로고 좌 · 기간 우) — 컴팩트 */}
-          <header className="preview-banner overflow-hidden rounded-3xl bg-gradient-to-r from-[#38bdf8] via-[#0ea5e9] to-[#0284c7] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25">
+          {/* 상단 브랜드 헤더 배너 (로고 좌 · 기간 우) — 컴팩트.
+              그라데이션은 인라인 명시 + 단색 폴백으로 → 모든 인쇄 환경에서 검정 깨짐 방지 */}
+          <header
+            className="preview-banner overflow-hidden rounded-3xl px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25"
+            style={{
+              backgroundColor: "#0ea5e9",
+              backgroundImage: "linear-gradient(90deg, #38bdf8 0%, #0ea5e9 50%, #0284c7 100%)",
+            }}
+          >
             <div className="flex flex-wrap items-start justify-between gap-4">
               {/* 좌측: 심볼 로고 + 브랜드명 + 부제목 */}
               <div className="flex items-center gap-3.5">
@@ -306,8 +313,12 @@ function WeekRateBars({
           <div className="relative h-3.5 flex-1 overflow-hidden rounded-full bg-slate-100">
             {w.rate > 0 && (
               <div
-                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#5ac8fa] via-[#4aa8f5] to-[#6366f1]"
-                style={{ width: `${w.rate}%` }}
+                className="absolute inset-y-0 left-0 rounded-full"
+                style={{
+                  width: `${w.rate}%`,
+                  backgroundColor: "#4aa8f5",
+                  backgroundImage: "linear-gradient(90deg, #5ac8fa 0%, #4aa8f5 50%, #6366f1 100%)",
+                }}
               />
             )}
           </div>
@@ -486,7 +497,8 @@ function PreviewStat({
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-4 shadow-sm">
-      <div className={`absolute inset-x-0 -top-8 h-24 bg-gradient-to-br ${
+      {/* 장식용 블러 그라데이션 — 일부 인쇄 환경에서 검정 박스로 깨져 인쇄 시 숨김(deco-blur) */}
+      <div className={`deco-blur absolute inset-x-0 -top-8 h-24 bg-gradient-to-br ${
         tone === "muted" ? "from-ink/5 to-ink/0" : "from-indigo/25 via-transparent via-40% to-transparent"
       } blur-xl`} />
       <div className="relative">

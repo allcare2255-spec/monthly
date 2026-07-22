@@ -148,6 +148,9 @@ html, body {
   .monthly-lead { padding-top: 16px !important; padding-bottom: 10px !important; }
   /* [월간 레포트] 기상 시간 기록 타일: 인쇄 시 높이 축소 */
   .wake-cell { min-height: 12mm !important; }
+  /* [PDF 안정화] blur 장식 그라데이션은 일부 인쇄 환경(GPU/드라이버)에서 검정 박스로
+     렌더되는 경우가 있어 인쇄 시 숨긴다 (색은 카드 본색·숫자 색으로 충분히 표현됨) */
+  .deco-blur { display: none !important; }
 
   /* [주간 미리보기] 문서 패딩 제거 → 배너가 페이지 가장자리까지 꽉 차게 */
   [data-preview-root] .preview-doc {
