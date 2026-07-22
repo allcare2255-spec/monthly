@@ -1,15 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import type { DayData, MonthlyReport, WeeklyReport } from "@/types";
 import { addDays, hmToMinutes } from "@/lib/dates";
 
@@ -240,19 +231,8 @@ export function MonthlyReportView({
             {/* 일별 순공시간 트렌드 */}
             <div className="mb-8">
               <h2 className="text-base font-bold text-ink mb-3">일별 순공시간 추이</h2>
-              <div className="preview-day-card border border-ink/10 rounded-2xl p-4">
-                <ResponsiveContainer width="100%" height={220}>
-                  <LineChart data={studyTrend} margin={{ top: 8, right: 12, bottom: 0, left: -10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                    <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="#64748B" />
-                    <YAxis tick={{ fontSize: 10 }} stroke="#64748B" />
-                    <Tooltip
-                      formatter={(v) => [`${Number(v).toFixed(1)}시간`, "순공"]}
-                      contentStyle={{ fontSize: 12 }}
-                    />
-                    <Line type="monotone" dataKey="hours" stroke="#0ea5e9" strokeWidth={2.5} dot={{ r: 3, fill: "#0284c7" }} activeDot={{ r: 5, fill: "#38bdf8" }} />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div className="preview-day-card border border-ink/10 rounded-2xl p-4 sm:p-5">
+                <StudyTrendChart data={studyTrend} />
               </div>
             </div>
 
@@ -330,6 +310,80 @@ function WeekRateBars({
         </div>
       ))}
     </div>
+  );
+}
+
+// 일별 순공시간 추이 — 순수 SVG 라인 차트.
+// recharts(ResponsiveContainer)가 인쇄(PDF)·초기 렌더에서 폭 0으로 측정돼
+// 차트가 깨지던 문제를 방지하기 위해 고정 viewBox SVG 로 직접 그린다.
+function StudyTrendChart({ data }: { data: { day: string; hours: number }[] }) {
+  const W = 760;
+  const H = 210;
+  const padL = 34;
+  const padR = 14;
+  const padT = 12;
+  const padB = 26;
+  const plotL = padL;
+  const plotR = W - padR;
+  const plotW = plotR - plotL;
+  const plotT = padT;
+  const plotB = H - padB;
+  const plotH = plotB - plotT;
+
+  const n = data.length;
+  const dataMax = data.reduce((mx, d) => Math.max(mx, d.hours), 0);
+  // 위쪽 여유를 둔 짝수 눈금 최대값 (최소 8)
+  const yMax = Math.max(8, Math.ceil(dataMax / 2) * 2);
+
+  const xOf = (i: number) => (n <= 1 ? plotL + plotW / 2 : plotL + (i / (n - 1)) * plotW);
+  const yOf = (h: number) => plotB - (h / yMax) * plotH;
+
+  const pts = data.map((d, i) => ({ x: xOf(i), y: yOf(d.hours) }));
+  const line = pts.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+
+  // Y 눈금 (0 ~ yMax, 4등분)
+  const yTicks = Array.from({ length: 5 }, (_, i) => (yMax * i) / 4);
+  // X 라벨 — 과밀 방지: 최대 14개 정도만 표기
+  const step = Math.max(1, Math.ceil(n / 14));
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="일별 순공시간 추이">
+      {/* 가로 그리드 + Y 라벨 */}
+      {yTicks.map((v) => {
+        const y = yOf(v);
+        return (
+          <g key={v}>
+            <line x1={plotL} y1={y} x2={plotR} y2={y} stroke="#E5E7EB" strokeWidth={1} strokeDasharray="3 3" />
+            <text x={plotL - 8} y={y + 3.5} textAnchor="end" fontSize={10} fill="#94A3B8">
+              {v}
+            </text>
+          </g>
+        );
+      })}
+      {/* X 라벨 */}
+      {data.map((d, i) =>
+        i % step === 0 ? (
+          <text
+            key={d.day}
+            x={xOf(i)}
+            y={plotB + 16}
+            textAnchor="middle"
+            fontSize={10}
+            fill="#64748B"
+          >
+            {d.day}
+          </text>
+        ) : null,
+      )}
+      {/* 라인 */}
+      {n > 0 && (
+        <path d={line} fill="none" stroke="#0ea5e9" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+      )}
+      {/* 점 */}
+      {pts.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={3} fill="#0284c7" />
+      ))}
+    </svg>
   );
 }
 
