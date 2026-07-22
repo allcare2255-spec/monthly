@@ -174,7 +174,7 @@ export function MonthlyReportView({
 
       <div data-preview-root>
         <div className="preview-doc mx-auto max-w-[860px]">
-          {/* 상단 브랜드 헤더 배너 (주간 레포트와 동일 언어) */}
+          {/* 상단 브랜드 헤더 배너 (로고·브랜드 + 기간 / 학생명은 배너 안에) */}
           <header className="preview-banner overflow-hidden rounded-3xl bg-gradient-to-r from-[#38bdf8] via-[#0ea5e9] to-[#0284c7] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25">
             <div className="flex flex-wrap items-start justify-between gap-4">
               {/* 좌측: 심볼 로고 + 브랜드명 + 부제목 */}
@@ -197,35 +197,43 @@ export function MonthlyReportView({
                 </div>
               </div>
             </div>
+
+            {/* 학생명 (배너 내부 좌측) */}
+            <div className="mt-6 sm:mt-8">
+              <div className="text-[12px] font-semibold tracking-[0.06em] text-white/80">
+                코칭 {cycle}개월차
+              </div>
+              <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-[34px]">
+                {studentName} 학생
+              </h1>
+              {highSchool && (
+                <div className="mt-1.5 text-[13px] font-medium text-white/70">{highSchool}</div>
+              )}
+            </div>
           </header>
 
           {/* 본문 (인쇄 시 좌우/하단 여백 — 배너만 풀블리드) */}
           <div className="preview-body">
-            {/* 헤더 아래 학생명 영역 */}
-            <div className="px-1 pt-7 pb-6 sm:pt-8">
-              <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#0284c7]">
-                코칭 {cycle}개월차 · Monthly
-              </div>
-              <h1 className="mt-1.5 text-3xl font-extrabold text-ink">
-                {studentName} <span className="text-ink/25 font-bold">·</span> 코칭 {cycle}개월차 월간 레포트
-              </h1>
-              <p className="mt-2 text-sm text-ink/55">
-                {highSchool ? `${highSchool} · ` : ""}{fmtDot(cycleStart)} ~ {fmtDot(cycleEnd)}
-              </p>
-            </div>
-
             {/* 통계 요약 — 파스텔 스탯 카드 */}
-            <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-3">
-              <PreviewStat label="월 평균 기상" value={stats.avgWake} />
-              <PreviewStat label="월 평균 순공시간" value={<StudyTimeValue minutes={stats.avgStudy} />} />
-              <PreviewStat label="종합 과제 완료율" value={`${stats.taskRate}%`} sub={`${stats.submitted}/${stats.total}일`} />
+            <div className="grid grid-cols-1 gap-4 pt-7 mb-8 sm:grid-cols-3 sm:pt-8">
+              <PreviewStat label="월 평균 기상 시간" value={stats.avgWake} />
+              <PreviewStat label="월 평균 순공 시간" value={<StudyTimeValue minutes={stats.avgStudy} />} />
+              <PreviewStat label="과제 완료율" value={`${stats.taskRate}%`} sub={`${stats.submitted}/${stats.total}일`} />
             </div>
 
-            {/* 28일 달력형 기상 인증 */}
+            {/* 주차별 과제 완료율 — 가로 그라데이션 진행바 */}
             <div className="mb-8">
-              <h2 className="text-base font-bold text-ink mb-3">28일 기상 인증 현황</h2>
-              <div className="preview-day-card border border-ink/10 rounded-2xl p-5">
-                <Calendar28 days={allDays} />
+              <h2 className="text-base font-bold text-ink mb-3">주차별 과제 완료율</h2>
+              <div className="preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6">
+                <WeekRateBars weekRates={weekRates} />
+              </div>
+            </div>
+
+            {/* 기상 시간 기록 — 요일 정렬 달력 */}
+            <div className="mb-8">
+              <h2 className="text-base font-bold text-ink mb-3">기상 시간 기록</h2>
+              <div className="preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6">
+                <WakeCalendar days={allDays} />
                 <Legend />
               </div>
             </div>
@@ -246,14 +254,6 @@ export function MonthlyReportView({
                     <Line type="monotone" dataKey="hours" stroke="#0ea5e9" strokeWidth={2.5} dot={{ r: 3, fill: "#0284c7" }} activeDot={{ r: 5, fill: "#38bdf8" }} />
                   </LineChart>
                 </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* 주차별 과제 완료율 — 가로 그라데이션 진행바 */}
-            <div className="mb-8">
-              <h2 className="text-base font-bold text-ink mb-3">주차별 과제 완료율</h2>
-              <div className="preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6">
-                <WeekRateBars weekRates={weekRates} />
               </div>
             </div>
 
@@ -379,39 +379,72 @@ function PreviewStat({
   );
 }
 
-function Calendar28({ days }: { days: DayData[] }) {
-  const weeks: DayData[][] = [];
-  for (let i = 0; i < 4; i++) weeks.push(days.slice(i * 7, (i + 1) * 7));
+// "2026-06-22" → 요일 인덱스(0=일 … 6=토). (y,m-1,d) 로컬 생성이라 타임존 영향 없음.
+function weekdaySunFirst(dateStr: string): number {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d).getDay();
+}
+// "2026-06-22" → "6/22"
+function mdLabel(dateStr: string): string {
+  const [, m, d] = dateStr.split("-").map(Number);
+  return `${m}/${d}`;
+}
+
+// 기상 시간 기록 — 실제 요일(일~토)에 맞춰 정렬된 달력. 각 칸에 날짜(M/D) + 기상 시각,
+// 미제출은 "미제출", 미입력은 날짜만 옅게 표시. (색상 의미는 기존과 동일)
+function WakeCalendar({ days }: { days: DayData[] }) {
+  if (!days.length) return null;
+  const lead = weekdaySunFirst(days[0].date); // 첫 날 앞의 빈 칸 수
+  const cells: (DayData | null)[] = [
+    ...Array.from({ length: lead }, () => null),
+    ...days,
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+  const rows: (DayData | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-7 gap-1.5 text-[10px] text-ink/50 text-center">
-        {["월", "화", "수", "목", "금", "토", "일"].map((w) => (
+      <div className="grid grid-cols-7 gap-2 text-[11px] font-semibold text-ink/40 text-center">
+        {["일", "월", "화", "수", "목", "금", "토"].map((w) => (
           <div key={w}>{w}</div>
         ))}
       </div>
-      {weeks.map((wk, i) => (
-        <div key={i} className="grid grid-cols-7 gap-1.5">
-          {wk.map((d) => {
-            const color = wakeCertColor(d);
-            return (
-              <div
-                key={d.date}
-                className="aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] font-semibold relative"
-                style={{ backgroundColor: color }}
-              >
-                <div className={color === STATUS_COLOR.empty ? "text-ink/40" : "text-white"}>
-                  {Number(d.date.slice(-2))}
-                </div>
-                {d.wake_up_time && (
-                  <div className={`text-[9px] mt-0.5 ${color === STATUS_COLOR.empty ? "text-ink/50" : "text-white/90"}`}>
-                    {d.wake_up_time.slice(0, 5)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+      {rows.map((row, ri) => (
+        <div key={ri} className="grid grid-cols-7 gap-2">
+          {row.map((d, ci) =>
+            d ? (
+              <WakeCell key={d.date} day={d} />
+            ) : (
+              <div key={`e-${ri}-${ci}`} className="min-h-[58px] rounded-xl bg-slate-50 sm:min-h-[66px]" />
+            ),
+          )}
         </div>
       ))}
+    </div>
+  );
+}
+
+function WakeCell({ day }: { day: DayData }) {
+  const color = wakeCertColor(day);
+  const isEmpty = color === STATUS_COLOR.empty;
+  const isMissed = color === STATUS_COLOR.missed;
+  const time = day.wake_up_time ? day.wake_up_time.slice(0, 5) : null;
+  return (
+    <div
+      className="min-h-[58px] rounded-xl flex flex-col items-center justify-center gap-0.5 px-1 py-2 sm:min-h-[66px]"
+      style={{ backgroundColor: color }}
+    >
+      <div className={`text-[11px] font-semibold ${isEmpty ? "text-ink/35" : "text-white/90"}`}>
+        {mdLabel(day.date)}
+      </div>
+      {time ? (
+        <div className={`text-[13px] font-bold tabular-nums ${isEmpty ? "text-ink/45" : "text-white"}`}>
+          {time}
+        </div>
+      ) : isMissed ? (
+        <div className="text-[11px] font-bold text-white">미제출</div>
+      ) : null}
     </div>
   );
 }
