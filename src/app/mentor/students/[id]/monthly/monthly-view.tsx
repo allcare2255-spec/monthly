@@ -197,15 +197,16 @@ export function MonthlyReportView({
 
           {/* 본문 (인쇄 시 좌우/하단 여백 — 배너만 풀블리드) */}
           <div className="preview-body">
+            {/* ===== 1페이지: 통계 · 주차별 완료율 · 기상 시간 기록 ===== */}
             {/* 통계 요약 — 파스텔 스탯 카드 */}
-            <div className="grid grid-cols-1 gap-4 pt-7 mb-8 sm:grid-cols-3 sm:pt-8">
+            <div className="grid grid-cols-1 gap-4 pt-7 mb-8 sm:grid-cols-3 sm:pt-8 print-avoid-break">
               <PreviewStat label="월 평균 기상 시간" value={stats.avgWake} />
               <PreviewStat label="월 평균 순공 시간" value={<StudyTimeValue minutes={stats.avgStudy} />} />
               <PreviewStat label="과제 완료율" value={`${stats.taskRate}%`} />
             </div>
 
             {/* 주차별 과제 완료율 — 가로 그라데이션 진행바 */}
-            <div className="mb-8">
+            <div className="mb-8 print-avoid-break">
               <h2 className="text-base font-bold text-ink mb-3">주차별 과제 완료율</h2>
               <div className="preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6">
                 <WeekRateBars weekRates={weekRates} />
@@ -213,7 +214,7 @@ export function MonthlyReportView({
             </div>
 
             {/* 기상 시간 기록 — 요일 정렬 달력 */}
-            <div className="mb-8">
+            <div className="mb-8 print-avoid-break">
               <h2 className="text-base font-bold text-ink mb-3">기상 시간 기록</h2>
               <div className="preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6">
                 <WakeCalendar days={allDays} />
@@ -221,15 +222,16 @@ export function MonthlyReportView({
               </div>
             </div>
 
-            {/* 일별 공부 시간 */}
-            <div className="mb-8">
+            {/* ===== 2페이지: 일별 공부 시간 · 멘토 총평 · 다음 달 코칭 방향 ===== */}
+            {/* 일별 공부 시간 (2페이지 시작) */}
+            <div className="mb-8 print-page-break print-avoid-break">
               <h2 className="text-base font-bold text-ink mb-3">일별 공부 시간</h2>
               <div className="preview-day-card border border-ink/10 rounded-2xl p-4 sm:p-5">
                 <StudyTrendChart data={studyTrend} avgMin={stats.avgStudy} />
               </div>
             </div>
 
-            {/* 멘토 총평 */}
+            {/* 멘토 총평 · 다음 달 코칭 방향 */}
             <div className="mb-2">
               <h2 className="text-base font-bold text-ink mb-3">멘토 총평</h2>
               {monthly ? (
@@ -553,7 +555,7 @@ function WakeCell({ day }: { day: DayData }) {
 
   return (
     <div
-      className="min-h-[68px] rounded-2xl flex flex-col items-center justify-center gap-1 px-1 py-2 sm:min-h-[82px]"
+      className="wake-cell min-h-[68px] rounded-2xl flex flex-col items-center justify-center gap-1 px-1 py-2 sm:min-h-[82px]"
       style={{ backgroundColor: bg }}
     >
       <div className="text-[11px] font-semibold text-white/90">{mdLabel(day.date)}</div>
@@ -590,7 +592,7 @@ function CommentField({
   const [text, setText] = useState(initial);
   useEffect(() => setText(initial), [initial]);
   return (
-    <div className="preview-day-card border border-ink/10 rounded-2xl p-5">
+    <div className="preview-day-card print-avoid-break border border-ink/10 rounded-2xl p-5">
       <label className="text-sm font-bold text-ink">{label}</label>
       <textarea
         rows={4}

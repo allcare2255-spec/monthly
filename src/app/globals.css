@@ -140,6 +140,11 @@ html, body {
   @page :first { margin: 0; }
   .print-page-break { page-break-before: always; }
 
+  /* [월간 레포트] 지정 섹션(제목+카드)을 페이지 경계에서 통째로 유지 → 내용 잘림 방지 */
+  .print-avoid-break { break-inside: avoid; page-break-inside: avoid; }
+  /* [월간 레포트] 기상 시간 기록 타일: 인쇄 시 높이 축소해 1페이지 안에 들어가게 */
+  .wake-cell { min-height: 13mm !important; }
+
   /* [주간 미리보기] 문서 패딩 제거 → 배너가 페이지 가장자리까지 꽉 차게 */
   [data-preview-root] .preview-doc {
     max-width: 100% !important;
