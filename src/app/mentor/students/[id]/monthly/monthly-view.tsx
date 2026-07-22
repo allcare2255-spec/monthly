@@ -174,21 +174,33 @@ export function MonthlyReportView({
 
       <div data-preview-root>
         <div className="preview-doc mx-auto max-w-[860px]">
-          {/* 상단 브랜드 헤더 배너 (로고·브랜드 + 기간 / 학생명은 배너 안에) */}
+          {/* 상단 브랜드 헤더 배너 (상단: 로고 / 하단: 학생명 좌 · 기간 우) */}
           <header className="preview-banner overflow-hidden rounded-3xl bg-gradient-to-r from-[#38bdf8] via-[#0ea5e9] to-[#0284c7] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              {/* 좌측: 심볼 로고 + 브랜드명 + 부제목 */}
-              <div className="flex items-center gap-3.5">
-                <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white ring-1 ring-white/40">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/logo.jpg" alt="SKY MATE 로고" className="h-9 w-9 object-contain" />
-                </div>
-                <div>
-                  <div className="text-xl font-extrabold tracking-tight">SKY MATE</div>
-                  <div className="mt-0.5 text-[13px] font-medium text-white/70">월간 학습코칭 레포트</div>
-                </div>
+            {/* 상단: 심볼 로고 + 브랜드명 + 부제목 */}
+            <div className="flex items-center gap-3.5">
+              <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white ring-1 ring-white/40">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.jpg" alt="SKY MATE 로고" className="h-9 w-9 object-contain" />
               </div>
-              {/* 우측: 기간(년/월) + 사이클 기간 + 담당 멘토 */}
+              <div>
+                <div className="text-xl font-extrabold tracking-tight">SKY MATE</div>
+                <div className="mt-0.5 text-[13px] font-medium text-white/70">월간 학습코칭 레포트</div>
+              </div>
+            </div>
+
+            {/* 하단: 학생명(좌) + 날짜·기간·담당 멘토(우) */}
+            <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <div className="text-[12px] font-semibold tracking-[0.06em] text-white/80">
+                  코칭 {cycle}개월차
+                </div>
+                <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-[34px]">
+                  {studentName} 학생
+                </h1>
+                {highSchool && (
+                  <div className="mt-1.5 text-[13px] font-medium text-white/70">{highSchool}</div>
+                )}
+              </div>
               <div className="text-right">
                 <div className="text-2xl font-extrabold sm:text-[26px]">{periodTitle}</div>
                 <div className="mt-1.5 text-[12px] leading-relaxed text-white/70">
@@ -196,19 +208,6 @@ export function MonthlyReportView({
                   <div>담당 멘토: {mentorName || "-"}</div>
                 </div>
               </div>
-            </div>
-
-            {/* 학생명 (배너 내부 좌측) */}
-            <div className="mt-6 sm:mt-8">
-              <div className="text-[12px] font-semibold tracking-[0.06em] text-white/80">
-                코칭 {cycle}개월차
-              </div>
-              <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-[34px]">
-                {studentName} 학생
-              </h1>
-              {highSchool && (
-                <div className="mt-1.5 text-[13px] font-medium text-white/70">{highSchool}</div>
-              )}
             </div>
           </header>
 
@@ -218,7 +217,7 @@ export function MonthlyReportView({
             <div className="grid grid-cols-1 gap-4 pt-7 mb-8 sm:grid-cols-3 sm:pt-8">
               <PreviewStat label="월 평균 기상 시간" value={stats.avgWake} />
               <PreviewStat label="월 평균 순공 시간" value={<StudyTimeValue minutes={stats.avgStudy} />} />
-              <PreviewStat label="과제 완료율" value={`${stats.taskRate}%`} sub={`${stats.submitted}/${stats.total}일`} />
+              <PreviewStat label="과제 완료율" value={`${stats.taskRate}%`} />
             </div>
 
             {/* 주차별 과제 완료율 — 가로 그라데이션 진행바 */}
@@ -342,9 +341,9 @@ function StudyTimeValue({ minutes }: { minutes: number }) {
   return (
     <span className="whitespace-nowrap">
       {h}
-      <span className="text-base font-bold">시간 </span>
+      <span className="text-base font-bold">H </span>
       {m}
-      <span className="text-base font-bold">분</span>
+      <span className="text-base font-bold">M</span>
     </span>
   );
 }
