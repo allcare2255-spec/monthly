@@ -270,9 +270,9 @@ function hasDataForDay(d: DayData) {
 
 // 기상 시각 → 타일 색상. 이른 기상일수록 진한 파랑, 늦을수록 연한 하늘로 연속 보간.
 // (06:00 이전 = 가장 진함, 09:00 이후 = 가장 연함)
-const WAKE_FAST = "#2563eb"; // 빠른 기상 (진한 파랑, ~06:00)
+const WAKE_FAST = "#0284c7"; // 빠른 기상 (배너 톤의 진한 하늘색, ~06:00)
 const WAKE_LATE = "#a9d4f5"; // 늦은 기상 (연한 하늘, ~09:00+)
-const WAKE_MISSED = "#ef4444"; // 미제출 (빨강)
+const WAKE_MISSED = "#f47272"; // 미제출 (부드러운 빨강)
 const WAKE_PAUSED = "#94A3B8"; // 일시 정지 (중립 slate)
 
 function lerpHexColor(a: string, b: string, t: number): string {
@@ -322,9 +322,9 @@ function WeekRateBars({
 // 일별 공부 시간 — 평균 대비 분류.
 type StudyCat = "above" | "below" | "missed";
 const STUDY_CAT_COLOR: Record<StudyCat, string> = {
-  above: "#2563eb", // 평균 이상 — 진한 파란색
+  above: "#0284c7", // 평균 이상 — 배너 톤의 진한 하늘색
   below: "#7dd3fc", // 평균 이하 — 연한 하늘색
-  missed: "#ef4444", // 미제출 — 빨간색
+  missed: "#f47272", // 미제출 — 부드러운 빨강
 };
 function studyCategory(d: DayData, avgMin: number): StudyCat {
   if (d.status === "paused") return "below";
