@@ -7,13 +7,6 @@ import { addDays, hmToMinutes } from "@/lib/dates";
 // 주간 레포트(완성 미리보기)와 통일한 섹션/지표 라벨 서식
 const SECTION_LABEL = "text-[12px] font-bold uppercase tracking-[0.12em] text-ink/55";
 
-const STATUS_COLOR: Record<string, string> = {
-  submitted: "#0ea5e9",   // 하늘색 (정상 인증)
-  missed: "#ec4899",      // 진한 분홍 (미제출)
-  paused: "#94A3B8",      // slate (일시 정지 — 중립)
-  empty: "#E5E7EB",       // gray-200 (미입력 — 중립)
-};
-
 // 표시용 날짜 포맷 "2026-06-01" → "2026.06.01"
 const fmtDot = (d: string) => (d || "").replace(/-/g, ".");
 
@@ -224,7 +217,7 @@ export function MonthlyReportView({
               <h2 className="text-base font-bold text-ink mb-3">기상 시간 기록</h2>
               <div className="preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6">
                 <WakeCalendar days={allDays} />
-                <Legend />
+                <WakeLegend />
               </div>
             </div>
 
@@ -273,15 +266,26 @@ function hasDataForDay(d: DayData) {
   return d.wake_up_time != null || d.study_minutes != null || d.status !== "missed";
 }
 
-// "기상 인증 현황" 달력 셀 색상.
-// status 는 submitted/incomplete/missed/paused/unset 5종이지만 STATUS_COLOR 는
-// 4종만 매핑돼 있어, incomplete/unset 이면 undefined → 배경색 없음(빈칸)이 되던 버그를 방지.
-// 기상 시간이 있으면(=기상 인증 제출) 상태와 무관하게 '정상 인증'(파랑)으로 표시한다.
-function wakeCertColor(d: DayData): string {
-  if (d.status === "paused") return STATUS_COLOR.paused; // 일시 정지
-  if (d.wake_up_time) return STATUS_COLOR.submitted;     // 기상 인증 제출 → 정상 인증
-  if (!hasDataForDay(d) || d.status === "unset") return STATUS_COLOR.empty; // 미입력
-  return STATUS_COLOR.missed;                            // 미제출
+// 기상 시각 → 타일 색상. 이른 기상일수록 진한 파랑, 늦을수록 연한 하늘로 연속 보간.
+// (06:00 이전 = 가장 진함, 09:00 이후 = 가장 연함)
+const WAKE_FAST = "#2563eb"; // 빠른 기상 (진한 파랑, ~06:00)
+const WAKE_LATE = "#a9d4f5"; // 늦은 기상 (연한 하늘, ~09:00+)
+const WAKE_MISSED = "#ef4444"; // 미제출 (빨강)
+const WAKE_PAUSED = "#94A3B8"; // 일시 정지 (중립 slate)
+
+function lerpHexColor(a: string, b: string, t: number): string {
+  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
+  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
+  const c = pa.map((v, i) => Math.round(v + (pb[i] - v) * t));
+  return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+}
+
+// 기상 시각(분) → 파랑 그라데이션 색상
+function wakeTimeColor(min: number): string {
+  const EARLY = 6 * 60; // 06:00
+  const LATE = 9 * 60; // 09:00
+  const t = Math.max(0, Math.min(1, (min - EARLY) / (LATE - EARLY)));
+  return lerpHexColor(WAKE_FAST, WAKE_LATE, t);
 }
 
 // 주차별 과제 완료율 — 가로 진행바(트랙 위 그라데이션 채움 + 우측 퍼센트).
@@ -542,45 +546,34 @@ function WakeCalendar({ days }: { days: DayData[] }) {
 }
 
 function WakeCell({ day }: { day: DayData }) {
-  const color = wakeCertColor(day);
-  const isEmpty = color === STATUS_COLOR.empty;
-  const isMissed = color === STATUS_COLOR.missed;
+  const wakeMin = hmToMinutes(day.wake_up_time);
+  const paused = day.status === "paused";
+  const bg = paused ? WAKE_PAUSED : wakeMin != null ? wakeTimeColor(wakeMin) : WAKE_MISSED;
   const time = day.wake_up_time ? day.wake_up_time.slice(0, 5) : null;
+
   return (
     <div
-      className="min-h-[58px] rounded-xl flex flex-col items-center justify-center gap-0.5 px-1 py-2 sm:min-h-[66px]"
-      style={{ backgroundColor: color }}
+      className="min-h-[68px] rounded-2xl flex flex-col items-center justify-center gap-1 px-1 py-2 sm:min-h-[82px]"
+      style={{ backgroundColor: bg }}
     >
-      <div className={`text-[11px] font-semibold ${isEmpty ? "text-ink/35" : "text-white/90"}`}>
-        {mdLabel(day.date)}
-      </div>
+      <div className="text-[11px] font-semibold text-white/90">{mdLabel(day.date)}</div>
       {time ? (
-        <div className={`text-[13px] font-bold tabular-nums ${isEmpty ? "text-ink/45" : "text-white"}`}>
-          {time}
-        </div>
-      ) : isMissed ? (
+        <div className="text-[13px] font-bold tabular-nums text-white">{time}</div>
+      ) : paused ? (
+        <div className="text-[11px] font-bold text-white">정지</div>
+      ) : (
         <div className="text-[11px] font-bold text-white">미제출</div>
-      ) : null}
+      )}
     </div>
   );
 }
 
-function Legend() {
+function WakeLegend() {
   return (
-    <div className="flex gap-4 mt-4 text-xs text-ink/60 flex-wrap">
-      <LegendDot color={STATUS_COLOR.submitted} label="정상 인증" />
-      <LegendDot color={STATUS_COLOR.missed} label="미제출" />
-      <LegendDot color={STATUS_COLOR.paused} label="일시 정지" />
-      <LegendDot color={STATUS_COLOR.empty} label="미입력" />
-    </div>
-  );
-}
-
-function LegendDot({ color, label }: { color: string; label: string }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className="w-3 h-3 rounded" style={{ backgroundColor: color }} />
-      <span>{label}</span>
+    <div className="mt-3 flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-[11px] text-ink/55">
+      <LegendCatDot color={WAKE_FAST} label="빠른 기상" />
+      <LegendCatDot color={WAKE_LATE} label="늦은 기상" />
+      <LegendCatDot color={WAKE_MISSED} label="미제출" />
     </div>
   );
 }
