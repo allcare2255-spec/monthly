@@ -186,7 +186,7 @@ export function MonthlyReportView({
           {/* 본문 (인쇄 시 좌우/하단 여백 — 배너만 풀블리드) */}
           <div className="preview-body">
             {/* 배너 아래 제목 영역 (검정) — 코칭 N개월차 · 이름 학생 N개월차 월간 레포트 */}
-            <div className="px-1 pt-7 pb-6 sm:pt-8">
+            <div className="monthly-lead px-1 pt-7 pb-6 sm:pt-8">
               <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#0284c7]">
                 코칭 {cycle}개월차 · Monthly
               </div>
