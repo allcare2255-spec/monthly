@@ -2,10 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -159,8 +156,6 @@ export function MonthlyReportView({
     [allDays],
   );
 
-  const pausedDays = allDays.filter((d) => d.status === "paused").length;
-
   // 배너 우측 기간 타이틀 (년/월)
   const [periodYear, periodMonth] = (cycleStart || "").split("-");
   const periodTitle = periodYear && periodMonth ? `${periodYear}년 ${Number(periodMonth)}월` : "";
@@ -220,11 +215,10 @@ export function MonthlyReportView({
             </div>
 
             {/* 통계 요약 — 파스텔 스탯 카드 */}
-            <div className="grid grid-cols-2 gap-4 mb-8 sm:grid-cols-4">
-              <PreviewStat label="종합 과제 완료율" value={`${stats.taskRate}%`} sub={`${stats.submitted}/${stats.total}일`} />
-              <PreviewStat label="월 평균 순공시간" value={<StudyTimeValue minutes={stats.avgStudy} />} />
+            <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-3">
               <PreviewStat label="월 평균 기상" value={stats.avgWake} />
-              <PreviewStat label="일시 정지" value={`${pausedDays}일`} tone="muted" />
+              <PreviewStat label="월 평균 순공시간" value={<StudyTimeValue minutes={stats.avgStudy} />} />
+              <PreviewStat label="종합 과제 완료율" value={`${stats.taskRate}%`} sub={`${stats.submitted}/${stats.total}일`} />
             </div>
 
             {/* 28일 달력형 기상 인증 */}
@@ -255,24 +249,11 @@ export function MonthlyReportView({
               </div>
             </div>
 
-            {/* 주차별 과제 완료율 */}
+            {/* 주차별 과제 완료율 — 가로 그라데이션 진행바 */}
             <div className="mb-8">
               <h2 className="text-base font-bold text-ink mb-3">주차별 과제 완료율</h2>
-              <div className="preview-day-card border border-ink/10 rounded-2xl p-4">
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={weekRates} margin={{ top: 8, right: 12, bottom: 0, left: -10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                    <XAxis dataKey="week" tick={{ fontSize: 11 }} stroke="#64748B" />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} stroke="#64748B" />
-                    <Tooltip formatter={(v) => [`${v}%`, "완료율"]} contentStyle={{ fontSize: 12 }} />
-                    <Bar dataKey="rate" radius={[8, 8, 0, 0]}>
-                      {weekRates.map((w, i) => {
-                        const colors = ["#0ea5e9", "#0284c7", "#38bdf8", "#0369a1"];
-                        return <Cell key={i} fill={w.hasData ? colors[i] : "#E2E8F0"} />;
-                      })}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6">
+                <WeekRateBars weekRates={weekRates} />
               </div>
             </div>
 
@@ -322,6 +303,35 @@ function wakeCertColor(d: DayData): string {
   if (d.wake_up_time) return STATUS_COLOR.submitted;     // 기상 인증 제출 → 정상 인증
   if (!hasDataForDay(d) || d.status === "unset") return STATUS_COLOR.empty; // 미입력
   return STATUS_COLOR.missed;                            // 미제출
+}
+
+// 주차별 과제 완료율 — 가로 진행바(트랙 위 그라데이션 채움 + 우측 퍼센트).
+// recharts 막대차트 대신 순수 CSS 진행바로 그려 인쇄(PDF) 잘림/사라짐 없이 안정적으로 표시.
+function WeekRateBars({
+  weekRates,
+}: {
+  weekRates: { week: string; rate: number; hasData: boolean }[];
+}) {
+  return (
+    <div className="space-y-3.5">
+      {weekRates.map((w) => (
+        <div key={w.week} className="flex items-center gap-3">
+          <span className="w-11 shrink-0 text-sm font-semibold text-ink/70">{w.week}</span>
+          <div className="relative h-3.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+            {w.rate > 0 && (
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#5ac8fa] via-[#4aa8f5] to-[#6366f1]"
+                style={{ width: `${w.rate}%` }}
+              />
+            )}
+          </div>
+          <span className="w-11 shrink-0 text-right text-sm font-bold text-ink/70 tabular-nums">
+            {w.hasData ? `${w.rate}%` : "-"}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // 월 평균 순공시간 값: 숫자는 크게, 단위(시간/분)는 작게, 한 줄로 표시.
