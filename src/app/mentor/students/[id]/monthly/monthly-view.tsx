@@ -23,6 +23,13 @@ const CARD_BG: CSSProperties = {
   backgroundImage: "linear-gradient(135deg, #F3FAFF 0%, #FBFDFF 40%, #FFFFFF 100%)",
 };
 
+// 일별 공부 시간 카드 — 꺾은선(#6366f1) 톤에 맞춘 인디고 계열 그라데이션.
+// 위 CARD_BG 와 같은 밝기라 나란히 놓아도 어색하지 않다.
+const CARD_BG_INDIGO: CSSProperties = {
+  backgroundColor: "#FFFFFF",
+  backgroundImage: "linear-gradient(135deg, #F4F5FE 0%, #FBFBFF 40%, #FFFFFF 100%)",
+};
+
 export function MonthlyReportView({
   studentId,
   studentName,
@@ -254,7 +261,7 @@ export function MonthlyReportView({
             {/* 일별 공부 시간 (2페이지 시작) */}
             <div className="mb-8 print-page-break print-avoid-break">
               <h2 className="text-base font-bold text-ink mb-3">일별 공부 시간</h2>
-              <div className="preview-day-card border border-ink/10 rounded-2xl p-4 sm:p-5">
+              <div className="preview-day-card border border-ink/10 rounded-2xl p-4 sm:p-5" style={CARD_BG_INDIGO}>
                 <StudyTrendChart data={studyTrend} avgMin={stats.avgStudy} />
               </div>
             </div>
