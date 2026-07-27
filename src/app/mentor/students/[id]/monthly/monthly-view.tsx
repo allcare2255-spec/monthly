@@ -15,7 +15,7 @@ const fmtDot = (d: string) => (d || "").replace(/-/g, ".");
 //  단색 폴백 + 부드러운 linear-gradient 는 화면·PDF 모두 동일하게 안전하게 렌더된다.)
 const CARD_BG: CSSProperties = {
   backgroundColor: "#FFFFFF",
-  backgroundImage: "linear-gradient(135deg, #E8F4FE 0%, #F5FAFF 45%, #FFFFFF 100%)",
+  backgroundImage: "linear-gradient(135deg, #F3FAFF 0%, #FBFDFF 40%, #FFFFFF 100%)",
 };
 
 export function MonthlyReportView({
