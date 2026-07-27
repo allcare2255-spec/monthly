@@ -682,7 +682,8 @@ function CommentField({
     >
       <div className="flex items-center gap-2">
         <span className="text-[15px] leading-none">{icon}</span>
-        <span className="text-sm font-bold" style={{ color: tone.title }}>
+        {/* 크기는 SectionTitle(주차별/기상/일별 공부 시간)과 동일하게 15px 로 맞춘다 */}
+        <span className="text-[15px] font-bold" style={{ color: tone.title }}>
           {label}
         </span>
       </div>
