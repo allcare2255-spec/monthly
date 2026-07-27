@@ -242,7 +242,7 @@ export function MonthlyReportView({
 
             {/* 주차별 과제 완료율 — 가로 그라데이션 진행바 (제목은 카드 안에) */}
             <div className="mb-8 print-avoid-break">
-              <div className="week-rate-card preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6" style={CARD_BG}>
+              <div className="week-rate-card preview-day-card border border-ink/[0.05] rounded-2xl p-5 sm:p-6" style={CARD_BG}>
                 <SectionTitle>주차별 과제 완료율</SectionTitle>
                 <WeekRateBars weekRates={weekRates} />
               </div>
