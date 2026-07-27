@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 로컬 인쇄 레이아웃 검증 하네스 (배포/커밋 제외)
+/src/app/dev-print-check/

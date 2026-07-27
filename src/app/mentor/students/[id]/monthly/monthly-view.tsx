@@ -13,6 +13,11 @@ const fmtDot = (d: string) => (d || "").replace(/-/g, ".");
 // 카드 배경 그라데이션 — blur 오버레이 대신 배경 자체에 얹는다.
 // (blur 는 일부 인쇄 환경에서 검정 박스로 깨져 PDF 에서 숨겨왔고, 그래서 카드가 흰색으로 보였음.
 //  단색 폴백 + 부드러운 linear-gradient 는 화면·PDF 모두 동일하게 안전하게 렌더된다.)
+// 기상 시간 기록 타일 — 칸 색(파랑/빨강) 위에 얹는 은은한 광택 그라데이션.
+// 색상별로 따로 만들지 않고 흰색→투명→살짝 어둡게 로 덮어, 어떤 배경색이든 같은 결로 보이게 한다.
+const WAKE_CELL_SHEEN =
+  "linear-gradient(150deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.06) 45%, rgba(0,0,0,0.05) 100%)";
+
 const CARD_BG: CSSProperties = {
   backgroundColor: "#FFFFFF",
   backgroundImage: "linear-gradient(135deg, #F3FAFF 0%, #FBFDFF 40%, #FFFFFF 100%)",
@@ -565,7 +570,7 @@ function WakeCalendar({ days }: { days: DayData[] }) {
             d ? (
               <WakeCell key={d.date} day={d} />
             ) : (
-              <div key={`e-${ri}-${ci}`} className="min-h-[58px] rounded-xl bg-slate-50 sm:min-h-[66px]" />
+              <div key={`e-${ri}-${ci}`} className="wake-cell-empty min-h-[58px] rounded-xl bg-slate-50 sm:min-h-[66px]" />
             ),
           )}
         </div>
@@ -583,7 +588,7 @@ function WakeCell({ day }: { day: DayData }) {
   return (
     <div
       className="wake-cell min-h-[68px] rounded-2xl flex flex-col items-center justify-center gap-1 px-1 py-2 sm:min-h-[82px]"
-      style={{ backgroundColor: bg }}
+      style={{ backgroundColor: bg, backgroundImage: WAKE_CELL_SHEEN }}
     >
       <div className="text-[11px] font-semibold text-white/90">{mdLabel(day.date)}</div>
       {time ? (
@@ -599,7 +604,7 @@ function WakeCell({ day }: { day: DayData }) {
 
 function WakeLegend() {
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-[11px] text-ink/55">
+    <div className="wake-legend mt-3 flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-[11px] text-ink/55">
       <LegendCatDot color={WAKE_FAST} label="빠른 기상" />
       <LegendCatDot color={WAKE_LATE} label="늦은 기상" />
       <LegendCatDot color={WAKE_MISSED} label="미제출" />

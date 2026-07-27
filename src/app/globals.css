@@ -142,12 +142,17 @@ html, body {
 
   /* [월간 레포트] 지정 섹션(제목+카드)을 페이지 경계에서 통째로 유지 → 내용 잘림 방지 */
   .print-avoid-break { break-inside: avoid; page-break-inside: avoid; }
-  /* [월간 레포트] 1페이지(배너~기상 기록)가 모두 들어가도록 인쇄 시 밀도 상향 */
-  [data-preview-root] .preview-body > div { margin-bottom: 12px !important; }
-  [data-preview-root] .preview-banner { padding-top: 20px !important; padding-bottom: 20px !important; }
-  .monthly-lead { padding-top: 16px !important; padding-bottom: 10px !important; }
-  /* [월간 레포트] 기상 시간 기록 타일: 인쇄 시 높이 축소 */
-  .wake-cell { min-height: 12mm !important; }
+  /* [월간 레포트] 1페이지(배너~기상 기록)가 모두 들어가도록 인쇄 시 밀도 상향.
+     배너~기상 기록 사이 여백을 최대한 줄여, 그만큼 기상 기록 타일 높이에 양보한다. */
+  [data-preview-root] .preview-body > div { margin-bottom: 8px !important; }
+  [data-preview-root] .preview-body h2 { margin-bottom: 6px !important; }
+  [data-preview-root] .preview-banner { padding-top: 14px !important; padding-bottom: 14px !important; }
+  .monthly-lead { padding-top: 10px !important; padding-bottom: 4px !important; }
+  /* [월간 레포트] 기상 시간 기록 타일: 위에서 아낀 여백만큼 높이를 키워 찌그러짐 방지.
+     빈 칸도 같은 높이로 맞춰야 요일 줄마다 높이가 들쭉날쭉하지 않다. */
+  .wake-cell,
+  .wake-cell-empty { min-height: 18.5mm !important; }
+  .wake-legend { margin-top: 6px !important; }
   /* [PDF 안정화] blur 장식 그라데이션은 일부 인쇄 환경(GPU/드라이버)에서 검정 박스로
      렌더되는 경우가 있어 인쇄 시 숨긴다 (색은 카드 본색·숫자 색으로 충분히 표현됨) */
   .deco-blur { display: none !important; }
