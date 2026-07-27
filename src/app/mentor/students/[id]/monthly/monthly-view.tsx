@@ -654,8 +654,9 @@ const COMMENT_TONE = {
 // - 빈 줄       → 문단(블록) 구분
 // - "[국어]"    → 소제목 (대괄호로 감싼 줄, 점 없이 굵게 — 대괄호는 그대로 노출)
 // - "국어 :"    → 소제목 (콜론으로 끝나는 줄, 점 없이 굵게)
-// - 그 외       → 일반 점(•) 항목 ("*", "-" 등 머리기호는 중복이라 벗겨낸다)
-type CommentLine = { kind: "heading" | "item"; text: string };
+// - "* 내용"    → 점(•) 대신 "*" 를 마커로 표시 (글자 시작 위치는 점 항목과 동일)
+// - 그 외       → 일반 점(•) 항목 ("-" 등 머리기호는 중복이라 벗겨낸다)
+type CommentLine = { kind: "heading" | "plain" | "item"; text: string };
 
 function parseBlocks(raw: string): CommentLine[][] {
   return raw
@@ -676,7 +677,7 @@ function parseBlocks(raw: string): CommentLine[][] {
           if (!starred && /[:：]\s*$/.test(body)) {
             return { kind: "heading", text: body.replace(/\s*[:：]\s*$/, "") };
           }
-          return { kind: "item", text: body };
+          return { kind: starred ? "plain" : "item", text: body };
         }),
     )
     .filter((block) => block.length > 0);
@@ -760,6 +761,17 @@ function CommentField({
                       style={{ color: tone.title }}
                     >
                       {line.text}
+                    </div>
+                  ) : line.kind === "plain" ? (
+                    // 점(•) 자리에 "*" 를 그대로 노출. 마커 폭을 점과 같게 잡아 글자 시작 위치를 맞춘다.
+                    <div key={li} className="flex gap-2 pl-0.5">
+                      <span
+                        className="w-[5px] shrink-0 text-center leading-[1.7]"
+                        style={{ color: tone.dot }}
+                      >
+                        *
+                      </span>
+                      <span>{line.text}</span>
                     </div>
                   ) : (
                     <div key={li} className="flex gap-2 pl-0.5">
