@@ -654,9 +654,8 @@ const COMMENT_TONE = {
 // - 빈 줄       → 문단(블록) 구분
 // - "[국어]"    → 소제목 (대괄호로 감싼 줄, 점 없이 굵게 — 대괄호는 그대로 노출)
 // - "국어 :"    → 소제목 (콜론으로 끝나는 줄, 점 없이 굵게)
-// - "* 내용"    → 강조 항목 (점을 진하게 + 굵은 글씨)
-// - 그 외       → 일반 점(•) 항목
-type CommentLine = { kind: "heading" | "strong" | "item"; text: string };
+// - 그 외       → 일반 점(•) 항목 ("*", "-" 등 머리기호는 중복이라 벗겨낸다)
+type CommentLine = { kind: "heading" | "item"; text: string };
 
 function parseBlocks(raw: string): CommentLine[][] {
   return raw
@@ -677,7 +676,7 @@ function parseBlocks(raw: string): CommentLine[][] {
           if (!starred && /[:：]\s*$/.test(body)) {
             return { kind: "heading", text: body.replace(/\s*[:：]\s*$/, "") };
           }
-          return { kind: starred ? "strong" : "item", text: body };
+          return { kind: "item", text: body };
         }),
     )
     .filter((block) => block.length > 0);
@@ -742,7 +741,7 @@ function CommentField({
         className="mt-3 w-full rounded-xl border border-ink/10 bg-white/80 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm leading-relaxed print:hidden"
         placeholder={
           variant === "bullets"
-            ? "한 줄에 한 항목씩 작성하세요.\n빈 줄을 넣으면 문단이 나뉘고, '국어 :' 처럼 콜론으로 끝내면 소제목이 됩니다.\n줄 앞에 * 를 붙이면 강조 항목으로 표시됩니다."
+            ? "한 줄에 한 항목씩 작성하세요.\n빈 줄을 넣으면 문단이 나뉘고, '국어 :' 또는 '[국어]' 처럼 쓰면 소제목이 됩니다."
             : "자유롭게 작성하세요. 빈 줄로 문단을 나눌 수 있습니다."
         }
       />
@@ -765,16 +764,10 @@ function CommentField({
                   ) : (
                     <div key={li} className="flex gap-2 pl-0.5">
                       <span
-                        className={`mt-[9px] shrink-0 rounded-full ${
-                          line.kind === "strong" ? "h-[6px] w-[6px]" : "h-[5px] w-[5px]"
-                        }`}
-                        style={{
-                          backgroundColor: line.kind === "strong" ? tone.title : tone.dot,
-                        }}
+                        className="mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full"
+                        style={{ backgroundColor: tone.dot }}
                       />
-                      <span className={line.kind === "strong" ? "font-bold" : undefined}>
-                        {line.text}
-                      </span>
+                      <span>{line.text}</span>
                     </div>
                   ),
                 )}
