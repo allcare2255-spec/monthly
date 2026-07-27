@@ -266,18 +266,21 @@ export function MonthlyReportView({
               </div>
             </div>
 
-            {/* 멘토 총평 · 다음 달 코칭 방향 */}
+            {/* 멘토 총평 · 다음 달 코칭 방향 — 각 카드가 제목을 가지므로 바깥 h2 는 두지 않는다 */}
             <div className="mb-2">
-              <h2 className="text-base font-bold text-ink mb-3">멘토 총평</h2>
               {monthly ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <CommentField
                     label="월간 멘토 총평"
+                    icon="📝"
+                    variant="summary"
                     value={monthly.month_summary || ""}
                     onSave={(v) => patchMonthly({ month_summary: v })}
                   />
                   <CommentField
                     label="다음 달 코칭 방향"
+                    icon="🎯"
+                    variant="bullets"
                     value={monthly.next_month_direction || ""}
                     onSave={(v) => patchMonthly({ next_month_direction: v })}
                   />
@@ -619,29 +622,102 @@ function WakeLegend() {
   );
 }
 
+// 멘토 총평 / 다음 달 코칭 방향 카드.
+// - summary: 빈 줄로 나뉜 문단 그대로 표시
+// - bullets: 줄 단위로 점(•) 목록 표시 ("-", "·" 등 머리기호는 중복이라 벗겨낸다)
+const COMMENT_TONE = {
+  summary: {
+    bg: "#EFF1FD",
+    bgImage: "linear-gradient(135deg, #EDEFFD 0%, #F4F5FE 55%, #F8F9FF 100%)",
+    border: "#DDE1FA",
+    title: "#4F46E5",
+    dot: "#6366F1",
+  },
+  bullets: {
+    bg: "#EAF3FE",
+    bgImage: "linear-gradient(135deg, #E7F1FE 0%, #F1F7FF 55%, #F7FBFF 100%)",
+    border: "#D5E6FA",
+    title: "#1D6FD0",
+    dot: "#3B8FE0",
+  },
+} as const;
+
 function CommentField({
   label,
+  icon,
+  variant,
   value: initial,
   onSave,
 }: {
   label: string;
+  icon: string;
+  variant: keyof typeof COMMENT_TONE;
   value: string;
   onSave: (v: string) => void;
 }) {
   const [text, setText] = useState(initial);
   useEffect(() => setText(initial), [initial]);
+
+  const tone = COMMENT_TONE[variant];
+  const paragraphs = text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  const bullets = text
+    .split("\n")
+    .map((l) => l.trim().replace(/^[-–—•·*]\s*/, ""))
+    .filter(Boolean);
+
   return (
-    <div className="preview-day-card print-avoid-break border border-ink/10 rounded-2xl p-5">
-      <label className="text-sm font-bold text-ink">{label}</label>
+    <div
+      className="preview-day-card print-avoid-break rounded-2xl p-5 sm:p-6"
+      style={{
+        backgroundColor: tone.bg,
+        backgroundImage: tone.bgImage,
+        border: `1px solid ${tone.border}`,
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-[15px] leading-none">{icon}</span>
+        <span className="text-sm font-bold" style={{ color: tone.title }}>
+          {label}
+        </span>
+      </div>
+
       <textarea
-        rows={4}
+        rows={5}
         value={text}
         onChange={(e) => setText(e.target.value)}
         onBlur={() => text !== initial && onSave(text)}
-        className="mt-2 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm leading-relaxed print:hidden"
-        placeholder="자유롭게 작성하세요. 학부모에게 전달되는 내용입니다."
+        className="mt-3 w-full rounded-xl border border-ink/10 bg-white/80 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm leading-relaxed print:hidden"
+        placeholder={
+          variant === "bullets"
+            ? "한 줄에 한 항목씩 작성하세요. 줄마다 점(•) 목록으로 표시됩니다."
+            : "자유롭게 작성하세요. 빈 줄로 문단을 나눌 수 있습니다."
+        }
       />
-      <div className="hidden print:block mt-1 text-sm text-ink/80 leading-relaxed whitespace-pre-wrap">{text}</div>
+
+      {/* PDF/인쇄용 서식 본문 */}
+      <div className="hidden print:block mt-3 text-[13px] text-ink/85 leading-[1.75]">
+        {variant === "bullets" ? (
+          <ul className="space-y-1.5">
+            {bullets.map((b, i) => (
+              <li key={i} className="flex gap-2">
+                <span
+                  className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full"
+                  style={{ backgroundColor: tone.dot }}
+                />
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="space-y-2.5">
+            {paragraphs.map((p, i) => (
+              <p key={i} className="whitespace-pre-wrap">
+                {p}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
