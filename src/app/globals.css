@@ -146,7 +146,9 @@ html, body {
      배너~기상 기록 사이 여백을 최대한 줄여, 그만큼 기상 기록 타일 높이에 양보한다. */
   [data-preview-root] .preview-body > div { margin-bottom: 8px !important; }
   [data-preview-root] .preview-body h2 { margin-bottom: 6px !important; }
-  [data-preview-root] .preview-banner { padding-top: 14px !important; padding-bottom: 14px !important; }
+  /* 배너 크기는 주간·월간 동일하게 유지한다 (마크업/클래스도 동일).
+     1페이지 밀도가 필요하면 배너가 아니라 아래 카드 여백에서 줄일 것. */
+  [data-preview-root] .preview-banner { padding-top: 20px !important; padding-bottom: 20px !important; }
   /* 배너와 "코칭 N개월차" 사이는 숨 쉴 틈을 준다. 대신 아래 통계/주차별 카드를 조여
      그만큼을 되돌려, 기상 기록 타일 높이는 건드리지 않는다. */
   .monthly-lead { padding-top: 28px !important; padding-bottom: 6px !important; }
