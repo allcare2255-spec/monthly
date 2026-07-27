@@ -240,28 +240,28 @@ export function MonthlyReportView({
               <PreviewStat label="과제 완료율" value={`${stats.taskRate}%`} />
             </div>
 
-            {/* 주차별 과제 완료율 — 가로 그라데이션 진행바 */}
+            {/* 주차별 과제 완료율 — 가로 그라데이션 진행바 (제목은 카드 안에) */}
             <div className="mb-8 print-avoid-break">
-              <h2 className="text-base font-bold text-ink mb-3">주차별 과제 완료율</h2>
               <div className="week-rate-card preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6" style={CARD_BG}>
+                <SectionTitle>주차별 과제 완료율</SectionTitle>
                 <WeekRateBars weekRates={weekRates} />
               </div>
             </div>
 
-            {/* 기상 시간 기록 — 요일 정렬 달력 */}
+            {/* 기상 시간 기록 — 요일 정렬 달력 (제목은 카드 안에) */}
             <div className="mb-8 print-avoid-break">
-              <h2 className="text-base font-bold text-ink mb-3">기상 시간 기록</h2>
               <div className="preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6">
+                <SectionTitle>기상 시간 기록</SectionTitle>
                 <WakeCalendar days={allDays} />
                 <WakeLegend />
               </div>
             </div>
 
             {/* ===== 2페이지: 일별 공부 시간 · 멘토 총평 · 다음 달 코칭 방향 ===== */}
-            {/* 일별 공부 시간 (2페이지 시작) */}
+            {/* 일별 공부 시간 (2페이지 시작, 제목은 카드 안에) */}
             <div className="mb-8 print-page-break print-avoid-break">
-              <h2 className="text-base font-bold text-ink mb-3">일별 공부 시간</h2>
               <div className="preview-day-card border border-ink/10 rounded-2xl p-4 sm:p-5" style={CARD_BG_INDIGO}>
+                <SectionTitle>일별 공부 시간</SectionTitle>
                 <StudyTrendChart data={studyTrend} avgMin={stats.avgStudy} />
               </div>
             </div>
@@ -330,6 +330,11 @@ function wakeTimeColor(min: number): string {
 
 // 주차별 과제 완료율 — 가로 진행바(트랙 위 그라데이션 채움 + 우측 퍼센트).
 // recharts 막대차트 대신 순수 CSS 진행바로 그려 인쇄(PDF) 잘림/사라짐 없이 안정적으로 표시.
+// 섹션 제목 — 카드 바깥이 아니라 카드 "안" 맨 위에 놓는다 (멘토 총평 카드와 동일한 배치).
+function SectionTitle({ children }: { children: ReactNode }) {
+  return <h2 className="mb-3 text-base font-bold text-ink">{children}</h2>;
+}
+
 function WeekRateBars({
   weekRates,
 }: {
