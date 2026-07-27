@@ -250,7 +250,7 @@ export function MonthlyReportView({
 
             {/* 기상 시간 기록 — 요일 정렬 달력 (제목은 카드 안에) */}
             <div className="mb-8 print-avoid-break">
-              <div className="preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6">
+              <div className="preview-day-card border border-ink/[0.05] rounded-2xl p-5 sm:p-6" style={CARD_BG}>
                 <SectionTitle>기상 시간 기록</SectionTitle>
                 <WakeCalendar days={allDays} />
                 <WakeLegend />
