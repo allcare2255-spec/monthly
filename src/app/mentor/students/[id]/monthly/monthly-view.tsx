@@ -504,17 +504,14 @@ function LegendCatDot({ color, label }: { color: string; label: string }) {
   );
 }
 
-// 월 평균 순공시간 값: 숫자는 크게, 단위(시간/분)는 작게, 한 줄로 표시.
+// 월 평균 순공시간 값: 단위(H/M)도 숫자와 같은 크기로 한 줄에 표시.
 // (카드 폭이 좁아 "7시간 30분" 이 두 줄로 줄바꿈되던 문제 방지)
 function StudyTimeValue({ minutes }: { minutes: number }) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return (
     <span className="whitespace-nowrap">
-      {h}
-      <span className="text-base font-bold">H </span>
-      {m}
-      <span className="text-base font-bold">M</span>
+      {h}H {m}M
     </span>
   );
 }
