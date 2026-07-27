@@ -674,9 +674,20 @@ function CommentField({
   // 아직 작성 전이면 화면에서는 입력칸을 그대로 두되, PDF/인쇄에서는 빈 카드가 나오지 않게 숨긴다.
   const isEmpty = text.trim().length === 0;
 
+  // 총평은 길어질 수 있어 문단 단위로 페이지를 넘기고(comment-card),
+  // 코칭 방향은 잘리면 보기 나쁘므로 통째로 유지해 안 들어가면 다음 장으로 넘긴다(comment-card-keep).
+  const cardClass = [
+    "comment-card",
+    variant === "bullets" ? "comment-card-keep" : "",
+    "preview-day-card rounded-2xl p-5 sm:p-6",
+    isEmpty ? "print:hidden" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <div
-      className={`comment-card preview-day-card rounded-2xl p-5 sm:p-6 ${isEmpty ? "print:hidden" : ""}`}
+      className={cardClass}
       style={{
         backgroundColor: tone.bg,
         backgroundImage: tone.bgImage,

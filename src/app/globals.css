@@ -226,6 +226,13 @@ html, body {
     page-break-after: avoid !important;
     break-after: avoid !important;
   }
+  /* 단, 코칭 방향 카드는 중간에 잘리지 않게 통째로 유지한다.
+     페이지에 안 들어가면 총평과 떨어지더라도 다음 장 전체로 넘어간다. */
+  .comment-card-keep,
+  .comment-card-keep > div {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 
   .preview-photos { page-break-inside: avoid; break-inside: avoid; }
   .preview-day-card img { page-break-inside: avoid; break-inside: avoid; }
