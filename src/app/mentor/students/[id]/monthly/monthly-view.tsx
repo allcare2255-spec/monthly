@@ -676,7 +676,7 @@ function CommentField({
 
   return (
     <div
-      className={`preview-day-card print-avoid-break rounded-2xl p-5 sm:p-6 ${isEmpty ? "print:hidden" : ""}`}
+      className={`comment-card preview-day-card rounded-2xl p-5 sm:p-6 ${isEmpty ? "print:hidden" : ""}`}
       style={{
         backgroundColor: tone.bg,
         backgroundImage: tone.bgImage,
