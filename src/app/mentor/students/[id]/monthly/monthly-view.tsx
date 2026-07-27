@@ -78,9 +78,13 @@ export function MonthlyReportView({
     });
   }
 
-  // PDF 저장 — 파일명 자동 설정: "홍길동 코칭 2개월차 월간 레포트"
+  // PDF 저장 — 파일명 자동 설정:
+  // "SKY MATE 월간 학습코칭 레포트_홍길동(김멘토T)_2개월차"
+  // (멘토명이 비어 있으면 괄호 부분은 생략)
   function handleSavePdf() {
-    const fileName = `${studentName} 코칭 ${cycle}개월차 월간 레포트`
+    const mentor = (mentorName || "").trim();
+    const who = mentor ? `${studentName}(${mentor}T)` : studentName;
+    const fileName = `SKY MATE 월간 학습코칭 레포트_${who}_${cycle}개월차`
       .replace(/[\\/:*?"<>|]/g, " ")
       .replace(/\s+/g, " ")
       .trim();
