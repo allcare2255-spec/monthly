@@ -695,13 +695,13 @@ function CommentField({
       />
 
       {/* PDF/인쇄용 서식 본문 */}
-      <div className="hidden print:block mt-3 text-[13px] text-ink/85 leading-[1.75]">
+      <div className="hidden print:block mt-3 text-[15px] font-bold text-ink/90 leading-[1.7]">
         {variant === "bullets" ? (
           <ul className="space-y-1.5">
             {bullets.map((b, i) => (
               <li key={i} className="flex gap-2">
                 <span
-                  className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full"
+                  className="mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full"
                   style={{ backgroundColor: tone.dot }}
                 />
                 <span>{b}</span>
