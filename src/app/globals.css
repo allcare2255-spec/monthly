@@ -152,6 +152,23 @@ html, body {
      렌더되는 경우가 있어 인쇄 시 숨긴다 (색은 카드 본색·숫자 색으로 충분히 표현됨) */
   .deco-blur { display: none !important; }
 
+  /* [월간 레포트] 배너 위 흰 여백 제거 → 주간 레포트처럼 배너가 1페이지 맨 위에 붙게.
+     월간은 주간과 달리 오버레이가 아니라 대시보드 안에 그대로 렌더되므로,
+     조상(<main> 패딩 / space-y 간격)이 인쇄 여백으로 남는 것을 걷어낸다. */
+  body.monthly-report-page main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body.monthly-report-page main > *,
+  body.monthly-report-page main > * > * {
+    margin-top: 0 !important;
+  }
+  body.monthly-report-page [data-preview-root] {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   /* [주간 미리보기] 문서 패딩 제거 → 배너가 페이지 가장자리까지 꽉 차게 */
   [data-preview-root] .preview-doc {
     max-width: 100% !important;

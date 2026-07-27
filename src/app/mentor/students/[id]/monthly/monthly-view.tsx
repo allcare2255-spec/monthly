@@ -33,6 +33,13 @@ export function MonthlyReportView({
 }) {
   const [monthly, setMonthly] = useState<MonthlyReport | null>(initialMonthly);
 
+  // 인쇄 시 배너를 페이지 맨 위까지 풀블리드로 뽑기 위해, 이 화면이 열려 있는 동안
+  // body 에 표식 클래스를 달아둔다 (Shell <main> 의 좌우/상하 여백을 print 에서 제거).
+  useEffect(() => {
+    document.body.classList.add("monthly-report-page");
+    return () => document.body.classList.remove("monthly-report-page");
+  }, []);
+
   useEffect(() => {
     if (monthly) return;
     fetch(`/api/reports/monthly?student_id=${studentId}&cycle=${cycle}`)
@@ -192,13 +199,13 @@ export function MonthlyReportView({
 
           {/* 본문 (인쇄 시 좌우/하단 여백 — 배너만 풀블리드) */}
           <div className="preview-body">
-            {/* 배너 아래 제목 영역 (검정) — 코칭 N개월차 · 이름 학생 N개월차 월간 레포트 */}
+            {/* 배너 아래 제목 영역 (검정) — 코칭 N개월차 · 이름 N개월차 월간 레포트 */}
             <div className="monthly-lead px-1 pt-7 pb-6 sm:pt-8">
               <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#0284c7]">
                 코칭 {cycle}개월차 · Monthly
               </div>
               <h1 className="mt-1.5 text-3xl font-extrabold text-ink">
-                {studentName} 학생 <span className="text-ink/25 font-bold">·</span> {cycle}개월차 월간 레포트
+                {studentName} <span className="text-ink/25 font-bold">·</span> {cycle}개월차 월간 레포트
               </h1>
               <p className="mt-2 text-sm text-ink/55">
                 {fmtDot(cycleStart)} ~ {fmtDot(cycleEnd)}
