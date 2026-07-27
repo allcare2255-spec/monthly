@@ -536,7 +536,7 @@ function PreviewStat({
       className="stat-card relative overflow-hidden rounded-2xl border border-ink/5 p-4 shadow-sm"
       style={tone === "muted" ? { backgroundColor: "#FFFFFF" } : CARD_BG}
     >
-      <div className="relative">
+      <div className="relative text-center">
         <div className={SECTION_LABEL}>{label}</div>
         <div className={`text-2xl font-extrabold mt-1 tabular-nums whitespace-nowrap ${
           tone === "muted" ? "text-ink/40" : "text-gradient"
