@@ -671,9 +671,12 @@ function CommentField({
     .map((l) => l.trim().replace(/^[-–—•·*]\s*/, ""))
     .filter(Boolean);
 
+  // 아직 작성 전이면 화면에서는 입력칸을 그대로 두되, PDF/인쇄에서는 빈 카드가 나오지 않게 숨긴다.
+  const isEmpty = text.trim().length === 0;
+
   return (
     <div
-      className="preview-day-card print-avoid-break rounded-2xl p-5 sm:p-6"
+      className={`preview-day-card print-avoid-break rounded-2xl p-5 sm:p-6 ${isEmpty ? "print:hidden" : ""}`}
       style={{
         backgroundColor: tone.bg,
         backgroundImage: tone.bgImage,
