@@ -650,6 +650,39 @@ const COMMENT_TONE = {
   },
 } as const;
 
+// 멘토가 입력한 줄글을 PDF용 구조로 해석한다.
+// - 빈 줄       → 문단(블록) 구분
+// - "[국어]"    → 소제목 (대괄호로 감싼 줄, 점 없이 굵게 — 대괄호는 그대로 노출)
+// - "국어 :"    → 소제목 (콜론으로 끝나는 줄, 점 없이 굵게)
+// - "* 내용"    → 강조 항목 (점을 진하게 + 굵은 글씨)
+// - 그 외       → 일반 점(•) 항목
+type CommentLine = { kind: "heading" | "strong" | "item"; text: string };
+
+function parseBlocks(raw: string): CommentLine[][] {
+  return raw
+    .split(/\n\s*\n/)
+    .map((block) =>
+      block
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map<CommentLine>((line) => {
+          // 줄 전체가 [ ] 로 감싸여 있으면 소제목 — 점을 붙이지 않는다.
+          if (/^\[[^\]]*\]$/.test(line)) {
+            return { kind: "heading", text: line };
+          }
+          const starred = /^\*\s*/.test(line);
+          const body = line.replace(/^[-–—•·*]\s*/, "").trim();
+          // 콜론으로 끝나면 소제목. 단 "* 화법과 작문 : ..." 처럼 뒤에 내용이 있으면 항목이다.
+          if (!starred && /[:：]\s*$/.test(body)) {
+            return { kind: "heading", text: body.replace(/\s*[:：]\s*$/, "") };
+          }
+          return { kind: starred ? "strong" : "item", text: body };
+        }),
+    )
+    .filter((block) => block.length > 0);
+}
+
 function CommentField({
   label,
   icon,
@@ -668,10 +701,7 @@ function CommentField({
 
   const tone = COMMENT_TONE[variant];
   const paragraphs = text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
-  const bullets = text
-    .split("\n")
-    .map((l) => l.trim().replace(/^[-–—•·*]\s*/, ""))
-    .filter(Boolean);
+  const blocks = parseBlocks(text);
 
   // 아직 작성 전이면 화면에서는 입력칸을 그대로 두되, PDF/인쇄에서는 빈 카드가 나오지 않게 숨긴다.
   const isEmpty = text.trim().length === 0;
@@ -712,7 +742,7 @@ function CommentField({
         className="mt-3 w-full rounded-xl border border-ink/10 bg-white/80 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm leading-relaxed print:hidden"
         placeholder={
           variant === "bullets"
-            ? "한 줄에 한 항목씩 작성하세요. 줄마다 점(•) 목록으로 표시됩니다."
+            ? "한 줄에 한 항목씩 작성하세요.\n빈 줄을 넣으면 문단이 나뉘고, '국어 :' 처럼 콜론으로 끝내면 소제목이 됩니다.\n줄 앞에 * 를 붙이면 강조 항목으로 표시됩니다."
             : "자유롭게 작성하세요. 빈 줄로 문단을 나눌 수 있습니다."
         }
       />
@@ -720,17 +750,37 @@ function CommentField({
       {/* PDF/인쇄용 서식 본문 */}
       <div className="hidden print:block mt-3 text-[15px] text-ink/90 leading-[1.7]">
         {variant === "bullets" ? (
-          <ul className="space-y-1.5">
-            {bullets.map((b, i) => (
-              <li key={i} className="flex gap-2">
-                <span
-                  className="mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full"
-                  style={{ backgroundColor: tone.dot }}
-                />
-                <span>{b}</span>
-              </li>
+          <div className="space-y-3.5">
+            {blocks.map((lines, bi) => (
+              <div key={bi} className="space-y-1.5">
+                {lines.map((line, li) =>
+                  line.kind === "heading" ? (
+                    <div
+                      key={li}
+                      className="text-[15px] font-bold"
+                      style={{ color: tone.title }}
+                    >
+                      {line.text}
+                    </div>
+                  ) : (
+                    <div key={li} className="flex gap-2 pl-0.5">
+                      <span
+                        className={`mt-[9px] shrink-0 rounded-full ${
+                          line.kind === "strong" ? "h-[6px] w-[6px]" : "h-[5px] w-[5px]"
+                        }`}
+                        style={{
+                          backgroundColor: line.kind === "strong" ? tone.title : tone.dot,
+                        }}
+                      />
+                      <span className={line.kind === "strong" ? "font-bold" : undefined}>
+                        {line.text}
+                      </span>
+                    </div>
+                  ),
+                )}
+              </div>
             ))}
-          </ul>
+          </div>
         ) : (
           <div className="space-y-2.5">
             {paragraphs.map((p, i) => (
