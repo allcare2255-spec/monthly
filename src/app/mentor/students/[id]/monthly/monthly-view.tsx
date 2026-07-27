@@ -765,10 +765,7 @@ function CommentField({
                   ) : line.kind === "plain" ? (
                     // 점(•) 자리에 "*" 를 그대로 노출. 마커 폭을 점과 같게 잡아 글자 시작 위치를 맞춘다.
                     <div key={li} className="flex gap-2 pl-0.5">
-                      <span
-                        className="w-[5px] shrink-0 text-center leading-[1.7]"
-                        style={{ color: tone.dot }}
-                      >
+                      <span className="w-[5px] shrink-0 text-center font-bold leading-[1.7] text-ink">
                         *
                       </span>
                       <span>{line.text}</span>
