@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import type { DayData, MonthlyReport, WeeklyReport } from "@/types";
 import { addDays, hmToMinutes } from "@/lib/dates";
 
@@ -9,6 +9,14 @@ const SECTION_LABEL = "text-[12px] font-bold uppercase tracking-[0.12em] text-in
 
 // 표시용 날짜 포맷 "2026-06-01" → "2026.06.01"
 const fmtDot = (d: string) => (d || "").replace(/-/g, ".");
+
+// 카드 배경 그라데이션 — blur 오버레이 대신 배경 자체에 얹는다.
+// (blur 는 일부 인쇄 환경에서 검정 박스로 깨져 PDF 에서 숨겨왔고, 그래서 카드가 흰색으로 보였음.
+//  단색 폴백 + 부드러운 linear-gradient 는 화면·PDF 모두 동일하게 안전하게 렌더된다.)
+const CARD_BG: CSSProperties = {
+  backgroundColor: "#FFFFFF",
+  backgroundImage: "linear-gradient(135deg, #E8F4FE 0%, #F5FAFF 45%, #FFFFFF 100%)",
+};
 
 export function MonthlyReportView({
   studentId,
@@ -223,7 +231,7 @@ export function MonthlyReportView({
             {/* 주차별 과제 완료율 — 가로 그라데이션 진행바 */}
             <div className="mb-8 print-avoid-break">
               <h2 className="text-base font-bold text-ink mb-3">주차별 과제 완료율</h2>
-              <div className="preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6">
+              <div className="preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6" style={CARD_BG}>
                 <WeekRateBars weekRates={weekRates} />
               </div>
             </div>
@@ -503,11 +511,10 @@ function PreviewStat({
   tone?: "muted";
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-4 shadow-sm">
-      {/* 장식용 블러 그라데이션 — 일부 인쇄 환경에서 검정 박스로 깨져 인쇄 시 숨김(deco-blur) */}
-      <div className={`deco-blur absolute inset-x-0 -top-8 h-24 bg-gradient-to-br ${
-        tone === "muted" ? "from-ink/5 to-ink/0" : "from-indigo/25 via-transparent via-40% to-transparent"
-      } blur-xl`} />
+    <div
+      className="relative overflow-hidden rounded-2xl border border-ink/5 p-4 shadow-sm"
+      style={tone === "muted" ? { backgroundColor: "#FFFFFF" } : CARD_BG}
+    >
       <div className="relative">
         <div className={SECTION_LABEL}>{label}</div>
         <div className={`text-2xl font-extrabold mt-1 tabular-nums whitespace-nowrap ${
