@@ -332,7 +332,8 @@ function wakeTimeColor(min: number): string {
 // recharts 막대차트 대신 순수 CSS 진행바로 그려 인쇄(PDF) 잘림/사라짐 없이 안정적으로 표시.
 // 섹션 제목 — 카드 바깥이 아니라 카드 "안" 맨 위에 놓는다 (멘토 총평 카드와 동일한 배치).
 function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mb-3 text-base font-bold text-ink">{children}</h2>;
+  // 검정에 가까운 --color-ink 를 그대로 쓰면 너무 무거워서, 살짝 투명도를 줘 톤을 낮춘다.
+  return <h2 className="mb-3 text-[15px] font-bold text-ink/70">{children}</h2>;
 }
 
 function WeekRateBars({
