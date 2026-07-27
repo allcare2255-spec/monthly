@@ -144,7 +144,7 @@ html, body {
   .print-avoid-break { break-inside: avoid; page-break-inside: avoid; }
   /* [월간 레포트] 1페이지(배너~기상 기록)가 모두 들어가도록 인쇄 시 밀도 상향.
      배너~기상 기록 사이 여백을 최대한 줄여, 그만큼 기상 기록 타일 높이에 양보한다. */
-  [data-preview-root] .preview-body > div { margin-bottom: 8px !important; }
+  [data-preview-root] .preview-body > div { margin-bottom: 16px !important; }
   [data-preview-root] .preview-body h2 { margin-bottom: 6px !important; }
   /* 배너 크기는 주간·월간 동일하게 유지한다 (마크업/클래스도 동일).
      1페이지 밀도가 필요하면 배너가 아니라 아래 카드 여백에서 줄일 것. */
