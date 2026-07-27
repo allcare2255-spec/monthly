@@ -700,7 +700,7 @@ function CommentField({
       />
 
       {/* PDF/인쇄용 서식 본문 */}
-      <div className="hidden print:block mt-3 text-[15px] font-bold text-ink/90 leading-[1.7]">
+      <div className="hidden print:block mt-3 text-[15px] text-ink/90 leading-[1.7]">
         {variant === "bullets" ? (
           <ul className="space-y-1.5">
             {bullets.map((b, i) => (
