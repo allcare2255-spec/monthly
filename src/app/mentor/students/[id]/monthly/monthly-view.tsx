@@ -243,7 +243,7 @@ export function MonthlyReportView({
             {/* 주차별 과제 완료율 — 가로 그라데이션 진행바 */}
             <div className="mb-8 print-avoid-break">
               <h2 className="text-base font-bold text-ink mb-3">주차별 과제 완료율</h2>
-              <div className="preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6" style={CARD_BG}>
+              <div className="week-rate-card preview-day-card border border-ink/10 rounded-2xl p-5 sm:p-6" style={CARD_BG}>
                 <WeekRateBars weekRates={weekRates} />
               </div>
             </div>
@@ -336,7 +336,7 @@ function WeekRateBars({
   weekRates: { week: string; rate: number; hasData: boolean }[];
 }) {
   return (
-    <div className="space-y-3.5">
+    <div className="week-rate-bars space-y-3.5">
       {weekRates.map((w) => (
         <div key={w.week} className="flex items-center gap-3">
           <span className="w-11 shrink-0 text-sm font-semibold text-ink/70">{w.week}</span>
@@ -527,7 +527,7 @@ function PreviewStat({
 }) {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-ink/5 p-4 shadow-sm"
+      className="stat-card relative overflow-hidden rounded-2xl border border-ink/5 p-4 shadow-sm"
       style={tone === "muted" ? { backgroundColor: "#FFFFFF" } : CARD_BG}
     >
       <div className="relative">
