@@ -5,7 +5,8 @@ import type { DayData, MonthlyReport, WeeklyReport } from "@/types";
 import { addDays, hmToMinutes } from "@/lib/dates";
 
 // 주간 레포트(완성 미리보기)와 통일한 섹션/지표 라벨 서식
-const SECTION_LABEL = "text-[12px] font-bold uppercase tracking-[0.12em] text-ink/55";
+// 색은 SectionTitle(주차별 과제 완료율 등)과 동일한 ink/70 으로 맞춘다.
+const SECTION_LABEL = "text-[12px] font-bold uppercase tracking-[0.12em] text-ink/70";
 
 // 표시용 날짜 포맷 "2026-06-01" → "2026.06.01"
 const fmtDot = (d: string) => (d || "").replace(/-/g, ".");
