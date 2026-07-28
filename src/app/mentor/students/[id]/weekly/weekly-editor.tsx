@@ -572,48 +572,55 @@ function WeeklyPlanView({
           </div>
         </div>
 
-        {/* 요일별 + 주간 계획 달성률(8번째 칸: 목요일 아래·일요일 옆) */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {PLAN_WEEKDAYS.map((wd, i) => {
-            const d = plan.days[wd.key];
-            const tasks = (d?.tasks || []).filter((t) => t.text.trim());
-            return (
-              <div key={wd.key} className="preview-day-card rounded-2xl border border-ink/10 p-3">
-                <div className="mb-1.5 flex items-baseline justify-between">
-                  <span className={SECTION_LABEL}>{wd.ko}</span>
-                  <span className="text-[10px] text-ink/45">{dates[i] ? dates[i].slice(5) : ""}</span>
-                </div>
-                {(d?.notes || "").trim() && (
-                  <div className="mb-1.5 rounded-lg border border-ink/10 px-2.5 py-1.5 whitespace-pre-wrap text-[13px] text-ink/70">
-                    {d.notes}
+        {/* 요일별 + 주간 계획 달성률(8번째 칸: 목요일 아래·일요일 옆)
+            PDF 인쇄 시 줄 중간에서 잘리지 않도록 2줄(월~목 / 금~일+달성률)을
+            각각 별도 그리드로 나눈다 — .plan-grid-row 는 print 에서 break-inside: avoid */}
+        {[PLAN_WEEKDAYS.slice(0, 4), PLAN_WEEKDAYS.slice(4)].map((row, rowIdx) => (
+          <div key={rowIdx} className="plan-grid-row grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {row.map((wd, j) => {
+              const i = rowIdx * 4 + j;
+              const d = plan.days[wd.key];
+              const tasks = (d?.tasks || []).filter((t) => t.text.trim());
+              return (
+                <div key={wd.key} className="preview-day-card rounded-2xl border border-ink/10 p-3">
+                  <div className="mb-1.5 flex items-baseline justify-between">
+                    <span className={SECTION_LABEL}>{wd.ko}</span>
+                    <span className="text-[10px] text-ink/45">{dates[i] ? dates[i].slice(5) : ""}</span>
                   </div>
-                )}
-                {tasks.length > 0 && (
-                  <ul className="space-y-0.5">
-                    {tasks.map((t) => (
-                      <li key={t.id} className="flex items-start gap-1.5 text-[12px] text-ink/80">
-                        <PlanCheck done={t.done} small />
-                        <span className={t.done ? "line-through text-ink/40" : ""}>{t.text}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
+                  {(d?.notes || "").trim() && (
+                    <div className="mb-1.5 rounded-lg border border-ink/10 px-2.5 py-1.5 whitespace-pre-wrap text-[13px] text-ink/70">
+                      {d.notes}
+                    </div>
+                  )}
+                  {tasks.length > 0 && (
+                    <ul className="space-y-0.5">
+                      {tasks.map((t) => (
+                        <li key={t.id} className="flex items-start gap-1.5 text-[12px] text-ink/80">
+                          <PlanCheck done={t.done} small />
+                          <span className={t.done ? "line-through text-ink/40" : ""}>{t.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
 
-          {/* 주간 계획 달성률 — 마지막(8번째) 칸: 라벨은 좌상단, 숫자는 정중앙 */}
-          <div className="preview-day-card rounded-2xl border border-ink/10 p-3 flex flex-col">
-            <div className={`${SECTION_LABEL} mb-1`}>주간 계획 달성률</div>
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <div className="font-extrabold tabular-nums text-gradient leading-none">
-                <span className="text-6xl tracking-tighter">{achievement}</span>
-                <span className="text-3xl">%</span>
+            {/* 주간 계획 달성률 — 마지막(8번째) 칸: 라벨은 좌상단, 숫자는 정중앙 */}
+            {rowIdx === 1 && (
+              <div className="preview-day-card rounded-2xl border border-ink/10 p-3 flex flex-col">
+                <div className={`${SECTION_LABEL} mb-1`}>주간 계획 달성률</div>
+                <div className="flex-1 flex flex-col items-center justify-center text-center">
+                  <div className="font-extrabold tabular-nums text-gradient leading-none">
+                    <span className="text-6xl tracking-tighter">{achievement}</span>
+                    <span className="text-3xl">%</span>
+                  </div>
+                  <div className="mt-2 text-[11px] text-ink/45">할 일 {done}/{total} 완료</div>
+                </div>
               </div>
-              <div className="mt-2 text-[11px] text-ink/45">할 일 {done}/{total} 완료</div>
-            </div>
+            )}
           </div>
-        </div>
+        ))}
       </div>
     </section>
   );

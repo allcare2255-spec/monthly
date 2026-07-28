@@ -235,6 +235,11 @@ html, body {
   }
 
   .preview-photos { page-break-inside: avoid; break-inside: avoid; }
+
+  /* 주간 계획표: 요일 카드 한 줄(월~목 / 금~일+달성률)이 페이지 경계에서
+     잘리지 않도록 줄 단위로 통째 유지 → 안 들어가면 다음 장으로 넘어간다. */
+  .plan-grid-row { page-break-inside: avoid; break-inside: avoid; }
+  .plan-grid-row > div { page-break-inside: avoid; break-inside: avoid; }
   .preview-day-card img { page-break-inside: avoid; break-inside: avoid; }
 
   /* 월간 레포트: print-target 내 gradient 텍스트를 검정으로 (주간 레포트와 통일) */
