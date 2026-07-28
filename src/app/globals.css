@@ -136,8 +136,12 @@ html, body {
      1페이지는 대문 배너 풀블리드를 위해 0.
      (브라우저는 이 여백 자리에 머리글/바닥글을 인쇄하므로, 저장 창에서
       "머리글/바닥글"을 해제하면 날짜·제목 글자 없이 흰 여백만 남는다 — 크롬이 설정 기억) */
-  @page { size: A4; margin: 18mm 0 0 0; }
-  @page :first { margin: 0; }
+  /* 좌우 여백 10mm — 0(풀블리드)으로 두면 종이 가장자리를 인쇄하지 못하는 프린터/드라이버에서
+     브라우저가 "인쇄 가능 영역에 맞추기"로 전체를 축소하고, 그 축소가 좌상단 기준이라
+     왼쪽은 붙고 오른쪽만 흰 여백이 남는 '한쪽 쏠림'이 생긴다.
+     세로 여백은 기존 값을 그대로 유지한다 (월간 레포트 1페이지 배치 보존). */
+  @page { size: A4; margin: 18mm 10mm 0 10mm; }
+  @page :first { margin: 0 10mm; }
   .print-page-break { page-break-before: always; }
 
   /* [월간 레포트] 지정 섹션(제목+카드)을 페이지 경계에서 통째로 유지 → 내용 잘림 방지 */
@@ -191,9 +195,10 @@ html, body {
     max-width: 100% !important;
     padding: 0 !important;
   }
-  /* 배너는 풀블리드(라운드 제거), 본문에는 좌우/하단 여백 */
-  [data-preview-root] .preview-banner { border-radius: 0 !important; }
-  [data-preview-root] .preview-body { padding: 0 12mm 14mm !important; }
+  /* 배너는 페이지 상단에 붙이고(위 라운드 제거) 좌우는 @page 여백 10mm 안쪽.
+     본문 글자 위치는 기존과 동일하게 유지 → @page 10mm + 아래 2mm = 12mm */
+  [data-preview-root] .preview-banner { border-radius: 0 0 20px 20px !important; }
+  [data-preview-root] .preview-body { padding: 0 2mm 14mm !important; }
   /* [월간 레포트] @page 여백이 0이 되었으므로 카드에 여백 부여 */
   .print-target { margin: 14mm !important; }
 
