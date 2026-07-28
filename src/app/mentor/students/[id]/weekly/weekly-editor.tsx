@@ -285,8 +285,10 @@ function StatCard({
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-4 shadow-sm">
-      <div className={`absolute inset-x-0 -top-8 h-24 bg-gradient-to-br ${
-        tone === "muted" ? "from-ink/5 to-ink/0" : "from-indigo/25 via-transparent via-40% to-transparent"
+      <div className={`deco-grad absolute inset-x-0 -top-8 h-24 bg-gradient-to-br ${
+        tone === "muted"
+          ? "from-ink/5 to-ink/0"
+          : "from-indigo/25 via-[rgba(14,165,233,0)] via-40% to-[rgba(14,165,233,0)]"
       } blur-xl`} />
       <div className="relative">
         <div className={SECTION_LABEL}>{label}</div>
@@ -348,7 +350,11 @@ function CertCard({
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-5 shadow-md">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo/20 via-transparent via-20% to-transparent" />
+      {/* 장식 그라데이션 — 끝 색을 'transparent'(=rgba(0,0,0,0)) 로 두면 일부 PDF 렌더러가
+          투명이 아니라 '검정'으로 보간해 카드 전체가 새까맣게 인쇄된다.
+          같은 RGB 의 알파 0 값을 명시해 어떤 렌더러에서도 검정이 섞이지 않게 한다.
+          (deco-grad: 인쇄 시에는 아예 숨겨 이중으로 방지) */}
+      <div className="deco-grad absolute inset-0 bg-gradient-to-br from-indigo/20 via-[rgba(14,165,233,0)] via-20% to-[rgba(14,165,233,0)]" />
       <div className="relative">
         <div className={`${SECTION_LABEL} mb-3 text-center`}>{title}</div>
         {/* 게이지바 */}
@@ -1562,7 +1568,7 @@ function ReportPreview({
 function PreviewStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-4 shadow-sm">
-      <div className="absolute inset-x-0 -top-8 h-24 bg-gradient-to-br from-indigo/25 via-transparent via-40% to-transparent blur-xl" />
+      <div className="deco-grad absolute inset-x-0 -top-8 h-24 bg-gradient-to-br from-indigo/25 via-[rgba(14,165,233,0)] via-40% to-[rgba(14,165,233,0)] blur-xl" />
       <div className="relative">
         <div className={SECTION_LABEL}>{label}</div>
         <div className="text-2xl font-extrabold mt-1 tabular-nums text-gradient">{value}</div>
