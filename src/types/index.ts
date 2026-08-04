@@ -44,6 +44,17 @@ export type ConsultingSubmission = {
   memo: string | null;
 };
 
+/** 멘토가 컨설팅 중에 작성하는 메모 (학생 + 누적 주차 1건). */
+export type ConsultingNote = {
+  id: string;
+  student_id: string;
+  week_number: number;
+  note: string;
+  author_name: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type CoachingCycle = {
   id: string;
   student_id: string;

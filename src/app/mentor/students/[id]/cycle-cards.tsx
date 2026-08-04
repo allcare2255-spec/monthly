@@ -385,6 +385,22 @@ function CycleCard({
       {/* 콤팩트 주차 버튼 */}
       <div className="border-t border-ink/5 pt-3 space-y-2">
         <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="text-[10px] text-ink/40 font-medium shrink-0 w-10">컨설팅</span>
+          {[1, 2, 3, 4].map((w) => (
+            <Link
+              key={w}
+              href={`/mentor/students/${studentId}/consult?cycle=${cycle}&week=${w}`}
+              className={`text-[11px] rounded-full px-2.5 py-0.5 font-semibold border transition ${
+                cumulativeWeek(cycle, w) < currentWeek
+                  ? "bg-ink/5 text-ink/40 border-ink/10 hover:bg-ink/10"
+                  : "bg-violet/10 text-violet border-violet/20 hover:bg-violet/20"
+              }`}
+            >
+              {cumulativeWeek(cycle, w)}주차 컨설팅
+            </Link>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-1.5 items-center">
           <span className="text-[10px] text-ink/40 font-medium shrink-0 w-10">계획표</span>
           {[1, 2, 3, 4].map((w) => (
             <Link

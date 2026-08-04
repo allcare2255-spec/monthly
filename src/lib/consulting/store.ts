@@ -1,7 +1,7 @@
 import "server-only";
 import crypto from "crypto";
 import { getServiceClient } from "@/lib/supabase";
-import type { ConsultingSubmission, ConsultingFormType, ConsultingFile } from "@/types";
+import type { ConsultingSubmission, ConsultingFormType, ConsultingFile, ConsultingNote } from "@/types";
 
 const SUB_COLS =
   "id, student_id, week_number, form_type, submitted_at, answers, file_paths, agreements, memo";
@@ -125,4 +125,84 @@ export async function listSubmissionsByStudent(studentId: string): Promise<Consu
     .order("submitted_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data || []) as ConsultingSubmission[];
+}
+
+/**
+ * 특정 누적 주차의 제출물 (폼 종류 무관, 최신 1건).
+ * 학생이 ?form=pre 같은 직접 링크로 제출하면 주차와 폼 종류가 어긋날 수 있어,
+ * 컨설팅 화면에서는 주차만으로 조회한다.
+ */
+export async function getSubmissionByWeekAnyForm(
+  studentId: string,
+  weekNumber: number,
+): Promise<ConsultingSubmission | null> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("consulting_submissions")
+    .select(SUB_COLS)
+    .eq("student_id", studentId)
+    .eq("week_number", weekNumber)
+    .order("submitted_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as ConsultingSubmission) ?? null;
+}
+
+// ── 멘토 컨설팅 메모 ────────────────────────────────────────────
+const NOTE_COLS = "id, student_id, week_number, note, author_name, created_at, updated_at";
+
+/** 특정 주차의 멘토 메모 1건 (없으면 null). */
+export async function getNoteByWeek(
+  studentId: string,
+  weekNumber: number,
+): Promise<ConsultingNote | null> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("consulting_notes")
+    .select(NOTE_COLS)
+    .eq("student_id", studentId)
+    .eq("week_number", weekNumber)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as ConsultingNote) ?? null;
+}
+
+/** 학생의 메모가 존재하는 주차 목록 (버튼에 ● 표시용). */
+export async function listNoteWeeks(studentId: string): Promise<number[]> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("consulting_notes")
+    .select("week_number, note")
+    .eq("student_id", studentId);
+  if (error) throw new Error(error.message);
+  return (data || [])
+    .filter((r: { note: string | null }) => (r.note || "").trim().length > 0)
+    .map((r: { week_number: number }) => r.week_number);
+}
+
+/** 메모 저장 (학생+주차 단위 upsert). */
+export async function upsertNote(input: {
+  studentId: string;
+  weekNumber: number;
+  note: string;
+  authorName?: string | null;
+}): Promise<ConsultingNote> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("consulting_notes")
+    .upsert(
+      {
+        student_id: input.studentId,
+        week_number: input.weekNumber,
+        note: input.note,
+        author_name: input.authorName ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "student_id,week_number" },
+    )
+    .select(NOTE_COLS)
+    .single();
+  if (error) throw new Error(error.message);
+  return data as ConsultingNote;
 }
