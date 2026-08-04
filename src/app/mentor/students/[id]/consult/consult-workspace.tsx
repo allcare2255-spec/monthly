@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fieldsFor, FORM_TITLE } from "@/lib/consulting/forms";
+import { noteToHtml, isEmptyNoteHtml } from "@/lib/consulting/note-html";
 import type { ConsultingSubmission, ConsultingFormType } from "@/types";
+import { RichEditor } from "./rich-editor";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -31,18 +33,23 @@ export function ConsultWorkspace({
   initialNote: string;
   noteSavable: boolean;
 }) {
-  const [note, setNote] = useState(initialNote);
+  // 예전 평문 메모도 그대로 열리도록 HTML 로 정규화해 시작한다
+  const initialHtml = useMemo(() => noteToHtml(initialNote), [initialNote]);
+
+  const [note, setNote] = useState(initialHtml);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [preview, setPreview] = useState(false);
 
   // 저장한 마지막 값 — 이 값과 같으면 자동 저장을 건너뛴다
-  const savedRef = useRef(initialNote);
+  const savedRef = useRef(initialHtml);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const save = useCallback(
-    async (value: string) => {
+    async (raw: string) => {
       if (!noteSavable) return;
+      // 빈 문단만 남은 상태("<p></p>")는 빈 값으로 취급 — 빈 행이 쌓이지 않게 한다
+      const value = isEmptyNoteHtml(raw) ? "" : raw;
       if (value === savedRef.current) return;
       setSaveState("saving");
       try {
@@ -66,25 +73,27 @@ export function ConsultWorkspace({
     [studentId, cumWeek, noteSavable],
   );
 
+  const dirty = (isEmptyNoteHtml(note) ? "" : note) !== savedRef.current;
+
   // 0.8초 디바운스 자동 저장
   useEffect(() => {
     if (!noteSavable) return;
-    if (note === savedRef.current) return;
+    if (!dirty) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => save(note), 800);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [note, save, noteSavable]);
+  }, [note, dirty, save, noteSavable]);
 
   // 저장 안 된 채로 페이지를 떠나려 할 때 경고
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (note !== savedRef.current) e.preventDefault();
+      if (dirty) e.preventDefault();
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [note]);
+  }, [dirty]);
 
   // 이 페이지에서만 Shell 폭 제한 해제 (좌우 여백 축소 → 2단을 넓게)
   useEffect(() => {
@@ -121,19 +130,17 @@ export function ConsultWorkspace({
             </div>
           </div>
           <div className="flex flex-1 flex-col p-5">
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              onBlur={() => save(note)}
-              disabled={!noteSavable}
-              placeholder="컨설팅 내용을 작성해주세요."
-              className="w-full flex-1 min-h-[520px] resize-y rounded-xl border border-ink/10 px-4 py-3 text-sm leading-relaxed outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition disabled:bg-ink/[0.03] disabled:text-ink/40"
+            <RichEditor
+              studentId={studentId}
+              initialHtml={initialHtml}
+              onChange={setNote}
+              editable={noteSavable}
             />
             <div className="mt-2 flex items-center justify-between text-[11px] text-ink/45">
-              <span>작성하면 자동 저장됩니다.</span>
+              <span>작성하면 자동 저장됩니다. &quot;/&quot; 를 누르면 블록 메뉴가 열려요.</span>
               <button
                 onClick={() => save(note)}
-                disabled={!noteSavable || note === savedRef.current}
+                disabled={!noteSavable || !dirty}
                 className="font-semibold text-indigo hover:underline disabled:text-ink/25 disabled:no-underline"
               >
                 지금 저장
@@ -372,10 +379,11 @@ function ConsultPreview({
           <section className="mt-6 print-avoid-break">
             <h2 className="text-lg font-extrabold text-ink mb-3">컨설팅 내용 정리</h2>
             <div className="comment-card rounded-2xl border border-ink/10 bg-[#f8fafc] px-5 py-4">
-              {note.trim() ? (
-                <p className="text-sm text-ink/85 whitespace-pre-wrap leading-relaxed">{note}</p>
+              {isEmptyNoteHtml(note) ? (
+                <p className="text-sm text-ink/40">작성된 내용이 없습니다.</p>
               ) : (
-                <p className="text-sm text-ink/40">작성된 메모가 없습니다.</p>
+                /* 에디터에서 만든 HTML 을 화면과 같은 스타일(.rich-content)로 렌더 */
+                <div className="rich-content" dangerouslySetInnerHTML={{ __html: note }} />
               )}
             </div>
           </section>

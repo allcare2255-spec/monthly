@@ -121,6 +121,7 @@ export default async function ConsultPage({
       )}
 
       <ConsultWorkspace
+        key={cumWeek}
         studentId={id}
         studentName={student.name}
         mentorName={(student as unknown as { mentor?: { name: string } | null }).mentor?.name || ""}
