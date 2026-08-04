@@ -183,6 +183,8 @@ function CycleCard({
   const cycleFirstWeek = (cycle - 1) * 4 + 1;
   const cycleLastWeek = cycle * 4;
   const isCurrent = currentWeek >= cycleFirstWeek && currentWeek <= cycleLastWeek;
+  // 4주가 모두 지난 월차 — 헤더 라벨과 월간 뱃지를 회색으로 (주차 뱃지와 동일한 기준)
+  const isPast = currentWeek > cycleLastWeek;
 
   // 이미 지나간 주차(누적 주차 < 현재 주차)의 계획표·레포트 뱃지는 회색 처리
   const weekBadgeCls = (cum: number) =>
@@ -280,7 +282,11 @@ function CycleCard({
       <div className="relative mb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <div className="text-[11px] uppercase tracking-[0.2em] text-indigo font-semibold">
+            <div
+              className={`text-[11px] uppercase tracking-[0.2em] font-semibold ${
+                isPast ? "text-ink/35" : "text-indigo"
+              }`}
+            >
               Coaching Month {cycle}
             </div>
             <div className="text-xl font-extrabold text-ink mt-0.5 flex items-center flex-wrap gap-2">
@@ -425,7 +431,11 @@ function CycleCard({
           ))}
           <Link
             href={`/mentor/students/${studentId}/monthly?cycle=${cycle}`}
-            className="text-[11px] rounded-full px-2.5 py-0.5 font-semibold border bg-fuchsia/10 text-fuchsia border-fuchsia/20 hover:bg-fuchsia/20 transition"
+            className={`text-[11px] rounded-full px-2.5 py-0.5 font-semibold border transition ${
+              isPast
+                ? "bg-ink/5 text-ink/40 border-ink/10 hover:bg-ink/10"
+                : "bg-fuchsia/10 text-fuchsia border-fuchsia/20 hover:bg-fuchsia/20"
+            }`}
           >
             {cycle}개월차 월간
           </Link>

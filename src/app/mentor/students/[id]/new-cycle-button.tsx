@@ -17,8 +17,23 @@ export function NewCycleButton({
 
   async function start() {
     setLoading(true);
-    // weekly 1주차로 이동 — GET 요청이 row 없으면 자동 생성
-    router.push(`/mentor/students/${studentId}/weekly?cycle=${nextCycle}&week=1`);
+    try {
+      // 레포트 화면으로 이동하지 않고 이 페이지에 머문 채 월차만 만든다.
+      // weekly GET 은 해당 (학생, 월차, 1주차) row 가 없으면 빈 row 를 생성한다.
+      const res = await fetch(
+        `/api/reports/weekly?student_id=${studentId}&cycle=${nextCycle}&week=1`,
+      );
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        alert(d.error || "월차를 시작하지 못했습니다.");
+        return;
+      }
+      router.refresh(); // 새 월차 카드가 아래에 추가된다
+    } catch {
+      alert("월차를 시작하지 못했습니다.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const label =
