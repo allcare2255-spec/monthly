@@ -108,7 +108,7 @@ export function ConsultWorkspace({
 
         <section className="rounded-2xl bg-white border border-ink/5 shadow-sm lg:sticky lg:top-4">
           <div className="flex items-center justify-between gap-3 border-b border-ink/5 px-5 py-3.5">
-            <h2 className="text-base font-bold text-ink">멘토 상담 메모</h2>
+            <h2 className="text-base font-bold text-ink">컨설팅 내용 정리</h2>
             <div className="flex items-center gap-2">
               <SaveBadge state={saveState} savable={noteSavable} error={errorMsg} />
               <button
@@ -369,7 +369,7 @@ function ConsultPreview({
           </h1>
 
           <section className="mt-6 print-avoid-break">
-            <h2 className="text-lg font-extrabold text-ink mb-3">멘토 상담 메모</h2>
+            <h2 className="text-lg font-extrabold text-ink mb-3">컨설팅 내용 정리</h2>
             <div className="comment-card rounded-2xl border border-ink/10 bg-[#f8fafc] px-5 py-4">
               {note.trim() ? (
                 <p className="text-sm text-ink/85 whitespace-pre-wrap leading-relaxed">{note}</p>
