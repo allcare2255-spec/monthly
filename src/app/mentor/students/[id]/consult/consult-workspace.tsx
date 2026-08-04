@@ -102,11 +102,12 @@ export function ConsultWorkspace({
 
   return (
     <>
-      {/* 좌: 학생 제출 폼 / 우: 멘토 메모 — 화면 공유용 2단 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start no-print">
+      {/* 좌: 학생 제출 폼 / 우: 멘토 메모 — 화면 공유용 2단.
+          items-stretch(기본) + flex 로 양쪽 카드 높이를 같게 맞춘다. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 no-print">
         <SubmissionPanel submission={submission} typeLabel={typeLabel} cumWeek={cumWeek} />
 
-        <section className="rounded-2xl bg-white border border-ink/5 shadow-sm lg:sticky lg:top-4">
+        <section className="flex flex-col rounded-2xl bg-white border border-ink/5 shadow-sm">
           <div className="flex items-center justify-between gap-3 border-b border-ink/5 px-5 py-3.5">
             <h2 className="text-base font-bold text-ink">컨설팅 내용 정리</h2>
             <div className="flex items-center gap-2">
@@ -119,14 +120,14 @@ export function ConsultWorkspace({
               </button>
             </div>
           </div>
-          <div className="p-5">
+          <div className="flex flex-1 flex-col p-5">
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               onBlur={() => save(note)}
               disabled={!noteSavable}
-              placeholder={`${cumWeek}주차 컨설팅 내용을 작성하세요.\n\n· 학생 답변을 보며 짚어준 것\n· 다음 주까지의 약속\n· 특이사항`}
-              className="w-full min-h-[520px] resize-y rounded-xl border border-ink/10 px-4 py-3 text-sm leading-relaxed outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition disabled:bg-ink/[0.03] disabled:text-ink/40"
+              placeholder="컨설팅 내용을 작성해주세요."
+              className="w-full flex-1 min-h-[520px] resize-y rounded-xl border border-ink/10 px-4 py-3 text-sm leading-relaxed outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition disabled:bg-ink/[0.03] disabled:text-ink/40"
             />
             <div className="mt-2 flex items-center justify-between text-[11px] text-ink/45">
               <span>작성하면 자동 저장됩니다.</span>
