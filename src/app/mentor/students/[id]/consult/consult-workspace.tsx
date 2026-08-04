@@ -86,6 +86,12 @@ export function ConsultWorkspace({
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [note]);
 
+  // 이 페이지에서만 Shell 폭 제한 해제 (좌우 여백 축소 → 2단을 넓게)
+  useEffect(() => {
+    document.body.classList.add("consult-page");
+    return () => document.body.classList.remove("consult-page");
+  }, []);
+
   useEffect(() => {
     if (preview) document.body.classList.add("preview-active");
     else document.body.classList.remove("preview-active");
