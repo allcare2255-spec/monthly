@@ -217,7 +217,10 @@ export function RichEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
-        link: { openOnClick: false, autolink: true, HTMLAttributes: { rel: "noreferrer", target: "_blank" } },
+        // openOnClick: 편집 중에도 링크를 누르면 새 탭으로 열린다 (노션과 동일).
+        // ProseMirror 의 handleClick 은 드래그가 아닌 '제자리 클릭'에만 반응하므로,
+        // 링크 글자를 드래그해서 선택하고 수정하는 것도 그대로 된다.
+        link: { openOnClick: true, autolink: true, HTMLAttributes: { rel: "noreferrer", target: "_blank" } },
       }),
       TaskList,
       TaskItem.configure({ nested: true }),
