@@ -29,7 +29,11 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
         />
       </head>
-      <body className="min-h-screen antialiased">{children}</body>
+      {/* 브라우저 맞춤법 검사 끄기 — 사전이 영어 기준이라 한국어 입력에 빨간 물결줄이 계속 그어진다.
+          spellcheck 는 상속되므로 body 한 곳에서 모든 입력란·에디터에 적용된다. */}
+      <body className="min-h-screen antialiased" spellCheck={false}>
+        {children}
+      </body>
     </html>
   );
 }
