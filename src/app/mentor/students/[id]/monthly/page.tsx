@@ -62,6 +62,10 @@ export default async function MonthlyReportPage({
 
   const cycleStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
   const cycleEnd = addDays(cycleStart, 27);
+  // 학생 상세/헤더에서 수정한 월차 날짜(오버라이드)가 있으면 월간 레포트 본문·일별 집계도 그 날짜에 연동
+  // (주간 페이지는 이미 동일하게 처리 중 — weekly/page.tsx 의 effectiveStart)
+  const effectiveStart = cycleRow?.start_date || cycleStart;
+  const effectiveEnd = cycleRow?.end_date || addDays(effectiveStart, 27);
   const notes = (cycleRow?.notes as CycleNote[]) || [];
 
   return (
@@ -118,8 +122,8 @@ export default async function MonthlyReportPage({
         highSchool={student.high_school}
         mentorName={(student as any).mentor?.name || ""}
         cycle={cycle}
-        cycleStart={cycleStart}
-        cycleEnd={cycleEnd}
+        cycleStart={effectiveStart}
+        cycleEnd={effectiveEnd}
         weeklies={(weeklies as WeeklyReport[]) || []}
         initialMonthly={monthly as any}
       />
