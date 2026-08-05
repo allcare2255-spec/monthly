@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays, cumulativeWeek, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
+import { addDays, buildCycleAnchors, cumulativeWeek, resolveCycleStart } from "@/lib/dates";
 import { getSubmissionByWeekAnyForm, getNoteByWeek } from "@/lib/consulting/store";
 import { weekStateFromWeek } from "@/lib/consulting/week";
 import { FORM_TITLE } from "@/lib/consulting/forms";
@@ -37,14 +37,10 @@ export default async function ConsultPage({
 
   const cumWeek = cumulativeWeek(cycle, week);
 
-  const [{ data: restarts }, { data: cycleRow }, submission, noteResult] = await Promise.all([
+  const [{ data: restarts }, { data: cycleRows }, submission, noteResult] = await Promise.all([
     supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", id),
-    supabase
-      .from("coaching_cycles")
-      .select("start_date, end_date")
-      .eq("student_id", id)
-      .eq("cycle_number", cycle)
-      .maybeSingle(),
+    // 이후 월차가 이어지도록 전체 월차 오버라이드를 가져온다
+    supabase.from("coaching_cycles").select("cycle_number, start_date, end_date").eq("student_id", id),
     getSubmissionByWeekAnyForm(id, cumWeek).catch(() => null as ConsultingSubmission | null),
     // 마이그레이션 미적용 시에도 페이지가 죽지 않도록 방어
     getNoteByWeek(id, cumWeek).then(
@@ -53,14 +49,11 @@ export default async function ConsultPage({
     ),
   ]);
 
-  const anchors: CycleAnchor[] = (restarts || []).map((r) => ({
-    cycle: r.cycle_number,
-    start_date: r.start_date,
-  }));
+  // 재시작 + 월차 시작일 오버라이드를 앵커로 삼아, 수정한 월차 이후가 자동으로 이어지게 한다
+  const anchors = buildCycleAnchors(restarts, cycleRows);
 
   const start = student.coaching_start_date;
-  const cycleStart = start ? resolveCycleStart(start, cycle, anchors) : null;
-  const effectiveStart = cycleRow?.start_date || cycleStart;
+  const effectiveStart = start ? resolveCycleStart(start, cycle, anchors) : null;
   const weekStart = effectiveStart ? addDays(effectiveStart, (week - 1) * 7) : null;
   const weekEnd = weekStart ? addDays(weekStart, 6) : null;
 

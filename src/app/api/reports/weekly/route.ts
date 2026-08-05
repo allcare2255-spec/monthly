@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
+import { addDays, buildCycleAnchors, resolveCycleStart } from "@/lib/dates";
 import type { DayData } from "@/types";
 
 async function ensureCanAccess(studentId: string) {
@@ -49,25 +49,15 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "코칭 시작일이 설정되지 않음" }, { status: 400 });
   }
 
-  // [변경 3] 재시작 앵커 반영한 사이클 시작일
-  const { data: restarts } = await supabase
-    .from("coaching_restarts")
-    .select("cycle_number, start_date")
-    .eq("student_id", studentId);
-  const anchors: CycleAnchor[] = (restarts || []).map((r) => ({
-    cycle: r.cycle_number,
-    start_date: r.start_date,
-  }));
-  const cycleStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
-  // 학생 상세 페이지에서 수정한 월차 시작일 오버라이드가 있으면 그것을 우선.
+  // [변경 3] 재시작 앵커 + 월차 시작일 오버라이드를 반영한 사이클 시작일.
+  // 오버라이드도 앵커로 취급하므로, 수정한 월차 이후의 월차도 자동으로 이어진다.
   // (레포트 헤더/일별 기록 날짜가 항상 같은 기준을 쓰도록 함)
-  const { data: cycleRow } = await supabase
-    .from("coaching_cycles")
-    .select("start_date")
-    .eq("student_id", studentId)
-    .eq("cycle_number", cycle)
-    .maybeSingle();
-  const effectiveStart = cycleRow?.start_date || cycleStart;
+  const [{ data: restarts }, { data: cycleRows }] = await Promise.all([
+    supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", studentId),
+    supabase.from("coaching_cycles").select("cycle_number, start_date").eq("student_id", studentId),
+  ]);
+  const anchors = buildCycleAnchors(restarts, cycleRows);
+  const effectiveStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
   const start = addDays(effectiveStart, (week - 1) * 7);
   const end = addDays(start, 6);
   const dates = Array.from({ length: 7 }, (_, i) => addDays(start, i));

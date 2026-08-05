@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays, cumulativeWeek, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
+import { addDays, buildCycleAnchors, cumulativeWeek, resolveCycleStart } from "@/lib/dates";
 import { WeeklyReportEditor } from "./weekly-editor";
 import { AdminMemoPanel, type CycleNote } from "../report-extras";
 import { ConsultingRefPanel } from "../consulting-ref-panel";
@@ -37,22 +37,19 @@ export default async function WeeklyReportPage({
   if (!student.coaching_start_date) return notFound();
 
   // 학생 확인(auth) 후, 독립 조회를 병렬 실행 (기존엔 순차 await 로 누적됐음)
-  const [{ data: restarts }, { data: cycleRow }, consultingSub] = await Promise.all([
+  const [{ data: restarts }, { data: cycleRows }, consultingSub] = await Promise.all([
     // [변경 3] 재시작 앵커
     supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", id),
-    // [변경 2] 월차 오버라이드·메모
-    supabase.from("coaching_cycles").select("start_date, end_date, notes").eq("student_id", id).eq("cycle_number", cycle).maybeSingle(),
+    // [변경 2] 월차 오버라이드·메모 — 이후 월차가 이어지도록 전체 월차를 가져온다
+    supabase.from("coaching_cycles").select("cycle_number, start_date, end_date, notes").eq("student_id", id),
     // 5단계 — 이 주차의 주간 성장 코칭 폼 제출(있으면 참고용 표시)
     getSubmissionByWeek(id, cumulativeWeek(cycle, week), "weekly").catch(() => null as ConsultingSubmission | null),
   ]);
-  const anchors: CycleAnchor[] = (restarts || []).map((r) => ({
-    cycle: r.cycle_number,
-    start_date: r.start_date,
-  }));
+  // [수정 6] 재시작 + 월차 시작일 오버라이드를 앵커로 삼아, 수정한 월차 이후가 자동으로 이어지게 한다
+  const anchors = buildCycleAnchors(restarts, cycleRows);
+  const cycleRow = (cycleRows || []).find((r) => r.cycle_number === cycle) ?? null;
 
-  const cycleStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
-  // [수정 6] 학생 상세 페이지에서 수정한 월차 시작일(오버라이드)이 있으면 그 날짜에 연동
-  const effectiveStart = cycleRow?.start_date || cycleStart;
+  const effectiveStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
   // [수정 5] 월차 전체가 아닌 "해당 주차" 날짜 범위
   const weekStart = addDays(effectiveStart, (week - 1) * 7);
   const weekEnd = addDays(weekStart, 6);

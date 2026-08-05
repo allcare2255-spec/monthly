@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays, resolveCycleStart, todaySeoul, weeksSinceStart, type CycleAnchor } from "@/lib/dates";
+import { addDays, buildCycleAnchors, resolveCycleStart, todaySeoul, weeksSinceStart } from "@/lib/dates";
 import { NewCycleButton } from "./new-cycle-button";
 import { CycleCards, type CycleInfo } from "./cycle-cards";
 import { listReviewSetsByStudent } from "@/lib/review/store";
@@ -68,10 +68,8 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
     overrides[r.cycle_number] = { start_date: r.start_date, end_date: r.end_date, memo: r.memo };
   });
 
-  const anchors: CycleAnchor[] = (restartRows || []).map((r) => ({
-    cycle: r.cycle_number,
-    start_date: r.start_date,
-  }));
+  // 재시작 + 월차 시작일 오버라이드를 앵커로 삼아, 수정한 월차 이후가 자동으로 이어지게 한다
+  const anchors = buildCycleAnchors(restartRows, cycleRows);
 
   const cycleSet = new Set<number>();
   (weeklyRows || []).forEach((r) => cycleSet.add(r.cycle_number));

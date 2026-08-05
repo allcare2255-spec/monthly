@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays, cumulativeWeek, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
+import { addDays, buildCycleAnchors, cumulativeWeek, resolveCycleStart } from "@/lib/dates";
 import { MonthlyReportView } from "./monthly-view";
 import { EditableCycleDate, AdminMemoPanel, type CycleNote } from "../report-extras";
 import { ConsultingRefPanel } from "../consulting-ref-panel";
@@ -40,7 +40,7 @@ export default async function MonthlyReportPage({
     { data: weeklies },
     { data: monthly },
     { data: restarts },
-    { data: cycleRow },
+    { data: cycleRows },
     consultingSub,
   ] = await Promise.all([
     // 사이클 내 4주간 weekly 데이터 (없으면 빈 값 처리)
@@ -49,23 +49,21 @@ export default async function MonthlyReportPage({
     supabase.from("coaching_monthly_reports").select("*").eq("student_id", id).eq("cycle_number", cycle).maybeSingle(),
     // [변경 3] 재시작 앵커
     supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", id),
-    // [변경 2] 월차 오버라이드·메모
-    supabase.from("coaching_cycles").select("start_date, end_date, notes").eq("student_id", id).eq("cycle_number", cycle).maybeSingle(),
+    // [변경 2] 월차 오버라이드·메모 — 이후 월차가 이어지도록 전체 월차를 가져온다
+    supabase.from("coaching_cycles").select("cycle_number, start_date, end_date, notes").eq("student_id", id),
     // 5단계 — 이 사이클 첫 주(=월간 주차)의 월간 비전 컨설팅 폼 제출(있으면 참고용 표시)
     getSubmissionByWeek(id, cumulativeWeek(cycle, 1), "monthly").catch(() => null as ConsultingSubmission | null),
   ]);
 
-  const anchors: CycleAnchor[] = (restarts || []).map((r) => ({
-    cycle: r.cycle_number,
-    start_date: r.start_date,
-  }));
+  // 재시작 + 월차 시작일 오버라이드를 모두 앵커로 삼아, 수정한 월차 이후가 자동으로 이어지게 한다
+  const anchors = buildCycleAnchors(restarts, cycleRows);
+  const cycleRow = (cycleRows || []).find((r) => r.cycle_number === cycle) ?? null;
 
   const cycleStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
   const cycleEnd = addDays(cycleStart, 27);
-  // 학생 상세/헤더에서 수정한 월차 날짜(오버라이드)가 있으면 월간 레포트 본문·일별 집계도 그 날짜에 연동
-  // (주간 페이지는 이미 동일하게 처리 중 — weekly/page.tsx 의 effectiveStart)
-  const effectiveStart = cycleRow?.start_date || cycleStart;
-  const effectiveEnd = cycleRow?.end_date || addDays(effectiveStart, 27);
+  // 이 월차에 직접 지정한 종료일이 있으면 그것을 우선 (레포트 본문·일별 집계도 같은 기준 사용)
+  const effectiveStart = cycleStart;
+  const effectiveEnd = cycleRow?.end_date || cycleEnd;
   const notes = (cycleRow?.notes as CycleNote[]) || [];
 
   return (

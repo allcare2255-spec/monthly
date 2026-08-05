@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays, cumulativeWeek, resolveCycleStart, type CycleAnchor } from "@/lib/dates";
+import { addDays, buildCycleAnchors, cumulativeWeek, resolveCycleStart } from "@/lib/dates";
 import { WeeklyPlanEditor } from "./plan-editor";
 import { SendButton } from "./send-button";
 
@@ -33,24 +33,14 @@ export default async function WeeklyPlanPage({
   if (session.role !== "admin" && student.mentor_id !== session.mentorId) return notFound();
   if (!student.coaching_start_date) return notFound();
 
-  const [{ data: restarts }, { data: cycleRow }] = await Promise.all([
+  const [{ data: restarts }, { data: cycleRows }] = await Promise.all([
     supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", id),
-    // [수정] 레포트 페이지와 동일하게 월차 시작일 오버라이드를 반영
-    supabase
-      .from("coaching_cycles")
-      .select("start_date")
-      .eq("student_id", id)
-      .eq("cycle_number", cycle)
-      .maybeSingle(),
+    // [수정] 레포트 페이지와 동일하게 월차 시작일 오버라이드를 반영 (이후 월차도 이어지도록 전체 조회)
+    supabase.from("coaching_cycles").select("cycle_number, start_date").eq("student_id", id),
   ]);
-  const anchors: CycleAnchor[] = (restarts || []).map((r) => ({
-    cycle: r.cycle_number,
-    start_date: r.start_date,
-  }));
-
-  const cycleStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
-  // 학생 상세 페이지에서 수정한 월차 시작일(오버라이드)이 있으면 그 날짜에 연동
-  const effectiveStart = cycleRow?.start_date || cycleStart;
+  // 재시작 + 월차 시작일 오버라이드를 앵커로 삼아, 수정한 월차 이후가 자동으로 이어지게 한다
+  const anchors = buildCycleAnchors(restarts, cycleRows);
+  const effectiveStart = resolveCycleStart(student.coaching_start_date, cycle, anchors);
   const weekStart = addDays(effectiveStart, (week - 1) * 7);
   const dates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)); // 월~일
 

@@ -68,6 +68,32 @@ export function resolveCycleStart(
   return addDays(chosen.start_date, (cycle - chosen.cycle) * 28);
 }
 
+/**
+ * 재시작 앵커 + 월차 시작일 오버라이드를 하나의 앵커 목록으로 합친다.
+ *
+ * 월차 시작일을 손으로 수정하면(예: 일주일 쉬고 시작) 그 월차뿐 아니라
+ * "그 이후 월차들도 자동으로 이어져야" 하므로, 오버라이드도 재시작과 똑같이
+ * 앵커로 취급한다. resolveCycleStart 가 대상 월차 이하의 가장 큰 앵커를 골라
+ * 28일씩 더하므로, 이후 월차는 수정된 날짜에서 자연히 이어진다.
+ *
+ * 같은 월차에 재시작과 오버라이드가 둘 다 있으면 오버라이드(직접 수정한 값)를 우선한다.
+ */
+export function buildCycleAnchors(
+  restarts?: { cycle_number: number; start_date: string | null }[] | null,
+  cycleOverrides?: { cycle_number: number; start_date: string | null }[] | null,
+): CycleAnchor[] {
+  const byCycle = new Map<number, string>();
+  for (const r of restarts || []) {
+    if (r.start_date) byCycle.set(r.cycle_number, r.start_date);
+  }
+  for (const c of cycleOverrides || []) {
+    if (c.start_date) byCycle.set(c.cycle_number, c.start_date);
+  }
+  return Array.from(byCycle, ([cycle, start_date]) => ({ cycle, start_date })).sort(
+    (a, b) => a.cycle - b.cycle,
+  );
+}
+
 /** 서버(UTC)에서도 한국시간(KST) 기준 오늘 날짜(yyyy-mm-dd). */
 export function todaySeoul(): string {
   const now = new Date();
