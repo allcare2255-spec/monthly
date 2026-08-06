@@ -23,6 +23,8 @@ export function middleware(req: NextRequest) {
     path.startsWith("/api/review/submit") ||
     // 컨설팅 폼 — 학생 공개 경로 (토큰 기반, 로그인 불필요)
     path.startsWith("/c/") ||
+    // 컨설팅 기록 열람 — 멘토가 켠 공유 링크 (토큰 기반, 로그인 불필요)
+    path.startsWith("/r/") ||
     path.startsWith("/api/consulting");
   const session = readSession(req);
 

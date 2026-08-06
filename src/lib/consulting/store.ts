@@ -206,3 +206,104 @@ export async function upsertNote(input: {
   if (error) throw new Error(error.message);
   return data as ConsultingNote;
 }
+
+// ── 컨설팅 기록 공개 링크 ───────────────────────────────────────
+export type NoteShare = { token: string | null; enabled: boolean };
+
+/** 마이그레이션(20260806_consulting_note_share.sql) 미적용 여부 판별 */
+function isMissingShareColumn(msg: string): boolean {
+  return /share_token|share_enabled/.test(msg) && /column|does not exist/i.test(msg);
+}
+
+export class ShareNotReadyError extends Error {
+  constructor() {
+    super("공개 링크 기능은 20260806_consulting_note_share.sql 적용 후 사용할 수 있습니다.");
+    this.name = "ShareNotReadyError";
+  }
+}
+
+/** 특정 주차 메모의 공유 상태 (행이 없으면 아직 만든 적 없음). */
+export async function getNoteShare(
+  studentId: string,
+  weekNumber: number,
+): Promise<NoteShare> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("consulting_notes")
+    .select("share_token, share_enabled")
+    .eq("student_id", studentId)
+    .eq("week_number", weekNumber)
+    .maybeSingle();
+  if (error) {
+    if (isMissingShareColumn(error.message)) throw new ShareNotReadyError();
+    throw new Error(error.message);
+  }
+  return {
+    token: (data as { share_token?: string | null } | null)?.share_token ?? null,
+    enabled: Boolean((data as { share_enabled?: boolean } | null)?.share_enabled),
+  };
+}
+
+/**
+ * 공유 상태 변경.
+ *  - enable    : 토큰이 없으면 발급하고 켠다
+ *  - disable   : 토큰은 남겨두고 끈다 (다시 켜면 같은 주소가 살아난다)
+ *  - regenerate: 새 토큰으로 바꾼다 (= 기존 링크 무효화) 후 켠다
+ */
+export async function setNoteShare(
+  studentId: string,
+  weekNumber: number,
+  action: "enable" | "disable" | "regenerate",
+): Promise<NoteShare> {
+  const supabase = getServiceClient();
+  const current = await getNoteShare(studentId, weekNumber);
+
+  let token = current.token;
+  let enabled = current.enabled;
+  if (action === "disable") {
+    enabled = false;
+  } else {
+    if (action === "regenerate" || !token) token = generateToken();
+    enabled = true;
+  }
+
+  // 메모 행이 아직 없을 수도 있으므로 upsert 로 만든다 (note 는 건드리지 않는다)
+  const { error } = await supabase
+    .from("consulting_notes")
+    .upsert(
+      {
+        student_id: studentId,
+        week_number: weekNumber,
+        share_token: token,
+        share_enabled: enabled,
+      },
+      { onConflict: "student_id,week_number" },
+    );
+  if (error) {
+    if (isMissingShareColumn(error.message)) throw new ShareNotReadyError();
+    throw new Error(error.message);
+  }
+  return { token, enabled };
+}
+
+/** 공개 토큰으로 열람 대상(학생+주차)을 찾는다. 꺼져 있으면 null. */
+export async function getSharedNoteByToken(
+  token: string,
+): Promise<{ studentId: string; weekNumber: number; note: string } | null> {
+  if (!token || !/^[a-f0-9]{8,}$/i.test(token)) return null;
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("consulting_notes")
+    .select("student_id, week_number, note, share_enabled")
+    .eq("share_token", token)
+    .maybeSingle();
+  if (error) {
+    if (isMissingShareColumn(error.message)) return null;
+    throw new Error(error.message);
+  }
+  const row = data as
+    | { student_id: string; week_number: number; note: string | null; share_enabled: boolean }
+    | null;
+  if (!row || !row.share_enabled) return null;
+  return { studentId: row.student_id, weekNumber: row.week_number, note: row.note ?? "" };
+}

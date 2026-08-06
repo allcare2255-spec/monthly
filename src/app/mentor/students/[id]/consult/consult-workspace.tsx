@@ -121,6 +121,7 @@ export function ConsultWorkspace({
             <h2 className="text-base font-bold text-ink">컨설팅 내용 정리</h2>
             <div className="flex items-center gap-2">
               <SaveBadge state={saveState} savable={noteSavable} error={errorMsg} />
+              <ShareMenu studentId={studentId} cumWeek={cumWeek} />
               <button
                 onClick={() => setPreview(true)}
                 className="btn-gradient rounded-xl px-3.5 py-1.5 text-xs font-semibold"
@@ -167,6 +168,160 @@ export function ConsultWorkspace({
         />
       )}
     </>
+  );
+}
+
+/** 공개 링크 만들기 / 끄기 — 그 주차의 "학생 제출 + 멘토 메모"만 열리는 주소 */
+function ShareMenu({ studentId, cumWeek }: { studentId: string; cumWeek: number }) {
+  const [open, setOpen] = useState(false);
+  const [share, setShare] = useState<{ token: string | null; enabled: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // 패널을 열 때 현재 상태를 읽어온다
+  useEffect(() => {
+    if (!open || share) return;
+    let alive = true;
+    fetch(`/api/consulting/note/share?student_id=${studentId}&week_number=${cumWeek}`)
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || "상태를 불러오지 못했습니다.");
+        return d as { token: string | null; enabled: boolean };
+      })
+      .then((d) => alive && setShare(d))
+      .catch((e) => alive && setError(e instanceof Error ? e.message : "오류"));
+    return () => {
+      alive = false;
+    };
+  }, [open, share, studentId, cumWeek]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  async function act(action: "enable" | "disable" | "regenerate") {
+    setBusy(true);
+    setError("");
+    try {
+      const r = await fetch("/api/consulting/note/share", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ student_id: studentId, week_number: cumWeek, action }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "실패했습니다.");
+      setShare(d);
+      setCopied(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "실패했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const url = share?.token ? `${typeof window !== "undefined" ? window.location.origin : ""}/r/${share.token}` : "";
+  const live = Boolean(share?.enabled && share?.token);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setError("복사에 실패했습니다. 주소를 직접 선택해 복사해주세요.");
+    }
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-xl border border-ink/15 px-3 py-1.5 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
+      >
+        🔗 링크 공유
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-9 z-50 w-[330px] rounded-2xl border border-ink/10 bg-white p-4 shadow-xl">
+          <div className="text-sm font-bold text-ink">{cumWeek}주차 기록 공유</div>
+          <p className="mt-1 text-[11px] leading-relaxed text-ink/50">
+            이 주차의 <b>학생 제출 내용</b>과 <b>멘토 메모</b>만 열립니다. 로그인 없이 링크만
+            있으면 볼 수 있으니 전달에 주의해주세요.
+          </p>
+
+          {!share && !error && <p className="mt-3 text-xs text-ink/45">불러오는 중…</p>}
+
+          {share && (
+            <>
+              {live ? (
+                <>
+                  <div className="mt-3 rounded-xl border border-ink/10 bg-ink/[0.02] px-3 py-2">
+                    <div className="break-all text-[11px] leading-relaxed text-ink/70">{url}</div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <button
+                      onClick={copy}
+                      className="btn-gradient rounded-lg px-3 py-1.5 text-[11px] font-semibold"
+                    >
+                      {copied ? "복사됨!" : "주소 복사"}
+                    </button>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-lg border border-ink/15 px-3 py-1.5 text-[11px] font-semibold text-ink/70 hover:bg-ink/5"
+                    >
+                      미리보기
+                    </a>
+                    <button
+                      onClick={() => act("disable")}
+                      disabled={busy}
+                      className="rounded-lg border border-ink/15 px-3 py-1.5 text-[11px] font-semibold text-ink/70 hover:bg-ink/5 disabled:opacity-50"
+                    >
+                      링크 끄기
+                    </button>
+                    <button
+                      onClick={() => act("regenerate")}
+                      disabled={busy}
+                      className="rounded-lg border border-rose/30 px-3 py-1.5 text-[11px] font-semibold text-rose hover:bg-rose/5 disabled:opacity-50"
+                    >
+                      새 주소로 교체
+                    </button>
+                  </div>
+                  <p className="mt-2 text-[10px] leading-relaxed text-ink/40">
+                    &quot;새 주소로 교체&quot;를 누르면 이전에 보낸 링크는 즉시 열리지 않습니다.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => act("enable")}
+                    disabled={busy}
+                    className="btn-gradient mt-3 w-full rounded-xl px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                  >
+                    {busy ? "만드는 중…" : share.token ? "링크 다시 켜기" : "공유 링크 만들기"}
+                  </button>
+                  {share.token && (
+                    <p className="mt-2 text-[10px] text-ink/40">
+                      지금은 꺼져 있습니다. 다시 켜면 이전과 같은 주소가 살아납니다.
+                    </p>
+                  )}
+                </>
+              )}
+            </>
+          )}
+
+          {error && <p className="mt-2 text-[11px] font-semibold text-rose">{error}</p>}
+        </div>
+      )}
+    </div>
   );
 }
 
