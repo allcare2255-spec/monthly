@@ -17,6 +17,7 @@ import { Placeholder } from "@tiptap/extension-placeholder";
 import Suggestion, { type SuggestionOptions } from "@tiptap/suggestion";
 import { ResizableImage } from "./editor-image";
 import { Callout } from "./editor-callout";
+import { BlockBackground, applyBlockBackground } from "./editor-block-bg";
 
 // ── 색상 팔레트 (노션과 동일한 10색 + 기본) ─────────────────────
 type Swatch = { name: string; text: string; bg: string };
@@ -248,6 +249,7 @@ export function RichEditor({
       Color,
       BackgroundColor,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
+      BlockBackground,
       TableKit.configure({ table: { resizable: true, allowTableNodeSelection: true } }),
       // persist: 접힘/펼침 상태를 저장해 다시 열었을 때 그대로 보이게 한다
       Details.configure({ persist: true, HTMLAttributes: { class: "editor-details" } }),
@@ -580,9 +582,16 @@ function MenuItem({
 }
 
 // ── 색 적용 ─────────────────────────────────────────────────────
-type LastColorRef = React.RefObject<{ kind: "text" | "bg"; value: string } | null>;
+type ColorKind = "text" | "bg" | "block";
+type LastColorRef = React.RefObject<{ kind: ColorKind; value: string } | null>;
 
-function applyColor(editor: Editor, kind: "text" | "bg", value: string, ref: LastColorRef) {
+function applyColor(editor: Editor, kind: ColorKind, value: string, ref: LastColorRef) {
+  // 블록 배경색은 마크가 아니라 블록 속성이라 선택 범위를 넓힐 필요가 없다
+  if (kind === "block") {
+    applyBlockBackground(editor, value);
+    if (value) ref.current = { kind, value };
+    return;
+  }
   const chain = editor.chain().focus();
   // 선택이 없으면 노션처럼 현재 블록 전체에 적용한다
   const { empty, $from } = editor.state.selection;
@@ -883,6 +892,32 @@ function ColorMenu({
               >
                 A
               </button>
+            ))}
+          </div>
+          <div className="editor-color-title mt-2">
+            블록 배경색 <span className="editor-color-hint">줄 전체</span>
+          </div>
+          <div className="editor-color-grid">
+            <button
+              type="button"
+              title="블록 배경 없애기"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { applyColor(editor, "block", "", lastColorRef); setOpen(false); }}
+              className="editor-color-cell"
+              style={{ background: "#ffffff", border: "1px solid #e5e7eb" }}
+            >
+              A
+            </button>
+            {PALETTE.map((c) => (
+              <button
+                key={`k-${c.name}`}
+                type="button"
+                title={`${c.name} 블록 배경색`}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { applyColor(editor, "block", c.bg, lastColorRef); setOpen(false); }}
+                className="editor-color-cell editor-color-cell-block"
+                style={{ background: c.bg }}
+              />
             ))}
           </div>
           <div className="mt-2 text-[10px] text-ink/45">

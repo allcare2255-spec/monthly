@@ -592,6 +592,23 @@ body.preview-active .editor-drag-handle { display: none !important; }
   justify-content: center;
 }
 .editor-color-cell:hover { outline: 2px solid rgba(14, 165, 233, 0.5); }
+/* 블록 배경색 칸 — 글자가 없으니 옅은 색도 보이도록 테두리를 준다 */
+.editor-color-cell-block { border: 1px solid rgba(11, 16, 32, 0.12); }
+.editor-color-hint {
+  font-weight: 500;
+  letter-spacing: 0;
+  color: rgba(11, 16, 32, 0.35);
+}
+
+/* 블록 배경색 — 글자 뒤가 아니라 줄 전체에 색 띠가 깔린다 (노션과 동일) */
+.rich-content [data-block-bg] {
+  border-radius: 6px;
+  padding: 3px 8px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+/* 목록 항목은 기호와 글자가 붙어 있으므로 왼쪽 여백을 조금 줄인다 */
+.rich-content li[data-block-bg] { padding-left: 4px; }
 
 /* 슬래시(/) 명령 메뉴 */
 .editor-slash {
@@ -672,6 +689,14 @@ body.preview-active .editor-drag-handle { display: none !important; }
   .no-print { display: none !important; }
   /* 블록 드래그 핸들은 body 포털이라 .no-print 가 닿지 않는다 */
   .editor-drag-handle { display: none !important; }
+  /* 메모의 강조색(블록 배경·콜아웃·형광펜)은 PDF 에도 그대로 찍히게 한다.
+     기본값은 배경색을 빼고 인쇄해서, 색으로 구분해둔 내용이 흑백으로 뭉개진다. */
+  .rich-content [data-block-bg],
+  .rich-content aside[data-type="callout"],
+  .rich-content [style*="background"] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
   /* 접어둔 토글도 PDF 에는 내용이 남아야 한다 — 기록이 통째로 사라지면 안 되므로 펼쳐서 인쇄 */
   .rich-content details > [data-type="detailsContent"] { display: block !important; }
   .rich-content details > summary::before { content: "▼" !important; }
