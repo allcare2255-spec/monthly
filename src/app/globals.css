@@ -241,8 +241,251 @@ body.consult-page main {
 .rich-content img[data-align="center"] { margin-left: auto; margin-right: auto; }
 .rich-content img[data-align="right"] { margin-left: auto; margin-right: 0; }
 
+/* ── 표 ────────────────────────────────────────────── */
+.rich-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 10px 0;
+  overflow: hidden;
+}
+.rich-content table td,
+.rich-content table th {
+  position: relative;
+  min-width: 1em;
+  padding: 7px 10px;
+  border: 1px solid rgba(11, 16, 32, 0.14);
+  vertical-align: top;
+}
+.rich-content table th {
+  background: rgba(11, 16, 32, 0.04);
+  font-weight: 700;
+  text-align: left;
+}
+.rich-content table p { margin: 0; min-height: 0; }
+/* 선택된 셀 / 열 너비 조절 손잡이 */
+.rich-content .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(14, 165, 233, 0.14);
+  pointer-events: none;
+}
+.rich-content .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background: #0ea5e9;
+  pointer-events: none;
+}
+.rich-content.resize-cursor { cursor: col-resize; }
+
+/* 표 편집 줄 (표 안에 커서가 있을 때만) */
+.editor-table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 8px;
+  border-left: 1px solid rgba(11, 16, 32, 0.1);
+  border-right: 1px solid rgba(11, 16, 32, 0.1);
+  border-bottom: 1px solid rgba(11, 16, 32, 0.1);
+  background: rgba(14, 165, 233, 0.06);
+}
+.editor-table-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #0284c7;
+  margin-right: 4px;
+}
+.editor-table-btn {
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(11, 16, 32, 0.7);
+  background: #ffffff;
+  border: 1px solid rgba(11, 16, 32, 0.1);
+}
+.editor-table-btn:hover { background: rgba(11, 16, 32, 0.05); }
+.editor-table-btn.is-danger { color: #d44c47; border-color: rgba(212, 76, 71, 0.3); }
+
+/* ── 토글 목록 (details) ───────────────────────────── */
+/* 에디터 안: div[data-type="details"] > button + div(summary + content) */
+.rich-content [data-type="details"] {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 2px;
+  margin: 4px 0;
+}
+.rich-content [data-type="details"] > button {
+  align-self: start;
+  width: 18px;
+  height: 24px;
+  line-height: 24px;
+  font-size: 11px;
+  color: rgba(11, 16, 32, 0.5);
+  cursor: pointer;
+  background: none;
+}
+.rich-content [data-type="details"] > button::before { content: "▶"; }
+.rich-content [data-type="details"].is-open > button::before { content: "▼"; }
+.rich-content [data-type="details"] > button:hover { color: rgba(11, 16, 32, 0.85); }
+.rich-content [data-type="details"] summary {
+  list-style: none;
+  font-weight: 600;
+  padding: 1px 0;
+}
+.rich-content [data-type="details"] summary::-webkit-details-marker { display: none; }
+.rich-content [data-type="detailsContent"] { padding: 2px 0 2px 2px; }
+.rich-content [data-type="detailsContent"] > * + * { margin-top: 6px; }
+
+/* 저장된 HTML(에디터 밖 · PDF)에서는 진짜 <details> 태그로 그려진다 */
+.rich-content details { margin: 4px 0; }
+.rich-content details > summary {
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.rich-content details > summary::before {
+  content: "▶";
+  display: inline-block;
+  width: 16px;
+  font-size: 11px;
+  color: rgba(11, 16, 32, 0.5);
+}
+.rich-content details[open] > summary::before { content: "▼"; }
+.rich-content details > summary::-webkit-details-marker { display: none; }
+.rich-content details > [data-type="detailsContent"] { padding-left: 16px; }
+
+/* ── 콜아웃 ────────────────────────────────────────── */
+.rich-content aside[data-type="callout"],
+.rich-content .callout-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 8px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(11, 16, 32, 0.07);
+}
+.rich-content .callout-emoji-wrap { position: relative; flex: 0 0 auto; }
+.rich-content .callout-emoji {
+  font-size: 17px;
+  line-height: 1.5;
+  border-radius: 6px;
+  padding: 0 2px;
+  user-select: none;
+}
+.rich-content .callout-emoji:not(:disabled):hover { background: rgba(11, 16, 32, 0.07); }
+.rich-content .callout-body { flex: 1 1 auto; min-width: 0; }
+.rich-content .callout-body > * + * { margin-top: 6px; }
+.rich-content .callout-body p { min-height: 1.5em; }
+.callout-pop {
+  position: absolute;
+  z-index: 60;
+  top: 28px;
+  left: 0;
+  width: 216px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(11, 16, 32, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+}
+.callout-emoji-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.callout-emoji-cell {
+  height: 26px;
+  border-radius: 6px;
+  font-size: 15px;
+}
+.callout-emoji-cell:hover { background: rgba(11, 16, 32, 0.07); }
+.callout-emoji-cell.is-active { outline: 2px solid rgba(14, 165, 233, 0.5); }
+.callout-bg-grid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 3px; }
+.callout-bg-cell {
+  height: 20px;
+  border-radius: 5px;
+  border: 1px solid rgba(11, 16, 32, 0.1);
+}
+.callout-bg-cell.is-active { outline: 2px solid rgba(14, 165, 233, 0.6); }
+
+/* ── 블록 드래그 핸들 (노션의 ⠿) ───────────────────── */
+.editor-drag-handle { z-index: 40; }
+/* PDF 미리보기가 떠 있는 동안에는 핸들을 숨긴다 (body 포털이라 오버레이 위로 뜬다) */
+body.preview-active .editor-drag-handle { display: none !important; }
+.editor-drag-zone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding-right: 4px;
+}
+.editor-drag-btn {
+  width: 20px;
+  height: 22px;
+  border-radius: 5px;
+  font-size: 12px;
+  line-height: 1;
+  color: rgba(11, 16, 32, 0.32);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+}
+.editor-drag-btn:hover { background: rgba(11, 16, 32, 0.08); color: rgba(11, 16, 32, 0.7); }
+.editor-drag-grip { cursor: grab; }
+.editor-drag-grip:active { cursor: grabbing; }
+
+.editor-block-menu {
+  position: absolute;
+  z-index: 80;
+  top: 26px;
+  left: 0;
+  width: 190px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 5px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(11, 16, 32, 0.1);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.18);
+}
+.editor-block-menu-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(11, 16, 32, 0.4);
+  padding: 7px 9px 3px;
+  border-top: 1px solid rgba(11, 16, 32, 0.07);
+  margin-top: 4px;
+}
+.editor-block-menu-item {
+  width: 100%;
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  text-align: left;
+  color: rgba(11, 16, 32, 0.8);
+}
+.editor-block-menu-item:hover { background: rgba(14, 165, 233, 0.12); }
+.editor-block-menu-item.is-danger { color: #d44c47; }
+.editor-block-menu-item.is-danger:hover { background: rgba(212, 76, 71, 0.1); }
+
 /* 빈 문서 안내문 (Tiptap Placeholder) */
-.rich-content p.is-editor-empty:first-child::before {
+.rich-content [data-type="detailsSummary"].is-empty::before,
+.rich-content summary.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: rgba(11, 16, 32, 0.35);
+}
+/* 표 셀·콜아웃 같은 중첩 문단에는 안내문이 새어 나오지 않도록 최상위 문단만 대상으로 한다 */
+.rich-content > p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
   height: 0;
@@ -427,6 +670,11 @@ body.consult-page main {
 ─────────────────────────────────────── */
 @media print {
   .no-print { display: none !important; }
+  /* 블록 드래그 핸들은 body 포털이라 .no-print 가 닿지 않는다 */
+  .editor-drag-handle { display: none !important; }
+  /* 접어둔 토글도 PDF 에는 내용이 남아야 한다 — 기록이 통째로 사라지면 안 되므로 펼쳐서 인쇄 */
+  .rich-content details > [data-type="detailsContent"] { display: block !important; }
+  .rich-content details > summary::before { content: "▼" !important; }
   body { background: #FFFFFF !important; }
   .mesh-bg, .mesh-bg-soft { background: #FFFFFF !important; }
   .glass, .glass-dark {

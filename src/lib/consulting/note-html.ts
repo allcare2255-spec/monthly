@@ -13,7 +13,7 @@ function escapeHtml(s: string): string {
 
 /** 저장값이 리치 에디터가 만든 HTML 인지 (평문 메모와 구분). */
 export function isHtmlNote(value: string): boolean {
-  return /^\s*<(p|ul|ol|h[1-3]|blockquote|pre|hr|img|div)\b/i.test(value);
+  return /^\s*<(p|ul|ol|h[1-3]|blockquote|pre|hr|img|div|table|details|aside)\b/i.test(value);
 }
 
 /** 저장값 → 에디터/렌더링용 HTML. 평문이면 줄 단위로 <p> 로 감싼다. */
@@ -27,10 +27,13 @@ export function noteToHtml(value: string | null | undefined): string {
     .join("");
 }
 
+/** 글자가 없어도 그 자체로 '내용'인 블록 — 이미지·표·구분선·토글·콜아웃 */
+const CONTENT_BLOCK = /<(img|table|hr|details|aside)\b/i;
+
 /** HTML 이 실질적으로 비어 있는지 (빈 문단만 있는 경우 포함). */
 export function isEmptyNoteHtml(html: string): boolean {
+  if (CONTENT_BLOCK.test(html)) return false;
   const stripped = html
-    .replace(/<img[^>]*>/gi, "IMG")
     .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/gi, " ")
     .trim();

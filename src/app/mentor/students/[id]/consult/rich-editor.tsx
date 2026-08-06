@@ -4,12 +4,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Extension, type Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
+import { DragHandle } from "@tiptap/extension-drag-handle-react";
+import type { Node as PMNode } from "@tiptap/pm/model";
+import { TextSelection } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
 import { TaskList, TaskItem } from "@tiptap/extension-list";
 import { TextStyle, Color, BackgroundColor } from "@tiptap/extension-text-style";
+import { TextAlign } from "@tiptap/extension-text-align";
+import { TableKit } from "@tiptap/extension-table";
+import { Details, DetailsContent, DetailsSummary } from "@tiptap/extension-details";
 import { Placeholder } from "@tiptap/extension-placeholder";
 import Suggestion, { type SuggestionOptions } from "@tiptap/suggestion";
 import { ResizableImage } from "./editor-image";
+import { Callout } from "./editor-callout";
 
 // ── 색상 팔레트 (노션과 동일한 10색 + 기본) ─────────────────────
 type Swatch = { name: string; text: string; bg: string };
@@ -30,6 +37,8 @@ type SlashItem = {
   title: string;
   hint: string;
   keywords: string;
+  /** 파일 선택창처럼 에디터 밖 동작이 필요한 항목 */
+  special?: "image";
   run: (editor: Editor) => void;
 };
 
@@ -38,13 +47,16 @@ const SLASH_ITEMS: SlashItem[] = [
   { title: "할 일 목록", hint: "체크박스", keywords: "할일 todo check 체크박스 task", run: (e) => e.chain().focus().toggleTaskList().run() },
   { title: "글머리 기호 목록", hint: "• 목록", keywords: "글머리 불릿 bullet list 목록", run: (e) => e.chain().focus().toggleBulletList().run() },
   { title: "번호 목록", hint: "1. 목록", keywords: "번호 numbered ordered list 목록", run: (e) => e.chain().focus().toggleOrderedList().run() },
+  { title: "토글 목록", hint: "▸ 접었다 펴기", keywords: "토글 toggle details 접기 펼치기 아코디언", run: (e) => e.chain().focus().setDetails().run() },
+  { title: "콜아웃", hint: "💡 강조 박스", keywords: "콜아웃 callout 강조 박스 note tip 안내", run: (e) => e.chain().focus().setCallout().run() },
+  { title: "표", hint: "3×3 표", keywords: "표 table 테이블 격자", run: (e) => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
   { title: "제목1", hint: "큰 제목", keywords: "제목 heading h1 title", run: (e) => e.chain().focus().toggleHeading({ level: 1 }).run() },
   { title: "제목2", hint: "중간 제목", keywords: "제목 heading h2", run: (e) => e.chain().focus().toggleHeading({ level: 2 }).run() },
   { title: "제목3", hint: "작은 제목", keywords: "제목 heading h3", run: (e) => e.chain().focus().toggleHeading({ level: 3 }).run() },
   { title: "인용", hint: "인용문", keywords: "인용 quote blockquote", run: (e) => e.chain().focus().toggleBlockquote().run() },
   { title: "구분선", hint: "가로줄", keywords: "구분선 divider hr line", run: (e) => e.chain().focus().setHorizontalRule().run() },
   { title: "코드", hint: "코드 블록", keywords: "코드 code block", run: (e) => e.chain().focus().toggleCodeBlock().run() },
-  { title: "이미지", hint: "사진 올리기", keywords: "이미지 사진 image photo picture 업로드", run: () => {} }, // 아래에서 특별 처리
+  { title: "이미지", hint: "사진 올리기", keywords: "이미지 사진 image photo picture 업로드", special: "image", run: () => {} },
 ];
 
 const SlashCommand = Extension.create<{ suggestion: Omit<SuggestionOptions, "editor"> }>({
@@ -58,6 +70,7 @@ const SlashCommand = Extension.create<{ suggestion: Omit<SuggestionOptions, "edi
 });
 
 // ── 노션과 같은 단축키 ──────────────────────────────────────────
+// 번호는 노션 실제 단축키에 맞춘다: 0 텍스트 / 1~3 제목 / 4 할 일 / 5 글머리 / 6 번호 / 7 토글
 const NotionShortcuts = Extension.create({
   name: "notionShortcuts",
   priority: 1000,
@@ -74,13 +87,20 @@ const NotionShortcuts = Extension.create({
       return false;
     };
     return {
-      "Mod-Shift-5": () => this.editor.commands.toggleBulletList(),
-      "Mod-Shift-6": () => this.editor.commands.toggleOrderedList(),
-      "Mod-Shift-7": () => this.editor.commands.toggleTaskList(),
       "Mod-Shift-0": () => this.editor.commands.setParagraph(),
       "Mod-Shift-1": () => this.editor.commands.toggleHeading({ level: 1 }),
       "Mod-Shift-2": () => this.editor.commands.toggleHeading({ level: 2 }),
       "Mod-Shift-3": () => this.editor.commands.toggleHeading({ level: 3 }),
+      "Mod-Shift-4": () => this.editor.commands.toggleTaskList(),
+      "Mod-Shift-5": () => this.editor.commands.toggleBulletList(),
+      "Mod-Shift-6": () => this.editor.commands.toggleOrderedList(),
+      "Mod-Shift-7": () => this.editor.commands.setDetails(),
+      "Mod-Shift-8": () => this.editor.commands.toggleCodeBlock(),
+      // 노션과 동일하게 Ctrl/Cmd+K 로 링크 입력창을 연다
+      "Mod-k": () => {
+        promptLink(this.editor);
+        return true;
+      },
       "Mod-Enter": toggleTaskChecked,
     };
   },
@@ -204,7 +224,7 @@ export function RichEditor({
       command: ({ editor, range, props }) => {
         const item = props as unknown as SlashItem;
         editor.chain().focus().deleteRange(range).run();
-        if (item.title === "이미지") fileInputRef.current?.click();
+        if (item.special === "image") fileInputRef.current?.click();
         else item.run(editor as Editor);
       },
     }),
@@ -227,8 +247,23 @@ export function RichEditor({
       TextStyle,
       Color,
       BackgroundColor,
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      TableKit.configure({ table: { resizable: true, allowTableNodeSelection: true } }),
+      // persist: 접힘/펼침 상태를 저장해 다시 열었을 때 그대로 보이게 한다
+      Details.configure({ persist: true, HTMLAttributes: { class: "editor-details" } }),
+      DetailsSummary,
+      DetailsContent,
+      Callout,
       ResizableImage.configure({ inline: false, allowBase64: false }),
-      Placeholder.configure({ placeholder: "컨설팅 내용을 작성해주세요." }),
+      Placeholder.configure({
+        includeChildren: true,
+        placeholder: ({ editor, node, pos }) => {
+          if (node.type.name === "detailsSummary") return "토글 제목";
+          if (node.type.name !== "paragraph") return "";
+          // 표 셀·콜아웃 안의 빈 문단까지 안내문이 새어 나오지 않도록 최상위 문단만 대상으로 한다
+          return editor.state.doc.resolve(pos).depth === 0 ? "컨설팅 내용을 작성해주세요." : "";
+        },
+      }),
       NotionShortcuts,
       SlashCommand.configure({ suggestion }),
     ],
@@ -302,6 +337,8 @@ export function RichEditor({
         disabled={!editable}
       />
 
+      {editable && editor.isActive("table") && <TableToolbar editor={editor} />}
+
       <BubbleMenu
         editor={editor}
         options={{ placement: "top" }}
@@ -328,6 +365,8 @@ export function RichEditor({
           <ColorMenu editor={editor} lastColorRef={lastColorRef} compact />
         </div>
       </BubbleMenu>
+
+      {editable && <BlockDragHandle editor={editor} />}
 
       <div className="relative flex flex-1 flex-col">
         <EditorContent editor={editor} className="flex flex-1 flex-col" />
@@ -375,6 +414,168 @@ export function RichEditor({
         }}
       />
     </div>
+  );
+}
+
+// ── 블록 드래그 핸들 (노션의 ⠿ + ＋) ────────────────────────────
+function BlockDragHandle({ editor }: { editor: Editor }) {
+  const [current, setCurrent] = useState<{ node: PMNode | null; pos: number }>({ node: null, pos: -1 });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, [menuOpen]);
+
+  const pos = current.pos;
+  const valid = pos >= 0;
+
+  /** 이 블록 안으로 커서를 옮긴다 (블록 전환 명령의 기준점) */
+  const focusBlock = useCallback(() => {
+    if (!valid) return;
+    editor.chain().focus().setTextSelection(pos + 1).run();
+  }, [editor, pos, valid]);
+
+  const insertParagraph = useCallback(
+    (where: "before" | "after") => {
+      if (!valid) return;
+      editor
+        .chain()
+        .focus()
+        .command(({ tr, state }) => {
+          const node = tr.doc.nodeAt(pos);
+          if (!node) return false;
+          const at = where === "before" ? pos : pos + node.nodeSize;
+          tr.insert(at, state.schema.nodes.paragraph.create());
+          // 새로 넣은 빈 문단 안으로 커서 이동
+          tr.setSelection(TextSelection.near(tr.doc.resolve(at + 1)));
+          return true;
+        })
+        .run();
+      setMenuOpen(false);
+    },
+    [editor, pos, valid],
+  );
+
+  const duplicate = useCallback(() => {
+    if (!valid) return;
+    editor
+      .chain()
+      .focus()
+      .command(({ tr }) => {
+        const node = tr.doc.nodeAt(pos);
+        if (!node) return false;
+        tr.insert(pos + node.nodeSize, node.copy(node.content));
+        return true;
+      })
+      .run();
+    setMenuOpen(false);
+  }, [editor, pos, valid]);
+
+  const remove = useCallback(() => {
+    if (!valid) return;
+    editor
+      .chain()
+      .focus()
+      .command(({ tr }) => {
+        const node = tr.doc.nodeAt(pos);
+        if (!node) return false;
+        tr.delete(pos, pos + node.nodeSize);
+        return true;
+      })
+      .run();
+    setMenuOpen(false);
+  }, [editor, pos, valid]);
+
+  const convert = useCallback(
+    (fn: (e: Editor) => void) => {
+      focusBlock();
+      fn(editor);
+      setMenuOpen(false);
+    },
+    [editor, focusBlock],
+  );
+
+  return (
+    <DragHandle
+      editor={editor}
+      nested
+      className="editor-drag-handle"
+      onNodeChange={({ node, pos }) => {
+        setCurrent({ node, pos });
+        setMenuOpen(false);
+      }}
+    >
+      <div className="editor-drag-zone" ref={menuRef}>
+        <button
+          type="button"
+          title="아래에 블록 추가"
+          className="editor-drag-btn"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => insertParagraph("after")}
+        >
+          ＋
+        </button>
+        <button
+          type="button"
+          title="드래그해서 옮기기 · 눌러서 메뉴"
+          className="editor-drag-btn editor-drag-grip"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setMenuOpen((o) => !o)}
+        >
+          ⠿
+        </button>
+
+        {menuOpen && (
+          <div className="editor-block-menu">
+            <MenuItem onClick={() => insertParagraph("before")}>위에 블록 추가</MenuItem>
+            <MenuItem onClick={() => insertParagraph("after")}>아래에 블록 추가</MenuItem>
+            <MenuItem onClick={duplicate}>복제</MenuItem>
+            <MenuItem onClick={remove} danger>
+              삭제
+            </MenuItem>
+            <div className="editor-block-menu-title">전환</div>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().setParagraph().run())}>텍스트</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().setNode("heading", { level: 1 }).run())}>제목1</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().setNode("heading", { level: 2 }).run())}>제목2</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().setNode("heading", { level: 3 }).run())}>제목3</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().toggleTaskList().run())}>할 일 목록</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().toggleBulletList().run())}>글머리 기호 목록</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().toggleOrderedList().run())}>번호 목록</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().toggleBlockquote().run())}>인용</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().setCallout().run())}>콜아웃</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().setDetails().run())}>토글 목록</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().toggleCodeBlock().run())}>코드</MenuItem>
+          </div>
+        )}
+      </div>
+    </DragHandle>
+  );
+}
+
+function MenuItem({
+  children,
+  onClick,
+  danger,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onClick}
+      className={`editor-block-menu-item${danger ? " is-danger" : ""}`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -427,7 +628,7 @@ function Toolbar({
       <MarkBtn editor={editor} name="strike" label="S" title="취소선 (Ctrl+Shift+S)" cls="line-through" />
       <MarkBtn editor={editor} name="code" label="{}" title="인라인 코드 (Ctrl+E)" cls="font-mono text-[11px]" />
       <span className="editor-sep" />
-      <Btn editor={editor} title="할 일 목록 (Ctrl+Shift+7)" active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()}>
+      <Btn editor={editor} title="할 일 목록 (Ctrl+Shift+4)" active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()}>
         ☑
       </Btn>
       <Btn editor={editor} title="글머리 기호 목록 (Ctrl+Shift+5)" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
@@ -446,9 +647,29 @@ function Toolbar({
       <Btn editor={editor} title="인용" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
         ❝
       </Btn>
+      <Btn editor={editor} title="토글 목록 (Ctrl+Shift+7)" active={editor.isActive("details")} onClick={() => editor.chain().focus().setDetails().run()}>
+        ▸
+      </Btn>
+      <Btn editor={editor} title="콜아웃" active={editor.isActive("callout")} onClick={() => editor.chain().focus().toggleCallout().run()}>
+        💡
+      </Btn>
+      <Btn editor={editor} title="표 넣기 (3×3)" active={editor.isActive("table")} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
+        ▦
+      </Btn>
       <Btn editor={editor} title="구분선" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
         ―
       </Btn>
+      <span className="editor-sep" />
+      <Btn editor={editor} title="왼쪽 정렬 (Ctrl+Shift+L)" active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+        ⬅
+      </Btn>
+      <Btn editor={editor} title="가운데 정렬 (Ctrl+Shift+E)" active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()}>
+        ⬌
+      </Btn>
+      <Btn editor={editor} title="오른쪽 정렬 (Ctrl+Shift+R)" active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()}>
+        ➡
+      </Btn>
+      <span className="editor-sep" />
       <Btn editor={editor} title="링크 (Ctrl+K)" active={editor.isActive("link")} onClick={() => promptLink(editor)}>
         🔗
       </Btn>
@@ -468,6 +689,50 @@ function Toolbar({
         ⌫
       </Btn>
     </div>
+  );
+}
+
+/** 표 안에 커서가 있을 때만 뜨는 표 편집 줄 */
+function TableToolbar({ editor }: { editor: Editor }) {
+  return (
+    <div className="editor-table-toolbar no-print">
+      <span className="editor-table-label">표</span>
+      <TBtn onClick={() => editor.chain().focus().addRowBefore().run()}>행↑</TBtn>
+      <TBtn onClick={() => editor.chain().focus().addRowAfter().run()}>행↓</TBtn>
+      <TBtn onClick={() => editor.chain().focus().addColumnBefore().run()}>열←</TBtn>
+      <TBtn onClick={() => editor.chain().focus().addColumnAfter().run()}>열→</TBtn>
+      <span className="editor-sep" />
+      <TBtn onClick={() => editor.chain().focus().deleteRow().run()}>행 삭제</TBtn>
+      <TBtn onClick={() => editor.chain().focus().deleteColumn().run()}>열 삭제</TBtn>
+      <span className="editor-sep" />
+      <TBtn onClick={() => editor.chain().focus().toggleHeaderRow().run()}>제목 행</TBtn>
+      <TBtn onClick={() => editor.chain().focus().mergeOrSplit().run()}>병합/분할</TBtn>
+      <span className="editor-sep" />
+      <TBtn danger onClick={() => editor.chain().focus().deleteTable().run()}>
+        표 삭제
+      </TBtn>
+    </div>
+  );
+}
+
+function TBtn({
+  children,
+  onClick,
+  danger,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onClick}
+      className={`editor-table-btn${danger ? " is-danger" : ""}`}
+    >
+      {children}
+    </button>
   );
 }
 

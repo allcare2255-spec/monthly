@@ -47,7 +47,7 @@ export const ResizableImage = Image.extend({
 
 const MIN_W = 80;
 
-function ImageNodeView({ node, updateAttributes, selected, editor }: NodeViewProps) {
+function ImageNodeView({ node, updateAttributes, selected, editor, deleteNode }: NodeViewProps) {
   const src = node.attrs.src as string;
   const width = (node.attrs.width as number | null) ?? null;
   const align = (node.attrs.align as ImageAlign) || "center";
@@ -179,6 +179,10 @@ function ImageNodeView({ node, updateAttributes, selected, editor }: NodeViewPro
               >
                 W
               </BarBtn>
+              <span className="editor-image-bar-sep" />
+              <BarBtn onClick={() => deleteNode()} title="이미지 삭제" danger>
+                🗑
+              </BarBtn>
             </div>
           </>
         )}
@@ -192,11 +196,13 @@ function BarBtn({
   onClick,
   active,
   title,
+  danger,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   active?: boolean;
   title: string;
+  danger?: boolean;
 }) {
   return (
     <button
@@ -204,7 +210,7 @@ function BarBtn({
       title={title}
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      className={`editor-image-bar-btn${active ? " is-active" : ""}`}
+      className={`editor-image-bar-btn${active ? " is-active" : ""}${danger ? " is-danger" : ""}`}
     >
       {children}
     </button>

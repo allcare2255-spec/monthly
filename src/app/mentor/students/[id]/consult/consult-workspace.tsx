@@ -137,7 +137,9 @@ export function ConsultWorkspace({
               editable={noteSavable}
             />
             <div className="mt-2 flex items-center justify-between text-[11px] text-ink/45">
-              <span>작성하면 자동 저장됩니다. &quot;/&quot; 를 누르면 블록 메뉴가 열려요.</span>
+              <span>
+                자동 저장됩니다. &quot;/&quot; 로 블록 추가, 왼쪽 ⠿ 를 잡아 순서 변경·＋로 블록 추가.
+              </span>
               <button
                 onClick={() => save(note)}
                 disabled={!noteSavable || !dirty}
