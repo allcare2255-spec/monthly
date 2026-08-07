@@ -369,6 +369,16 @@ export function RichEditor({
     return () => window.removeEventListener("keydown", onKey);
   }, [editor]);
 
+  // ⚠️ BubbleMenu 는 options / shouldShow 가 "다른 값"이면 트랜잭션을 dispatch 한다.
+  // 인라인으로 넘기면 매 렌더 새 객체라서, 리렌더가 켜진 상태에서
+  // 렌더 → dispatch → 리렌더 → dispatch … 무한 루프가 되어 에디터가 통째로 죽는다.
+  const bubbleOptions = useMemo(() => ({ placement: "top" as const }), []);
+  const bubbleShouldShow = useCallback(
+    ({ editor, from, to }: { editor: Editor; from: number; to: number }) =>
+      editable && from !== to && !editor.isActive("image"),
+    [editable],
+  );
+
   if (!editor) {
     return <div className="min-h-[520px] rounded-xl border border-ink/10 bg-ink/[0.02]" />;
   }
@@ -385,13 +395,7 @@ export function RichEditor({
 
       {editable && editor.isActive("table") && <TableToolbar editor={editor} />}
 
-      <BubbleMenu
-        editor={editor}
-        options={{ placement: "top" }}
-        shouldShow={({ editor, from, to }) =>
-          editable && from !== to && !editor.isActive("image")
-        }
-      >
+      <BubbleMenu editor={editor} options={bubbleOptions} shouldShow={bubbleShouldShow}>
         <div className="editor-bubble">
           <MarkBtn editor={editor} name="bold" label="B" title="굵게 (Ctrl+B)" cls="font-extrabold" />
           <MarkBtn editor={editor} name="italic" label="i" title="기울임 (Ctrl+I)" cls="italic font-serif" />
