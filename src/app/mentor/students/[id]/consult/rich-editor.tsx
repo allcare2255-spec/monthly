@@ -7,6 +7,7 @@ import { BubbleMenu } from "@tiptap/react/menus";
 import { DragHandle } from "@tiptap/extension-drag-handle-react";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { TextSelection } from "@tiptap/pm/state";
+import type { EditorProps } from "@tiptap/pm/view";
 import StarterKit from "@tiptap/starter-kit";
 import { TaskList, TaskItem } from "@tiptap/extension-list";
 import { TextStyle, Color, BackgroundColor } from "@tiptap/extension-text-style";
@@ -244,14 +245,13 @@ export function RichEditor({
     [],
   );
 
-  const editor = useEditor({
-    immediatelyRender: false,
-    editable,
-    // Tiptap v3 는 이 값이 없으면 커서를 옮기거나 글을 써도 React 를 다시 그리지 않는다.
-    // 그러면 툴바의 눌림 표시(B·H1·목록…)가 처음 상태로 굳고, 표 안에 커서를 놔도
-    // 표 편집 줄이 아예 뜨지 않아서 "버튼이 안 먹는다"처럼 보인다.
-    shouldRerenderOnTransaction: true,
-    extensions: [
+  // ⚠️ 확장 목록은 반드시 한 번만 만든다.
+  // useEditor 는 렌더할 때마다 옵션을 이전 값과 "같은 객체인지"로 비교하는데,
+  // 여기서 매번 새로 만들면 항상 다르다고 판단해 editor.setOptions() 를 부른다.
+  // 그러면 글자 하나 칠 때마다 view.updateState() 가 돌면서 본문 전체가 다시 그려지고,
+  // 커서·한글 조합·React 노드뷰(콜아웃·이미지)가 통째로 리셋된다 → 에디터가 먹통이 된다.
+  const extensions = useMemo(
+    () => [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
         // openOnClick: 편집 중에도 링크를 누르면 새 탭으로 열린다 (노션과 동일).
@@ -285,8 +285,12 @@ export function RichEditor({
       NotionShortcuts,
       SlashCommand.configure({ suggestion }),
     ],
-    content: initialHtml || "",
-    editorProps: {
+    [suggestion],
+  );
+
+  // editorProps 도 같은 이유로 한 번만 만든다
+  const editorProps = useMemo<EditorProps>(
+    () => ({
       attributes: { class: "rich-content consult-note-editor" },
       handlePaste: (view, event) => {
         const files = Array.from(event.clipboardData?.files || []);
@@ -315,7 +319,19 @@ export function RichEditor({
         }
         return false;
       },
-    },
+    }),
+    [uploadAndInsert],
+  );
+
+  const editor = useEditor({
+    immediatelyRender: false,
+    editable,
+    // 이 값이 없으면 커서를 옮기거나 글을 써도 React 를 다시 그리지 않는다. 그러면 툴바의
+    // 눌림 표시(B·H1·목록…)가 처음 상태로 굳고, 표 안에 커서를 놔도 표 편집 줄이 뜨지 않는다.
+    shouldRerenderOnTransaction: true,
+    extensions,
+    content: initialHtml || "",
+    editorProps,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
   });
 
