@@ -16,7 +16,7 @@ import { Details, DetailsContent, DetailsSummary } from "@tiptap/extension-detai
 import { Placeholder } from "@tiptap/extension-placeholder";
 import Suggestion, { type SuggestionOptions } from "@tiptap/suggestion";
 import { ResizableImage } from "./editor-image";
-import { Callout } from "./editor-callout";
+import { Callout, cleanCalloutEmojiLines } from "./editor-callout";
 import { BlockBackground, applyBlockBackground } from "./editor-block-bg";
 
 // ── 색상 팔레트 (노션과 동일한 10색 + 기본) ─────────────────────
@@ -112,7 +112,7 @@ const NotionShortcuts = Extension.create({
 
 export function RichEditor({
   studentId,
-  initialHtml,
+  initialHtml: rawInitialHtml,
   onChange,
   editable = true,
 }: {
@@ -121,6 +121,8 @@ export function RichEditor({
   onChange: (html: string) => void;
   editable?: boolean;
 }) {
+  // 예전 버그로 콜아웃 안에 쌓인 이모지 문단을 열면서 정리한다
+  const initialHtml = useMemo(() => cleanCalloutEmojiLines(rawInitialHtml), [rawInitialHtml]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");

@@ -70,7 +70,15 @@ export const Callout = Node.create({
   },
 
   parseHTML() {
-    return [{ tag: 'aside[data-type="callout"]' }];
+    return [
+      {
+        tag: 'aside[data-type="callout"]',
+        // 저장된 HTML 에는 이모지 <span> 이 본문 앞에 함께 들어 있다. 이걸 빼지 않으면
+        // 다시 열 때마다 "💡" 만 적힌 문단이 콜아웃 안에 하나씩 쌓인다.
+        contentElement: (el) =>
+          (el as HTMLElement).querySelector<HTMLElement>(":scope > .callout-body") ?? (el as HTMLElement),
+      },
+    ];
   },
 
   renderHTML({ node, HTMLAttributes }) {
@@ -141,6 +149,31 @@ export const Callout = Node.create({
     };
   },
 });
+
+/**
+ * 예전 버그로 이미 저장돼버린 메모를 열 때 고친다.
+ * 콜아웃을 저장 → 다시 열 때마다 아이콘 이모지가 본문 문단으로 한 줄씩 쌓였다.
+ * 콜아웃 본문 맨 앞에 "그 콜아웃의 아이콘 한 글자"만 있는 문단이 있으면 걷어낸다.
+ */
+export function cleanCalloutEmojiLines(html: string): string {
+  if (typeof window === "undefined" || !html.includes("callout")) return html;
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
+  let changed = false;
+  doc.querySelectorAll('aside[data-type="callout"]').forEach((aside) => {
+    const emoji = aside.getAttribute("data-emoji") || "💡";
+    const body = aside.querySelector(":scope > .callout-body") ?? aside;
+    // 본문이 통째로 비지 않도록 최소 한 블록은 남긴다
+    while (
+      body.children.length > 1 &&
+      body.firstElementChild &&
+      body.firstElementChild.textContent?.trim() === emoji
+    ) {
+      body.firstElementChild.remove();
+      changed = true;
+    }
+  });
+  return changed ? doc.body.innerHTML : html;
+}
 
 function CalloutView({ node, updateAttributes, editor }: NodeViewProps) {
   const emoji = (node.attrs.emoji as string) || "💡";
