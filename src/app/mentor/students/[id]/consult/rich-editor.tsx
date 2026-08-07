@@ -95,7 +95,10 @@ const NotionShortcuts = Extension.create({
       "Mod-Shift-4": () => this.editor.commands.toggleTaskList(),
       "Mod-Shift-5": () => this.editor.commands.toggleBulletList(),
       "Mod-Shift-6": () => this.editor.commands.toggleOrderedList(),
-      "Mod-Shift-7": () => this.editor.commands.setDetails(),
+      "Mod-Shift-7": () =>
+        this.editor.isActive("details")
+          ? this.editor.commands.unsetDetails()
+          : this.editor.commands.setDetails(),
       "Mod-Shift-8": () => this.editor.commands.toggleCodeBlock(),
       // 노션과 동일하게 Ctrl/Cmd+K 로 링크 입력창을 연다
       "Mod-k": () => {
@@ -201,6 +204,12 @@ export function RichEditor({
             setSlash((x) => ({ ...x, open: false }));
             return true;
           }
+          // 한글 조합 중의 Enter 는 글자를 확정하는 키다. 여기서 가로채면 "/각" 처럼
+          // 조합 중인 글자가 사라지고 엉뚱한 항목이 실행된다.
+          if (props.event.isComposing || props.event.keyCode === 229) return false;
+          // 검색 결과가 없으면 메뉴가 보이지 않는데도 키를 삼켜서
+          // Enter 로 줄바꿈이 안 되던 문제 — 결과가 없으면 에디터에 넘긴다.
+          if (!s.items.length) return false;
           if (props.event.key === "ArrowDown") {
             setSlash((x) => ({ ...x, index: (x.index + 1) % Math.max(x.items.length, 1) }));
             return true;
@@ -213,8 +222,9 @@ export function RichEditor({
             return true;
           }
           if (props.event.key === "Enter" || props.event.key === "Tab") {
-            const item = s.items[s.index];
-            if (item && s.command) s.command(item);
+            const item = s.items[Math.min(s.index, s.items.length - 1)];
+            if (!item || !s.command) return false;
+            s.command(item);
             return true;
           }
           return false;
@@ -235,6 +245,10 @@ export function RichEditor({
   const editor = useEditor({
     immediatelyRender: false,
     editable,
+    // Tiptap v3 는 이 값이 없으면 커서를 옮기거나 글을 써도 React 를 다시 그리지 않는다.
+    // 그러면 툴바의 눌림 표시(B·H1·목록…)가 처음 상태로 굳고, 표 안에 커서를 놔도
+    // 표 편집 줄이 아예 뜨지 않아서 "버튼이 안 먹는다"처럼 보인다.
+    shouldRerenderOnTransaction: true,
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
@@ -287,7 +301,14 @@ export function RichEditor({
         if (files.some((f) => f.type.startsWith("image/"))) {
           event.preventDefault();
           const ed = (view as unknown as { __editor?: Editor }).__editor;
-          if (ed) uploadAndInsert(ed, files);
+          if (!ed) return true;
+          // 예전에는 커서 자리에 들어가서, 사진을 끌어다 놓아도 엉뚱한 곳에 붙었다.
+          const at = view.posAtCoords({
+            left: (event as DragEvent).clientX,
+            top: (event as DragEvent).clientY,
+          });
+          if (at) ed.commands.setTextSelection(at.pos);
+          uploadAndInsert(ed, files);
           return true;
         }
         return false;
@@ -302,12 +323,17 @@ export function RichEditor({
     (editor.view as unknown as { __editor?: Editor }).__editor = editor;
   }, [editor]);
 
+  // useEditor 는 editable 옵션이 바뀌어도 현재 값을 유지하므로 직접 반영해준다
+  useEffect(() => {
+    if (!editor) return;
+    if (editor.isEditable !== editable) editor.setEditable(editable);
+  }, [editor, editable]);
+
   // 서버에서 새 값이 내려오면(주차 이동 등) 에디터 내용 교체
   useEffect(() => {
     if (!editor) return;
     if (editor.getHTML() === (initialHtml || "<p></p>")) return;
     editor.commands.setContent(initialHtml || "", { emitUpdate: false });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialHtml, editor]);
 
   // 마지막 색 다시 적용 (Ctrl/Cmd + Shift + H)
@@ -385,7 +411,8 @@ export function RichEditor({
       {slash.open && slash.rect && slash.items.length > 0 && (
         <div
           className="editor-slash"
-          style={{ top: slash.rect.bottom + 6, left: slash.rect.left }}
+          // 커서가 화면 아래쪽이면 메뉴가 잘려서 항목을 못 누른다 → 위로 띄운다
+          style={slashMenuStyle(slash.rect)}
         >
           {slash.items.map((item, i) => (
             <button
@@ -419,28 +446,76 @@ export function RichEditor({
   );
 }
 
+/** 슬래시 메뉴 위치 — 아래 공간이 부족하면 커서 위로, 오른쪽으로 넘치면 안쪽으로 당긴다 */
+const SLASH_MENU_H = 300;
+const SLASH_MENU_W = 250;
+function slashMenuStyle(rect: { top: number; left: number; bottom: number }): React.CSSProperties {
+  if (typeof window === "undefined") return { top: rect.bottom + 6, left: rect.left };
+  const below = window.innerHeight - rect.bottom;
+  const top =
+    below < SLASH_MENU_H + 16 && rect.top > below
+      ? Math.max(8, rect.top - Math.min(SLASH_MENU_H, rect.top - 16) - 6)
+      : rect.bottom + 6;
+  const left = Math.max(8, Math.min(rect.left, window.innerWidth - SLASH_MENU_W - 8));
+  const maxHeight =
+    top < rect.top ? Math.min(SLASH_MENU_H, rect.top - 14) : Math.min(SLASH_MENU_H, below - 14);
+  return { top, left, maxHeight: Math.max(120, maxHeight) };
+}
+
 // ── 블록 드래그 핸들 (노션의 ⠿ + ＋) ────────────────────────────
 function BlockDragHandle({ editor }: { editor: Editor }) {
-  const [current, setCurrent] = useState<{ node: PMNode | null; pos: number }>({ node: null, pos: -1 });
+  const [pos, setPos] = useState(-1);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // 메뉴가 열려 있는 동안에는 마우스가 다른 블록 위를 지나가도 대상 블록을 바꾸지 않는다.
+  // (메뉴 항목으로 마우스를 옮기다가 대상이 바뀌면 엉뚱한 블록이 삭제·복제된다)
+  // ref 는 렌더 중이 아니라 이 setter 안에서만 갱신한다.
+  const menuOpenRef = useRef(false);
+  const setMenu = useCallback((open: boolean) => {
+    menuOpenRef.current = open;
+    setMenuOpen(open);
+  }, []);
+
+  // ⚠️ DragHandle 은 onNodeChange 의 함수 정체성이 바뀌면 ProseMirror 플러그인을 통째로
+  // 재등록한다. 인라인 화살표 함수를 넘기면 블록 위로 마우스를 옮길 때마다 재등록되면서
+  // 핸들이 숨겨졌다 나타나기를 반복해 ＋ / ⠿ 클릭이 자주 씹힌다. 반드시 고정해야 한다.
+  const handleNodeChange = useCallback(({ pos: next }: { node: PMNode | null; pos: number }) => {
+    if (menuOpenRef.current) return;
+    setPos(next);
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
     const onDown = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenu(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenu(false);
     };
     window.addEventListener("mousedown", onDown);
-    return () => window.removeEventListener("mousedown", onDown);
-  }, [menuOpen]);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen, setMenu]);
 
-  const pos = current.pos;
   const valid = pos >= 0;
 
   /** 이 블록 안으로 커서를 옮긴다 (블록 전환 명령의 기준점) */
   const focusBlock = useCallback(() => {
     if (!valid) return;
-    editor.chain().focus().setTextSelection(pos + 1).run();
+    // 목록·토글처럼 pos+1 이 글자 자리가 아닌 블록에서도 안전하도록 near 로 붙인다
+    editor
+      .chain()
+      .focus()
+      .command(({ tr }) => {
+        if (pos + 1 > tr.doc.content.size) return false;
+        tr.setSelection(TextSelection.near(tr.doc.resolve(pos + 1)));
+        return true;
+      })
+      .run();
   }, [editor, pos, valid]);
 
   const insertParagraph = useCallback(
@@ -452,16 +527,29 @@ function BlockDragHandle({ editor }: { editor: Editor }) {
         .command(({ tr, state }) => {
           const node = tr.doc.nodeAt(pos);
           if (!node) return false;
-          const at = where === "before" ? pos : pos + node.nodeSize;
-          tr.insert(at, state.schema.nodes.paragraph.create());
+          const para = state.schema.nodes.paragraph.create();
+          const $pos = tr.doc.resolve(pos);
+          // 목록 안쪽처럼 문단을 바로 넣을 수 없는 자리면, 문단을 받을 수 있는 가장 가까운
+          // 바깥 블록 옆으로 올라간다. 예전에는 여기서 ＋ 가 조용히 실패하거나 문서가 깨졌다.
+          let depth = $pos.depth;
+          while (depth > 0 && !$pos.node(depth).type.contentMatch.matchType(para.type)) depth--;
+          const at =
+            depth === $pos.depth
+              ? where === "before"
+                ? pos
+                : pos + node.nodeSize
+              : where === "before"
+                ? $pos.before(depth + 1)
+                : $pos.after(depth + 1);
+          tr.insert(at, para);
           // 새로 넣은 빈 문단 안으로 커서 이동
           tr.setSelection(TextSelection.near(tr.doc.resolve(at + 1)));
           return true;
         })
         .run();
-      setMenuOpen(false);
+      setMenu(false);
     },
-    [editor, pos, valid],
+    [editor, pos, valid, setMenu],
   );
 
   const duplicate = useCallback(() => {
@@ -476,43 +564,41 @@ function BlockDragHandle({ editor }: { editor: Editor }) {
         return true;
       })
       .run();
-    setMenuOpen(false);
-  }, [editor, pos, valid]);
+    setMenu(false);
+  }, [editor, pos, valid, setMenu]);
 
   const remove = useCallback(() => {
     if (!valid) return;
     editor
       .chain()
       .focus()
-      .command(({ tr }) => {
+      .command(({ tr, state }) => {
         const node = tr.doc.nodeAt(pos);
         if (!node) return false;
-        tr.delete(pos, pos + node.nodeSize);
+        // 문서에 이 블록 하나만 남았을 때 통째로 지우면 문서 구조가 깨진다 → 빈 문단으로 바꾼다
+        if (tr.doc.childCount === 1 && pos === 0) {
+          tr.replaceWith(0, tr.doc.content.size, state.schema.nodes.paragraph.create());
+        } else {
+          tr.delete(pos, pos + node.nodeSize);
+        }
         return true;
       })
       .run();
-    setMenuOpen(false);
-  }, [editor, pos, valid]);
+    setMenu(false);
+  }, [editor, pos, valid, setMenu]);
 
   const convert = useCallback(
     (fn: (e: Editor) => void) => {
+      if (!valid) return;
       focusBlock();
       fn(editor);
-      setMenuOpen(false);
+      setMenu(false);
     },
-    [editor, focusBlock],
+    [editor, focusBlock, valid, setMenu],
   );
 
   return (
-    <DragHandle
-      editor={editor}
-      nested
-      className="editor-drag-handle"
-      onNodeChange={({ node, pos }) => {
-        setCurrent({ node, pos });
-        setMenuOpen(false);
-      }}
-    >
+    <DragHandle editor={editor} nested className="editor-drag-handle" onNodeChange={handleNodeChange}>
       <div className="editor-drag-zone" ref={menuRef}>
         <button
           type="button"
@@ -523,12 +609,13 @@ function BlockDragHandle({ editor }: { editor: Editor }) {
         >
           ＋
         </button>
+        {/* onMouseDown 에서 preventDefault 를 하면 HTML5 드래그가 시작되지 않아
+            블록 순서 바꾸기가 아예 안 된다. 그립만은 기본 동작을 막지 않는다. */}
         <button
           type="button"
           title="드래그해서 옮기기 · 눌러서 메뉴"
           className="editor-drag-btn editor-drag-grip"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => setMenuOpen((o) => !o)}
+          onClick={() => setMenu(!menuOpenRef.current)}
         >
           ⠿
         </button>
@@ -542,10 +629,11 @@ function BlockDragHandle({ editor }: { editor: Editor }) {
               삭제
             </MenuItem>
             <div className="editor-block-menu-title">전환</div>
-            <MenuItem onClick={() => convert((e) => e.chain().focus().setParagraph().run())}>텍스트</MenuItem>
-            <MenuItem onClick={() => convert((e) => e.chain().focus().setNode("heading", { level: 1 }).run())}>제목1</MenuItem>
-            <MenuItem onClick={() => convert((e) => e.chain().focus().setNode("heading", { level: 2 }).run())}>제목2</MenuItem>
-            <MenuItem onClick={() => convert((e) => e.chain().focus().setNode("heading", { level: 3 }).run())}>제목3</MenuItem>
+            {/* 목록·인용처럼 감싸는 블록 안에서는 clearNodes() 로 먼저 풀어야 제목/텍스트로 바뀐다 */}
+            <MenuItem onClick={() => convert((e) => e.chain().focus().clearNodes().setParagraph().run())}>텍스트</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().clearNodes().setNode("heading", { level: 1 }).run())}>제목1</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().clearNodes().setNode("heading", { level: 2 }).run())}>제목2</MenuItem>
+            <MenuItem onClick={() => convert((e) => e.chain().focus().clearNodes().setNode("heading", { level: 3 }).run())}>제목3</MenuItem>
             <MenuItem onClick={() => convert((e) => e.chain().focus().toggleTaskList().run())}>할 일 목록</MenuItem>
             <MenuItem onClick={() => convert((e) => e.chain().focus().toggleBulletList().run())}>글머리 기호 목록</MenuItem>
             <MenuItem onClick={() => convert((e) => e.chain().focus().toggleOrderedList().run())}>번호 목록</MenuItem>
@@ -600,8 +688,13 @@ function applyColor(editor: Editor, kind: ColorKind, value: string, ref: LastCol
     const end = $from.end();
     chain.setTextSelection({ from: start, to: end });
   }
-  if (kind === "text") value === "" ? chain.unsetColor().run() : chain.setColor(value).run();
-  else value === "" ? chain.unsetBackgroundColor().run() : chain.setBackgroundColor(value).run();
+  if (kind === "text") {
+    if (value === "") chain.unsetColor().run();
+    else chain.setColor(value).run();
+  } else {
+    if (value === "") chain.unsetBackgroundColor().run();
+    else chain.setBackgroundColor(value).run();
+  }
   if (value) ref.current = { kind, value };
 }
 
@@ -620,7 +713,8 @@ function Toolbar({
   disabled: boolean;
 }) {
   return (
-    <div className="editor-toolbar no-print">
+    // 저장할 수 없는 주차에서는 눌러도 아무 일이 없으니, 아예 눌리지 않는다는 걸 보여준다
+    <div className={`editor-toolbar no-print${disabled ? " is-disabled" : ""}`}>
       <Btn editor={editor} title="제목1 (Ctrl+Shift+1)" active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
         H1
       </Btn>
@@ -646,17 +740,17 @@ function Toolbar({
       <Btn editor={editor} title="번호 목록 (Ctrl+Shift+6)" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
         1.
       </Btn>
-      <Btn editor={editor} title="들여쓰기 (Tab)" onClick={() => editor.chain().focus().sinkListItem("listItem").run()}>
+      <Btn editor={editor} title="들여쓰기 (Tab)" onClick={() => shiftListItem(editor, "in")}>
         ⇥
       </Btn>
-      <Btn editor={editor} title="내어쓰기 (Shift+Tab)" onClick={() => editor.chain().focus().liftListItem("listItem").run()}>
+      <Btn editor={editor} title="내어쓰기 (Shift+Tab)" onClick={() => shiftListItem(editor, "out")}>
         ⇤
       </Btn>
       <span className="editor-sep" />
       <Btn editor={editor} title="인용" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
         ❝
       </Btn>
-      <Btn editor={editor} title="토글 목록 (Ctrl+Shift+7)" active={editor.isActive("details")} onClick={() => editor.chain().focus().setDetails().run()}>
+      <Btn editor={editor} title="토글 목록 (Ctrl+Shift+7)" active={editor.isActive("details")} onClick={() => toggleDetails(editor)}>
         ▸
       </Btn>
       <Btn editor={editor} title="콜아웃" active={editor.isActive("callout")} onClick={() => editor.chain().focus().toggleCallout().run()}>
@@ -694,7 +788,15 @@ function Toolbar({
       <Btn editor={editor} title="다시 실행 (Ctrl+Shift+Z)" onClick={() => editor.chain().focus().redo().run()} disabled={disabled}>
         ↷
       </Btn>
-      <Btn editor={editor} title="서식 지우기" onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}>
+      <Btn
+        editor={editor}
+        title="서식 지우기"
+        onClick={() => {
+          // 블록 배경색은 마크가 아니라 블록 속성이라 unsetAllMarks 로는 지워지지 않는다
+          applyBlockBackground(editor, "");
+          editor.chain().focus().unsetAllMarks().clearNodes().run();
+        }}
+      >
         ⌫
       </Btn>
     </div>
@@ -933,10 +1035,38 @@ function promptLink(editor: Editor) {
   const prev = (editor.getAttributes("link").href as string) || "";
   const url = window.prompt("링크 주소를 입력하세요 (비우면 링크 해제)", prev);
   if (url === null) return;
-  if (url === "") {
+  const raw = url.trim();
+  if (raw === "") {
     editor.chain().focus().extendMarkRange("link").unsetLink().run();
     return;
   }
-  const href = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+  const href = /^(https?:\/\/|mailto:|tel:)/i.test(raw) ? raw : `https://${raw}`;
+
+  // 글자를 선택하지 않은 채 눌렀을 때 예전에는 아무 일도 일어나지 않았다.
+  // 노션처럼 주소를 글자로 넣고 링크를 걸어준다.
+  if (editor.state.selection.empty && !editor.isActive("link")) {
+    editor
+      .chain()
+      .focus()
+      .insertContent({ type: "text", text: raw, marks: [{ type: "link", attrs: { href } }] })
+      .unsetMark("link")
+      .run();
+    return;
+  }
   editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
+}
+
+/** 토글 목록 켜기/끄기 — 예전에는 누를 때마다 토글이 겹겹이 쌓였다 */
+function toggleDetails(editor: Editor) {
+  const chain = editor.chain().focus();
+  if (editor.isActive("details")) chain.unsetDetails().run();
+  else chain.setDetails().run();
+}
+
+/** 목록 들여쓰기/내어쓰기 — 할 일 목록은 항목 타입이 taskItem 이라 따로 넘겨야 한다 */
+function shiftListItem(editor: Editor, dir: "in" | "out") {
+  const type = editor.isActive("taskItem") ? "taskItem" : "listItem";
+  const chain = editor.chain().focus();
+  if (dir === "in") chain.sinkListItem(type).run();
+  else chain.liftListItem(type).run();
 }

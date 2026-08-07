@@ -516,11 +516,32 @@ body.preview-active .editor-drag-handle { display: none !important; }
   border-radius: 12px 12px 0 0;
   background: rgba(11, 16, 32, 0.02);
 }
+/* Tailwind v4 는 button 의 기본 커서를 default 로 되돌렸다.
+   에디터 버튼들이 "못 누르는 것"처럼 보이던 원인이라 손 모양을 되살린다. */
+.editor-btn,
+.editor-table-btn,
+.editor-block-menu-item,
+.editor-slash-item,
+.editor-color-cell,
+.editor-image-bar-btn,
+.editor-drag-btn,
+.callout-emoji-cell,
+.callout-bg-cell,
+.rich-content .callout-emoji:not(:disabled) {
+  cursor: pointer;
+}
+
+/* 저장할 수 없는 주차 — 눌러도 반응이 없으니 아예 잠긴 것으로 보이게 한다 */
+.editor-toolbar.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
 .editor-btn {
   min-width: 28px;
   height: 28px;
   padding: 0 6px;
   border-radius: 7px;
+  cursor: pointer;
   font-size: 13px;
   color: rgba(11, 16, 32, 0.7);
   display: inline-flex;
