@@ -3,8 +3,12 @@ import crypto from "crypto";
 import { getServiceClient } from "@/lib/supabase";
 import type { ConsultingSubmission, ConsultingFormType, ConsultingFile, ConsultingNote } from "@/types";
 
-const SUB_COLS =
+const SUB_COLS_BASE =
   "id, student_id, week_number, form_type, submitted_at, answers, file_paths, agreements, memo";
+const SUB_COLS = `${SUB_COLS_BASE}, deleted_at, deleted_by`;
+
+/** 컨설팅 제출물 이미지가 올라가는 버킷 (영구삭제 시 함께 정리). */
+const PHOTO_BUCKET = "coaching-photos";
 
 /** 추측 불가능한 공개 링크 토큰 (24자리 hex, URL-safe, 사람이 입력하지 않음). */
 export function generateToken(): string {
@@ -89,10 +93,78 @@ export async function saveSubmission(input: SaveSubmissionInput): Promise<Consul
       agreements: input.agreements,
       memo: input.memo ?? null,
     })
-    .select(SUB_COLS)
+    .select(SUB_COLS_BASE)
     .single();
   if (error) throw new Error(error.message);
   return data as ConsultingSubmission;
+}
+
+// ── 제출 내역 조회 / 휴지통 ─────────────────────────────────────
+/** active = 살아있는 것만, trash = 휴지통만, all = 전부. */
+export type SubmissionScope = "active" | "trash" | "all";
+
+/** 마이그레이션(20260810_consulting_submission_trash.sql) 미적용 여부 판별 */
+function isMissingTrashColumn(msg: string): boolean {
+  return /deleted_at|deleted_by/.test(msg) && /column|does not exist/i.test(msg);
+}
+
+export class TrashNotReadyError extends Error {
+  constructor() {
+    super("휴지통 기능은 20260810_consulting_submission_trash.sql 적용 후 사용할 수 있습니다.");
+    this.name = "TrashNotReadyError";
+  }
+}
+
+/**
+ * 휴지통 컬럼 적용 여부 캐시.
+ * null = 아직 모름 / true = 적용됨 / false = 미적용(구 스키마로 폴백).
+ */
+let trashReady: boolean | null = null;
+
+type SubQuery = {
+  studentId?: string;
+  id?: string;
+  weekNumber?: number;
+  formType?: ConsultingFormType;
+  scope: SubmissionScope;
+  limit?: number;
+};
+
+/**
+ * 제출 내역 조회 단일 진입점.
+ * 마이그레이션이 아직 안 걸린 DB에서도 페이지가 죽지 않도록, deleted_at 컬럼이 없으면
+ * 구 스키마(휴지통 없음)로 한 번 더 조회한다.
+ */
+async function querySubmissions(opts: SubQuery): Promise<ConsultingSubmission[]> {
+  const supabase = getServiceClient();
+  const build = (cols: string, scope: SubmissionScope) => {
+    let q = supabase.from("consulting_submissions").select(cols);
+    if (opts.id) q = q.eq("id", opts.id);
+    if (opts.studentId) q = q.eq("student_id", opts.studentId);
+    if (opts.weekNumber !== undefined) q = q.eq("week_number", opts.weekNumber);
+    if (opts.formType) q = q.eq("form_type", opts.formType);
+    if (scope === "active") q = q.is("deleted_at", null);
+    else if (scope === "trash") q = q.not("deleted_at", "is", null);
+    q = q.order("submitted_at", { ascending: false });
+    if (opts.limit) q = q.limit(opts.limit);
+    return q;
+  };
+
+  if (trashReady !== false) {
+    const { data, error } = await build(SUB_COLS, opts.scope);
+    if (!error) {
+      trashReady = true;
+      return (data || []) as unknown as ConsultingSubmission[];
+    }
+    if (!isMissingTrashColumn(error.message)) throw new Error(error.message);
+    trashReady = false;
+  }
+
+  // 구 스키마 — 삭제 개념이 없으므로 휴지통은 항상 빈 목록
+  if (opts.scope === "trash") return [];
+  const { data, error } = await build(SUB_COLS_BASE, "all");
+  if (error) throw new Error(error.message);
+  return (data || []) as unknown as ConsultingSubmission[];
 }
 
 /** 특정 누적 주차 + 폼 종류에 해당하는 제출 1건 (최신, 레포트 참고용). */
@@ -101,30 +173,27 @@ export async function getSubmissionByWeek(
   weekNumber: number,
   formType: ConsultingFormType,
 ): Promise<ConsultingSubmission | null> {
-  const supabase = getServiceClient();
-  const { data, error } = await supabase
-    .from("consulting_submissions")
-    .select(SUB_COLS)
-    .eq("student_id", studentId)
-    .eq("week_number", weekNumber)
-    .eq("form_type", formType)
-    .order("submitted_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return (data as ConsultingSubmission) ?? null;
+  const rows = await querySubmissions({ studentId, weekNumber, formType, scope: "active", limit: 1 });
+  return rows[0] ?? null;
 }
 
-/** 학생의 제출 내역 (최신순). */
-export async function listSubmissionsByStudent(studentId: string): Promise<ConsultingSubmission[]> {
-  const supabase = getServiceClient();
-  const { data, error } = await supabase
-    .from("consulting_submissions")
-    .select(SUB_COLS)
-    .eq("student_id", studentId)
-    .order("submitted_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return (data || []) as ConsultingSubmission[];
+/** 학생의 제출 내역 (최신순). 기본은 휴지통 제외. */
+export async function listSubmissionsByStudent(
+  studentId: string,
+  scope: SubmissionScope = "active",
+): Promise<ConsultingSubmission[]> {
+  return querySubmissions({ studentId, scope });
+}
+
+/** 학생의 휴지통 목록 (삭제된 것만, 최신순). */
+export async function listTrashedSubmissions(studentId: string): Promise<ConsultingSubmission[]> {
+  return querySubmissions({ studentId, scope: "trash" });
+}
+
+/** 제출물 1건 (휴지통 포함) — 권한 확인용. */
+export async function getSubmissionById(id: string): Promise<ConsultingSubmission | null> {
+  const rows = await querySubmissions({ id, scope: "all", limit: 1 });
+  return rows[0] ?? null;
 }
 
 /**
@@ -136,17 +205,59 @@ export async function getSubmissionByWeekAnyForm(
   studentId: string,
   weekNumber: number,
 ): Promise<ConsultingSubmission | null> {
+  const rows = await querySubmissions({ studentId, weekNumber, scope: "active", limit: 1 });
+  return rows[0] ?? null;
+}
+
+/**
+ * 휴지통으로 보내기 / 되돌리기 (소프트 삭제).
+ * 실제 행과 이미지는 그대로 두고 deleted_at 만 찍는다 → 언제든 복원 가능.
+ */
+export async function setSubmissionDeleted(
+  id: string,
+  deleted: boolean,
+  actorName: string | null,
+): Promise<ConsultingSubmission> {
   const supabase = getServiceClient();
   const { data, error } = await supabase
     .from("consulting_submissions")
+    .update(
+      deleted
+        ? { deleted_at: new Date().toISOString(), deleted_by: actorName }
+        : { deleted_at: null, deleted_by: null },
+    )
+    .eq("id", id)
     .select(SUB_COLS)
-    .eq("student_id", studentId)
-    .eq("week_number", weekNumber)
-    .order("submitted_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .single();
+  if (error) {
+    if (isMissingTrashColumn(error.message)) {
+      trashReady = false;
+      throw new TrashNotReadyError();
+    }
+    throw new Error(error.message);
+  }
+  return data as unknown as ConsultingSubmission;
+}
+
+/**
+ * 영구삭제 — 업로드된 이미지까지 스토리지에서 지우고 행을 제거한다. 복원 불가.
+ * (스토리지 삭제가 실패해도 행 삭제는 진행 — 고아 파일이 남는 편이 낫다)
+ */
+export async function purgeSubmission(id: string): Promise<void> {
+  const supabase = getServiceClient();
+  const sub = await getSubmissionById(id);
+  if (!sub) return;
+
+  const paths = Object.values(sub.file_paths || {})
+    .flat()
+    .map((f) => f?.path)
+    .filter((p): p is string => Boolean(p));
+  if (paths.length) {
+    await supabase.storage.from(PHOTO_BUCKET).remove(paths);
+  }
+
+  const { error } = await supabase.from("consulting_submissions").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  return (data as ConsultingSubmission) ?? null;
 }
 
 // ── 멘토 컨설팅 메모 ────────────────────────────────────────────

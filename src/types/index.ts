@@ -42,6 +42,8 @@ export type ConsultingSubmission = {
   file_paths: Record<string, ConsultingFile[]>; // { 이미지 질문키: [업로드들] }
   agreements: Record<string, boolean>;         // { 동의항목키: true }
   memo: string | null;
+  deleted_at?: string | null;                  // 값이 있으면 휴지통에 있는 제출물
+  deleted_by?: string | null;                  // 휴지통으로 보낸 사람 (멘토명 / "관리자")
 };
 
 /** 멘토가 컨설팅 중에 작성하는 메모 (학생 + 누적 주차 1건). */

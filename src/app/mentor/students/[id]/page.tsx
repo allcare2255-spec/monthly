@@ -6,7 +6,7 @@ import { addDays, buildCycleAnchors, resolveCycleStart, todaySeoul, weeksSinceSt
 import { NewCycleButton } from "./new-cycle-button";
 import { CycleCards, type CycleInfo } from "./cycle-cards";
 import { listReviewSetsByStudent } from "@/lib/review/store";
-import { ensureToken, listSubmissionsByStudent } from "@/lib/consulting/store";
+import { ensureToken, listSubmissionsByStudent, listTrashedSubmissions } from "@/lib/consulting/store";
 import { weekStateForStudent } from "@/lib/consulting/week";
 import { ConsultingSection } from "./consulting-section";
 
@@ -51,13 +51,17 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
     (async () => {
       try {
         const token = await ensureToken(id);
-        const subs = await listSubmissionsByStudent(id);
-        return { ready: true, token, subs };
+        const [subs, trashed] = await Promise.all([
+          listSubmissionsByStudent(id),
+          listTrashedSubmissions(id),
+        ]);
+        return { ready: true, token, subs, trashed };
       } catch {
         return {
           ready: false,
           token: null as string | null,
           subs: [] as Awaited<ReturnType<typeof listSubmissionsByStudent>>,
+          trashed: [] as Awaited<ReturnType<typeof listSubmissionsByStudent>>,
         };
       }
     })(),
@@ -91,6 +95,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
 
   const consultingToken: string | null = consulting.token;
   const submissions = consulting.subs;
+  const trashedSubmissions = consulting.trashed;
   const consultingReady = consulting.ready;
 
   const weekState = weekStateForStudent(start);
@@ -162,7 +167,12 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
 
       {/* 컨설팅 폼 — 학생 제출 링크 + 줌 컨설팅 prep */}
       {consultingReady && consultingToken ? (
-        <ConsultingSection token={consultingToken} submissions={submissions} current={consultingCurrent} />
+        <ConsultingSection
+          token={consultingToken}
+          submissions={submissions}
+          trashed={trashedSubmissions}
+          current={consultingCurrent}
+        />
       ) : (
         <section className="rounded-2xl bg-gradient-to-br from-sunset/10 to-rose/10 border border-sunset/30 p-5 text-sm text-ink/75">
           컨설팅 제출 기능은 DB 마이그레이션(<code className="text-xs">20260615_consulting.sql</code>) 적용 후 사용할 수 있습니다.
