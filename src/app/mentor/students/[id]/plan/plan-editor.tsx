@@ -167,7 +167,9 @@ export function WeeklyPlanEditor({
   const achievement = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   return (
-    <div className="space-y-4" id="plan-capture-root">
+    // wordBreak 는 전역(globals.css)에도 있지만, PNG 캡처는 DOM 을 복제해서 그리므로
+    // 캡처 루트에 직접 박아 한글이 글자 중간에서 잘리지 않도록 보장한다
+    <div className="space-y-4" id="plan-capture-root" style={{ wordBreak: "keep-all", overflowWrap: "break-word" }}>
       {/* PNG 전용 헤더 — 웹에서는 숨김, PNG 캡처 시에만 표시 */}
       <div className="png-only" style={{ display: "none", padding: "12px 4px 8px" }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.25em", marginBottom: 4 }}>
@@ -285,10 +287,11 @@ function SectionCard({
 }) {
   return (
     <div className="rounded-2xl bg-white border border-ink/5 p-4 shadow-sm flex flex-col">
-      <div className="flex items-baseline gap-2 mb-3">
-        <span className={`h-4 w-1.5 rounded-full bg-gradient-to-b ${ACCENT[accent] || ACCENT.indigo}`} />
-        <h3 className="text-sm font-extrabold text-ink tracking-wide">{title}</h3>
-        {subtitle && <span className="text-[11px] text-ink/45">{subtitle}</span>}
+      {/* 제목/부제는 각각 통째로만 줄바꿈되게 (칸이 좁아도 "Weekly / Goals" 처럼 쪼개지지 않도록) */}
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-3">
+        <span className={`h-4 w-1.5 shrink-0 rounded-full bg-gradient-to-b ${ACCENT[accent] || ACCENT.indigo}`} />
+        <h3 className="whitespace-nowrap text-sm font-extrabold text-ink tracking-wide">{title}</h3>
+        {subtitle && <span className="whitespace-nowrap text-[11px] text-ink/45">{subtitle}</span>}
       </div>
       {children}
     </div>

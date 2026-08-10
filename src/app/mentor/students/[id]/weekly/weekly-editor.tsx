@@ -549,7 +549,7 @@ function WeeklyPlanView({
         {/* Weekly Goals + Main Test */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="preview-day-card rounded-2xl border border-ink/10 p-4">
-            <div className={`${SECTION_LABEL} mb-2`}>Weekly Goals</div>
+            <div className={`${SECTION_LABEL} mb-2 whitespace-nowrap`}>Weekly Goals</div>
             {plan.weekly_goals.some((t) => t.text.trim()) ? (
               <ol className="list-decimal space-y-1 pl-5 text-sm text-ink/80">
                 {plan.weekly_goals
@@ -563,7 +563,7 @@ function WeeklyPlanView({
             )}
           </div>
           <div className="preview-day-card rounded-2xl border border-ink/10 p-4">
-            <div className={`${SECTION_LABEL} mb-2`}>Main Test</div>
+            <div className={`${SECTION_LABEL} mb-2 whitespace-nowrap`}>Main Test</div>
             {plan.main_test.some((x) => x.trim()) ? (
               <ol className="list-decimal space-y-1 pl-5 text-sm text-ink/80">
                 {plan.main_test

@@ -27,6 +27,17 @@ html, body {
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "ss01", "ss02";
+  /* 한글은 기본값(break-word)이면 좁은 칸에서 "완/료"처럼 글자 중간이 잘린다.
+     keep-all 로 어절(띄어쓰기) 단위로만 끊고, 한 줄에 도저히 안 들어가는
+     긴 단어·URL 만 overflow-wrap 으로 강제 분리한다. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* PDF 미리보기 / PNG 캡처 루트에도 동일 규칙을 명시 (캡처는 DOM 을 복제해 그린다) */
+[data-preview-root] {
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 @font-face {
@@ -141,7 +152,8 @@ body.consult-page main {
   font-size: 14px;
   line-height: 1.75;
   color: var(--color-ink);
-  word-break: break-word;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 .rich-content:focus { outline: none; }
 .rich-content > * + * { margin-top: 6px; }
