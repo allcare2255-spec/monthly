@@ -20,7 +20,7 @@ export const WEEKLY_FIELDS: ConsultingField[] = [
   { key: "worry_korean", label: "이번주 주요 국어 고민", hint: "구체적일수록 자세한 상담이 가능해요", type: "longtext", required: true },
   { key: "worry_math", label: "이번주 주요 수학 고민", type: "longtext", required: true },
   { key: "worry_english", label: "이번주 주요 영어 고민", type: "longtext", required: true },
-  { key: "worry_explore", label: "이번주 주요 탐구 고민", type: "longtext", required: false },
+  { key: "worry_explore", label: "이번주 주요 탐구 고민", type: "longtext", required: true },
   { key: "worry_extra", label: "이번주 추가적인 고민", type: "longtext", required: true },
   { key: "help_wanted", label: "멘토님께 이번주 특히 도움받고 싶은 부분", type: "longtext", required: true },
   { key: "memo", label: "메모", type: "longtext", required: false },
