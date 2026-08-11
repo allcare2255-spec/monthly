@@ -294,7 +294,12 @@ export function RichEditor({
       attributes: { class: "rich-content consult-note-editor" },
       handlePaste: (view, event) => {
         const files = Array.from(event.clipboardData?.files || []);
-        if (files.some((f) => f.type.startsWith("image/"))) {
+        // 워드·한글·구글독스에서 글을 복사하면 클립보드에 글자와 함께 화면 비트맵이 같이 실린다.
+        // 예전에는 그 비트맵만 보고 "이미지 붙여넣기" 로 판단해 글자 붙여넣기를 통째로 막았다
+        // (메모장을 거치면 비트맵이 떨어져 나가서 그때만 됐다).
+        // 글자가 같이 있으면 평소대로 글을 붙여넣고, 글자가 없을 때만 이미지로 처리한다.
+        const hasText = !!event.clipboardData?.getData("text/plain")?.trim();
+        if (!hasText && files.some((f) => f.type.startsWith("image/"))) {
           event.preventDefault();
           const ed = (view as unknown as { __editor?: Editor }).__editor;
           if (ed) uploadAndInsert(ed, files);
