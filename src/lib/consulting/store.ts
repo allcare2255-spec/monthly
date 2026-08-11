@@ -1,6 +1,7 @@
 import "server-only";
 import crypto from "crypto";
 import { getServiceClient } from "@/lib/supabase";
+import { isEmptyNoteHtml } from "@/lib/consulting/note-html";
 import type { ConsultingSubmission, ConsultingFormType, ConsultingFile, ConsultingNote } from "@/types";
 
 const SUB_COLS_BASE =
@@ -316,6 +317,77 @@ export async function upsertNote(input: {
     .single();
   if (error) throw new Error(error.message);
   return data as ConsultingNote;
+}
+
+// ── 주차 이동 ───────────────────────────────────────────────────
+/**
+ * 한 주차의 컨설팅 내용을 다른 주차로 옮긴다 (학생 제출 폼 / 멘토 메모 각각 선택).
+ *
+ * 학생이 폼을 늦게 내거나 링크를 잘못 눌러 주차가 어긋나는 일이 있어, 멘토/관리자가
+ * 화면에서 직접 바로잡을 수 있게 한다.
+ *
+ * 안전 규칙 — 옮길 곳에 이미 내용이 있으면 아무것도 하지 않고 막는다.
+ * 덮어쓰기로 남의 기록이 소리 없이 사라지는 것보다, 실패하고 안내하는 편이 낫다.
+ */
+export class MoveWeekConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MoveWeekConflictError";
+  }
+}
+
+export async function moveConsultingWeek(input: {
+  studentId: string;
+  fromWeek: number;
+  toWeek: number;
+  moveSubmission: boolean;
+  moveNote: boolean;
+  actorName?: string | null;
+}): Promise<{ movedSubmission: boolean; movedNote: boolean }> {
+  const { studentId, fromWeek, toWeek } = input;
+  if (fromWeek === toWeek) throw new MoveWeekConflictError("같은 주차로는 옮길 수 없습니다.");
+  if (!input.moveSubmission && !input.moveNote) {
+    throw new MoveWeekConflictError("옮길 항목을 하나 이상 선택해주세요.");
+  }
+
+  const [fromSub, toSub, fromNote, toNote] = await Promise.all([
+    input.moveSubmission ? getSubmissionByWeekAnyForm(studentId, fromWeek) : null,
+    input.moveSubmission ? getSubmissionByWeekAnyForm(studentId, toWeek) : null,
+    input.moveNote ? getNoteByWeek(studentId, fromWeek) : null,
+    input.moveNote ? getNoteByWeek(studentId, toWeek) : null,
+  ]);
+
+  // 먼저 전부 검사한 뒤에 쓴다 — 하나만 옮겨지고 다른 하나가 실패하는 상태를 막는다
+  if (input.moveSubmission) {
+    if (!fromSub) throw new MoveWeekConflictError(`${fromWeek}주차에 옮길 학생 제출 폼이 없습니다.`);
+    if (toSub) throw new MoveWeekConflictError(`${toWeek}주차에 이미 학생 제출 폼이 있습니다.`);
+  }
+  const fromNoteText = (fromNote?.note ?? "").trim();
+  if (input.moveNote) {
+    if (!fromNoteText) throw new MoveWeekConflictError(`${fromWeek}주차에 옮길 컨설팅 내용 정리가 없습니다.`);
+    if (!isEmptyNoteHtml(toNote?.note ?? "")) {
+      throw new MoveWeekConflictError(`${toWeek}주차에 이미 컨설팅 내용 정리가 있습니다.`);
+    }
+  }
+
+  const supabase = getServiceClient();
+  if (input.moveSubmission && fromSub) {
+    const { error } = await supabase
+      .from("consulting_submissions")
+      .update({ week_number: toWeek })
+      .eq("id", fromSub.id);
+    if (error) throw new Error(error.message);
+  }
+  if (input.moveNote && fromNote) {
+    // 행을 옮기지 않고 내용을 복사한 뒤 원래 주차를 비운다.
+    // (consulting_notes 는 student_id+week_number 가 unique 라, 옮길 곳에 빈 메모 행만
+    //  남아 있어도 week_number 만 바꾸는 방식은 충돌한다)
+    const author = fromNote.author_name ?? input.actorName ?? null;
+    await upsertNote({ studentId, weekNumber: toWeek, note: fromNote.note, authorName: author });
+    await upsertNote({ studentId, weekNumber: fromWeek, note: "", authorName: author });
+  }
+
+  return { movedSubmission: input.moveSubmission, movedNote: input.moveNote };
 }
 
 // ── 컨설팅 기록 공개 링크 ───────────────────────────────────────

@@ -6,8 +6,10 @@ import { addDays, buildCycleAnchors, cumulativeWeek, resolveCycleStart } from "@
 import { getSubmissionByWeekAnyForm, getNoteByWeek } from "@/lib/consulting/store";
 import { weekStateFromWeek } from "@/lib/consulting/week";
 import { FORM_TITLE } from "@/lib/consulting/forms";
+import { isEmptyNoteHtml } from "@/lib/consulting/note-html";
 import type { ConsultingSubmission, ConsultingNote, ConsultingFormType } from "@/types";
 import { ConsultWorkspace } from "./consult-workspace";
+import { MoveWeekButton } from "./move-week-button";
 
 export const dynamic = "force-dynamic";
 
@@ -104,6 +106,14 @@ export default async function ConsultPage({
         >
           레포트 →
         </Link>
+        <MoveWeekButton
+          studentId={id}
+          cumWeek={cumWeek}
+          cycle={cycle}
+          hasSubmission={!!submission}
+          submissionLabel={submission ? FORM_TITLE[submission.form_type] : ""}
+          hasNote={!isEmptyNoteHtml(noteResult.note?.note ?? "")}
+        />
       </div>
 
       {!noteResult.ready && (
