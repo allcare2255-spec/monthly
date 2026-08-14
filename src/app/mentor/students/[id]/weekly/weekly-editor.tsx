@@ -1068,8 +1068,10 @@ function PhotoSection({
   onChange: (patch: Partial<DayData>) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const photos = day.photos || [];
   // 업로드가 진행되는 동안 클로저가 stale해지는 것을 방지: ref로 최신 사진 목록 유지
   const photosRef = useRef(photos);
@@ -1078,6 +1080,27 @@ function PhotoSection({
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     if (fileRef.current) fileRef.current.value = "";
+    await uploadFiles(files);
+  }
+
+  // 클립보드/드롭 데이터에서 이미지 파일만 추출 (복사한 사진 붙여넣기 지원)
+  function imagesFrom(dt: DataTransfer | null): File[] {
+    if (!dt) return [];
+    const out: File[] = [];
+    for (const item of Array.from(dt.items || [])) {
+      if (item.kind !== "file") continue;
+      const f = item.getAsFile();
+      if (f && f.type.startsWith("image/")) out.push(f);
+    }
+    if (!out.length) {
+      for (const f of Array.from(dt.files || [])) {
+        if (f.type.startsWith("image/")) out.push(f);
+      }
+    }
+    return out;
+  }
+
+  async function uploadFiles(files: File[]) {
     if (!files.length) return;
     setErr(null);
 
@@ -1110,6 +1133,25 @@ function PhotoSection({
     if (uploaded.length) onChange({ photos: [...photosRef.current, ...uploaded] });
   }
 
+  // 이 영역에 마우스를 올려두거나 포커스가 있을 때 Ctrl+V로 붙여넣기
+  useEffect(() => {
+    function onDocPaste(e: ClipboardEvent) {
+      const box = boxRef.current;
+      if (!box) return;
+      const active = document.activeElement;
+      const focused = active instanceof Node && box.contains(active);
+      const hovered = box.matches(":hover");
+      if (!focused && !hovered) return;
+      const files = imagesFrom(e.clipboardData);
+      if (!files.length) return;
+      e.preventDefault();
+      void uploadFiles(files);
+    }
+    document.addEventListener("paste", onDocPaste);
+    return () => document.removeEventListener("paste", onDocPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentId, cycle, week, day.date]);
+
   async function removePhoto(p: DayPhoto) {
     onChange({ photos: photos.filter((x) => x.path !== p.path) });
     await fetch("/api/reports/weekly/photo", {
@@ -1120,7 +1162,30 @@ function PhotoSection({
   }
 
   return (
-    <div className="mt-3">
+    <div
+      className="mt-3"
+      ref={boxRef}
+      tabIndex={-1}
+      onPaste={(e) => {
+        const files = imagesFrom(e.clipboardData);
+        if (!files.length) return;
+        e.preventDefault();
+        void uploadFiles(files);
+      }}
+      onDragOver={(e) => {
+        if (!Array.from(e.dataTransfer.types || []).includes("Files")) return;
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        const files = imagesFrom(e.dataTransfer);
+        setDragOver(false);
+        if (!files.length) return;
+        e.preventDefault();
+        void uploadFiles(files);
+      }}
+    >
       <div className="flex items-center justify-between">
         <label className="text-xs text-ink/55 font-medium">
           공부 인증 사진 <span className="text-ink/40">({photos.length}/{MAX_PHOTOS})</span>
@@ -1144,6 +1209,20 @@ function PhotoSection({
         onChange={onPick}
         className="hidden"
       />
+      {photos.length < MAX_PHOTOS && (
+        <div
+          onClick={() => fileRef.current?.click()}
+          className={`no-print mt-2 rounded-xl border border-dashed px-3 py-2 text-[11px] text-center cursor-pointer transition ${
+            dragOver ? "border-indigo bg-indigo/10 text-indigo" : "border-ink/15 text-ink/40 hover:border-indigo/40 hover:text-indigo/70"
+          }`}
+        >
+          {busy
+            ? "업로드 중..."
+            : dragOver
+              ? "여기에 놓으면 업로드됩니다"
+              : "복사한 사진은 여기에 Ctrl+V로 붙여넣기 · 드래그해서 놓기 · 클릭해서 파일 선택"}
+        </div>
+      )}
       {photos.length > 0 && (
         <div className="mt-2 grid grid-cols-4 gap-2">
           {photos.map((p) => (
