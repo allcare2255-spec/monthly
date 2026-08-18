@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { fieldsFor, FORM_TITLE } from "@/lib/consulting/forms";
 import { noteToHtml, isEmptyNoteHtml } from "@/lib/consulting/note-html";
 import type { ConsultingSubmission, ConsultingFormType } from "@/types";
@@ -153,20 +154,26 @@ export function ConsultWorkspace({
         </section>
       </div>
 
-      {preview && (
-        <ConsultPreview
-          studentName={studentName}
-          mentorName={mentorName}
-          cumWeek={cumWeek}
-          cycle={cycle}
-          weekStart={weekStart}
-          weekEnd={weekEnd}
-          submission={submission}
-          typeLabel={typeLabel}
-          note={note}
-          onClose={() => setPreview(false)}
-        />
-      )}
+      {/* 미리보기는 반드시 body 바로 아래(포털)에 그린다.
+          인쇄 CSS 가 `body.preview-active > :not([data-preview-root])` 로 body 의 다른 자식을 숨기는데,
+          대시보드 안에 그대로 두면 미리보기도 조상과 함께 숨겨져 PDF 가 백지로 나온다. */}
+      {preview &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <ConsultPreview
+            studentName={studentName}
+            mentorName={mentorName}
+            cumWeek={cumWeek}
+            cycle={cycle}
+            weekStart={weekStart}
+            weekEnd={weekEnd}
+            submission={submission}
+            typeLabel={typeLabel}
+            note={note}
+            onClose={() => setPreview(false)}
+          />,
+          document.body,
+        )}
     </>
   );
 }

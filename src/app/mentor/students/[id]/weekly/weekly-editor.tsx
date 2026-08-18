@@ -35,6 +35,14 @@ export function WeeklyReportEditor({
   cycleEnd: string;
 }) {
   const [report, setReport] = useState<WeeklyReport | null>(null);
+  // 항상 "지금 가장 최신인 레포트"를 가리키는 참조.
+  // 사진 업로드처럼 시간이 걸리는 작업은 "시작 시점의 레포트"를 그대로 들고 끝나기 때문에,
+  // 그 값을 기준으로 저장하면 그사이 입력·저장된 내용이 통째로 되돌아간다(=사라진다).
+  const reportRef = useRef<WeeklyReport | null>(null);
+  const applyReport = (r: WeeklyReport | null) => {
+    reportRef.current = r;
+    setReport(r);
+  };
   const [plan, setPlan] = useState<WeeklyPlanData | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingField, setSavingField] = useState<string | null>(null);
@@ -49,7 +57,7 @@ export function WeeklyReportEditor({
     fetch(`/api/reports/weekly?student_id=${studentId}&cycle=${cycle}&week=${week}`)
       .then((r) => r.json())
       .then((d) => {
-        setReport(d.report);
+        applyReport(d.report);
         setLoading(false);
       });
   }, [studentId, cycle, week]);
@@ -78,27 +86,30 @@ export function WeeklyReportEditor({
   }, [preview]);
 
   async function patch(patchObj: Partial<WeeklyReport>, fieldKey: string) {
-    if (!report) return;
+    const current = reportRef.current;
+    if (!current) return;
     const seq = ++writeSeq.current;
     setSavingField(fieldKey);
     const res = await fetch("/api/reports/weekly", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ id: report.id, student_id: studentId, ...patchObj }),
+      body: JSON.stringify({ id: current.id, student_id: studentId, ...patchObj }),
     });
     const data = await res.json();
     // 이 응답 이후에 더 새로운 저장이 시작됐다면, 오래된 응답으로 상태를 덮어쓰지 않는다
     if (seq !== writeSeq.current) return;
     setSavingField(null);
-    if (res.ok) setReport(data.report);
+    if (res.ok) applyReport(data.report);
   }
 
   function updateDayByDate(date: string, dayPatch: Partial<DayData>) {
-    if (!report) return;
-    const nextDays = report.day_data.map((d) =>
+    // 렌더 당시가 아니라 "지금 가장 최신" 레포트를 기준으로 합친다.
+    const current = reportRef.current;
+    if (!current) return;
+    const nextDays = current.day_data.map((d) =>
       d.date === date ? { ...d, ...dayPatch } : d,
     );
-    setReport({ ...report, day_data: nextDays });
+    applyReport({ ...current, day_data: nextDays });
     return nextDays;
   }
 
@@ -1133,6 +1144,13 @@ function PhotoSection({
     if (uploaded.length) onChange({ photos: [...photosRef.current, ...uploaded] });
   }
 
+  // uploadFiles 는 렌더마다 새로 만들어진다. document 리스너를 한 번만 달면 첫 렌더의 함수
+  // (=그 시점의 레포트 내용)를 계속 붙잡게 되므로, 항상 최신 함수를 참조해 호출한다.
+  const uploadRef = useRef(uploadFiles);
+  useEffect(() => {
+    uploadRef.current = uploadFiles;
+  });
+
   // 이 영역에 마우스를 올려두거나 포커스가 있을 때 Ctrl+V로 붙여넣기
   useEffect(() => {
     function onDocPaste(e: ClipboardEvent) {
@@ -1145,12 +1163,11 @@ function PhotoSection({
       const files = imagesFrom(e.clipboardData);
       if (!files.length) return;
       e.preventDefault();
-      void uploadFiles(files);
+      void uploadRef.current(files);
     }
     document.addEventListener("paste", onDocPaste);
     return () => document.removeEventListener("paste", onDocPaste);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studentId, cycle, week, day.date]);
+  }, []);
 
   async function removePhoto(p: DayPhoto) {
     onChange({ photos: photos.filter((x) => x.path !== p.path) });
@@ -1166,12 +1183,6 @@ function PhotoSection({
       className="mt-3"
       ref={boxRef}
       tabIndex={-1}
-      onPaste={(e) => {
-        const files = imagesFrom(e.clipboardData);
-        if (!files.length) return;
-        e.preventDefault();
-        void uploadFiles(files);
-      }}
       onDragOver={(e) => {
         if (!Array.from(e.dataTransfer.types || []).includes("Files")) return;
         e.preventDefault();
