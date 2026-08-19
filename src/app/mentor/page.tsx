@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
+import { fetchMentorExperience } from "@/lib/erpExperience";
 
 export const dynamic = "force-dynamic";
 
@@ -36,11 +37,17 @@ export default async function MentorHomePage({
     viewingMentorName = m?.name ?? null;
   }
 
-  const { data: students } = await supabase
-    .from("coaching_students")
-    .select("*")
-    .eq("mentor_id", effectiveMentorId)
-    .order("created_at", { ascending: false });
+  // 업력은 ERP가 원본 — 이름으로 대조해 가져오고, 못 찾으면 표시하지 않는다
+  const experienceName = viewingMentorName ?? session.mentorName ?? null;
+
+  const [{ data: students }, experience] = await Promise.all([
+    supabase
+      .from("coaching_students")
+      .select("*")
+      .eq("mentor_id", effectiveMentorId)
+      .order("created_at", { ascending: false }),
+    experienceName ? fetchMentorExperience(experienceName) : Promise.resolve(null),
+  ]);
 
   const all = (students || []) as any[];
   const active = all.filter((s) => !s.coaching_ended);
@@ -63,6 +70,17 @@ export default async function MentorHomePage({
         <p className="text-ink/55 mt-2 text-sm">
           학생을 선택하면 주간/월간 레포트 작성 화면으로 이동합니다
         </p>
+        {experience && (
+          <div className="mt-4 inline-flex items-center gap-2.5 rounded-full border border-indigo/15 bg-gradient-to-r from-indigo/10 to-fuchsia/10 pl-3.5 pr-4 py-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo/70">
+              업력
+            </span>
+            <span className="text-sm font-extrabold text-ink">
+              {experience.experienceMonths}개월
+            </span>
+            <span className="text-[11px] text-ink/40">{experience.asOf} 기준</span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
