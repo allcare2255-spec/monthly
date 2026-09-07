@@ -111,11 +111,44 @@ export function daysBetween(a: string, b: string): number {
 /**
  * 코칭 시작일부터 오늘까지 실제 날짜 기준 누적 주차.
  * 시작일이 속한 주(월~일)를 1주차로 하여 7일마다 +1. 시작 전이면 0.
+ *
+ * 주의: 중간에 통으로 쉰 주(월차 시작일 오버라이드/재시작)를 반영하지 않는다.
+ * 화면 표시·컨설팅 주차에는 currentWeekWithAnchors 를 쓸 것.
  */
 export function weeksSinceStart(start: string, today: string): number {
   const diff = daysBetween(start, today);
   if (diff < 0) return 0;
   return Math.floor(diff / 7) + 1;
+}
+
+/**
+ * 월차 앵커(재시작 / 월차 시작일 오버라이드)를 반영한 오늘의 누적 주차.
+ *
+ * 한 주를 통으로 쉬면 다음 월차 시작일을 뒤로 미루는데(예: 12주차까지 하고 한 주 쉰 뒤
+ * 13주차를 일주일 늦게 시작), 이때 날짜만 세는 weeksSinceStart 는 실제 진행 주차보다
+ * 한 주 앞서 나간다. 여기서는 오늘이 속한 월차를 앵커로 찾은 뒤 그 월차 안에서의
+ * 주차를 더해 실제 진행 주차를 구한다.
+ *
+ * 쉬는 구간(직전 월차는 끝났고 다음 월차는 아직 시작 전)에는 직전 월차의 마지막
+ * 주차(4주차)를 유지한다.
+ */
+export function currentWeekWithAnchors(
+  coachingStart: string | null | undefined,
+  anchors: CycleAnchor[] = [],
+  today: string = todaySeoul(),
+): number {
+  if (!coachingStart) return 0;
+  if (daysBetween(coachingStart, today) < 0) return 0;
+  const maxAnchorCycle = anchors.reduce((m, a) => Math.max(m, a.cycle), 1);
+  // 앵커 이후 월차는 28일씩 이어지므로 시작일이 단조 증가 — 오늘을 넘어서면 멈춘다
+  let cycle = 1;
+  for (let c = 2; c <= maxAnchorCycle + 200; c++) {
+    if (daysBetween(resolveCycleStart(coachingStart, c, anchors), today) < 0) break;
+    cycle = c;
+  }
+  const cycleStart = resolveCycleStart(coachingStart, cycle, anchors);
+  const weekInCycle = Math.min(4, Math.floor(daysBetween(cycleStart, today) / 7) + 1);
+  return cumulativeWeek(cycle, weekInCycle);
 }
 
 // "10:23" 같은 시간 문자열 → 분

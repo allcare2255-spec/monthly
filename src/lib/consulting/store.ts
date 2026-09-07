@@ -1,6 +1,7 @@
 import "server-only";
 import crypto from "crypto";
 import { getServiceClient } from "@/lib/supabase";
+import { buildCycleAnchors, type CycleAnchor } from "@/lib/dates";
 import { isEmptyNoteHtml } from "@/lib/consulting/note-html";
 import type { ConsultingSubmission, ConsultingFormType, ConsultingFile, ConsultingNote } from "@/types";
 
@@ -22,6 +23,8 @@ export type ConsultingStudent = {
   phone: string | null;
   mentorName: string | null;
   coachingStartDate: string | null;
+  /** 재시작 / 월차 시작일 오버라이드 — 통으로 쉰 주를 반영한 주차 계산에 필요 */
+  cycleAnchors: CycleAnchor[];
 };
 
 /** 공개 토큰으로 학생을 조회한다 (prefill / 권한 확인용). */
@@ -41,12 +44,18 @@ export async function getStudentByToken(token: string): Promise<ConsultingStuden
     }>();
   if (error) throw new Error(error.message);
   if (!data) return undefined;
+  // 월차 시작일을 미룬 이력(코칭 정지 등)이 있으면 주차 계산에 반영해야 한다.
+  const [{ data: cycleRows }, { data: restartRows }] = await Promise.all([
+    supabase.from("coaching_cycles").select("cycle_number, start_date").eq("student_id", data.id),
+    supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", data.id),
+  ]);
   return {
     id: data.id,
     name: data.name,
     phone: data.phone ?? null,
     mentorName: data.mentor?.name ?? null,
     coachingStartDate: data.coaching_start_date ?? null,
+    cycleAnchors: buildCycleAnchors(restartRows, cycleRows),
   };
 }
 

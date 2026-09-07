@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
-import { addDays, buildCycleAnchors, resolveCycleStart, todaySeoul, weeksSinceStart } from "@/lib/dates";
+import { addDays, buildCycleAnchors, currentWeekWithAnchors, resolveCycleStart, todaySeoul } from "@/lib/dates";
 import { NewCycleButton } from "./new-cycle-button";
 import { CycleCards, type CycleInfo } from "./cycle-cards";
 import { listReviewSetsByStudent } from "@/lib/review/store";
@@ -81,8 +81,10 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
   const cycles = Array.from(cycleSet).sort((a, b) => a - b);
   const nextCycle = cycles.length ? Math.max(...cycles) + 1 : 1;
 
-  // [수정 1] 첫 코칭 시작일 ~ 오늘(KST) 실제 날짜 기준 누적 주차
-  const currentWeek = start ? weeksSinceStart(start, todaySeoul()) : 0;
+  // [수정 1] 첫 코칭 시작일 ~ 오늘(KST) 누적 주차.
+  // 한 주를 통으로 쉬어 월차 시작일을 미룬 학생은 날짜만 세면 실제보다 앞서 나가므로,
+  // 월차 앵커(재시작 / 월차 시작일 오버라이드)를 반영해 오늘이 속한 주차를 구한다.
+  const currentWeek = currentWeekWithAnchors(start, anchors);
 
   // 사이클별 week 진행 카운트 (몇 주차까지 시작됐는지)
   const weekCountByCycle: Record<number, number> = {};
@@ -98,7 +100,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
   const trashedSubmissions = consulting.trashed;
   const consultingReady = consulting.ready;
 
-  const weekState = weekStateForStudent(start);
+  const weekState = weekStateForStudent(start, anchors);
   const consultingCurrent =
     weekState.kind === "form"
       ? { state: "form" as const, week: weekState.week, formType: weekState.formType }

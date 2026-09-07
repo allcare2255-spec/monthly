@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const student = await getStudentByToken(token);
   if (!student) return NextResponse.json({ error: "유효하지 않은 링크입니다." }, { status: 404 });
 
-  const state = weekStateForStudent(student.coachingStartDate);
+  const state = weekStateForStudent(student.coachingStartDate, student.cycleAnchors);
 
   // 폼 종류 결정 — 주차는 항상 서버가 계산한다 (클라이언트 값 신뢰 안 함).
   // 폼 종류는 ?form=... 직접 링크로 지정할 수 있어야 한다. 학생이 실제로 작성한 폼과

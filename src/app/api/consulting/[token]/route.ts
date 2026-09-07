@@ -36,7 +36,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     mentorName: student.mentorName,
   };
 
-  const state = weekStateForStudent(student.coachingStartDate);
+  const state = weekStateForStudent(student.coachingStartDate, student.cycleAnchors);
 
   // 폼 지정 직접 링크 (?form=pre|weekly|monthly) — 주차 종류 무시, 항상 지정된 폼만 표시
   const forced = new URL(req.url).searchParams.get("form");

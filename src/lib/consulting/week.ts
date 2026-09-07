@@ -1,6 +1,6 @@
 // 컨설팅 폼 주차 → 폼 종류 판정 (server/client 공용, 순수 함수)
 import type { ConsultingFormType } from "@/types";
-import { weeksSinceStart, todaySeoul } from "@/lib/dates";
+import { currentWeekWithAnchors, type CycleAnchor } from "@/lib/dates";
 
 export type WeekState =
   | { kind: "not_started"; week: 0 }                 // 코칭 시작 전 / 시작일 미등록
@@ -21,7 +21,9 @@ export function weekStateFromWeek(week: number): WeekState {
 
 /**
  * 학생의 코칭 시작일(월요일) 기준 오늘(KST)의 누적 주차 → 폼 상태.
- * 멘토 학생 상세 페이지의 currentWeek 계산과 동일한 방식(raw start)을 사용한다.
+ * 멘토 학생 상세 페이지의 currentWeek 계산과 동일한 방식(월차 앵커 반영)을 사용한다.
+ * 중간에 한 주를 통으로 쉰 학생은 날짜로 센 주차보다 실제 주차가 뒤에 있으므로,
+ * 반드시 월차 앵커(재시작 / 월차 시작일 오버라이드)를 넘겨야 한다.
  *
  * 컨설팅은 항상 '다음 주'를 준비하기 위해 진행되므로, 폼 종류는 현재 주차가 아니라
  * (현재 주차 + 1) 기준으로 결정한다.
@@ -29,9 +31,12 @@ export function weekStateFromWeek(week: number): WeekState {
  * - 4주차에 접속 → 5주차(새 달 시작) 준비용 월간 비전 컨설팅
  * 단, 아직 코칭 시작 전(week <= 0)이면 not_started 를 유지한다.
  */
-export function weekStateForStudent(coachingStartDate: string | null): WeekState {
+export function weekStateForStudent(
+  coachingStartDate: string | null,
+  anchors: CycleAnchor[] = [],
+): WeekState {
   if (!coachingStartDate) return { kind: "not_started", week: 0 };
-  const week = weeksSinceStart(coachingStartDate, todaySeoul());
+  const week = currentWeekWithAnchors(coachingStartDate, anchors);
   if (week <= 0) return { kind: "not_started", week: 0 };
   return weekStateFromWeek(week + 1);
 }
