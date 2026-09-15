@@ -228,6 +228,15 @@ export const DEMO_CHAT: ChatMessage[] = [
 // ── 주간 줌 컨설팅 기록 ────────────────────────────────────────
 export const DEMO_ZOOM = {
   date: "2026.08.23 (일)",
+  /** 줌 화면 하단 실시간 자막처럼 흘러가는 대화 */
+  captions: [
+    { who: "mentor", text: "이번 주 계획표 같이 볼까요? 달성률이 89%예요, 잘했어요!" },
+    { who: "student", text: "수요일이랑 금요일에 미적분이 조금 밀렸어요ㅜㅜ" },
+    { who: "mentor", text: "인강 보는 시간이 길어져서 문제 풀 시간이 부족했죠?" },
+    { who: "student", text: "네, 인강만 보다가 하루가 끝난 날이 있었어요." },
+    { who: "mentor", text: "다음 주엔 한 강 듣고 → 관련 문제 → 틀린 문제 확인까지 한 세트로 해봐요." },
+    { who: "student", text: "좋아요! 계획표에 문제 풀이 시간도 따로 적어둘게요." },
+  ] as { who: "mentor" | "student"; text: string }[],
   planCheck: [
     {
       subject: "국어",
