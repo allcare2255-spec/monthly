@@ -460,7 +460,7 @@ function SemiGauge({ value, total, label }: { value: number; total: number; labe
   );
 }
 
-function DonutCharts({ report }: { report: WeeklyReport }) {
+export function DonutCharts({ report }: { report: WeeklyReport }) {
   const days = report.day_data;
   // 제출 과제 인증 — 게이지 '제출 일수'는 제출 완료 + 과제 미흡 (미제출만 제외)
   const submitTones: CloudTone[] = days.map((d) => submitTone(d.status));
@@ -529,7 +529,7 @@ function PlanCheck({ done, small }: { done: boolean; small?: boolean }) {
   );
 }
 
-function WeeklyPlanView({
+export function WeeklyPlanView({
   plan,
   dates,
   weekLabel,
@@ -1655,7 +1655,7 @@ function ReportPreview({
 }
 
 // 멘토 편집 화면의 StatCard와 동일한 디자인 (흰 카드 + 그라데이션 블러 + 하늘색 그라데이션 숫자)
-function PreviewStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+export function PreviewStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-4 shadow-sm">
       <div className="deco-grad absolute inset-x-0 -top-8 h-24 bg-gradient-to-br from-indigo/25 via-[rgba(14,165,233,0)] via-40% to-[rgba(14,165,233,0)] blur-xl" />
@@ -1668,7 +1668,7 @@ function PreviewStat({ label, value, sub }: { label: string; value: string; sub?
   );
 }
 
-function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
+export function PreviewDayCard({ day, weekday }: { day: DayData; weekday: string }) {
   const wake = wakeText(day);
   const targetStudy = day.target_study_minutes != null ? minutesToHm(day.target_study_minutes) : null;
   const study = day.study_minutes != null ? minutesToHm(day.study_minutes) : null;

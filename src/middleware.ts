@@ -17,6 +17,8 @@ export function middleware(req: NextRequest) {
   const isPublic =
     path === "/" ||
     path.startsWith("/api/login") ||
+    // 고등 코칭 체험(영업용 데모) — 가상 학생 데이터만 사용, 로그인 불필요
+    path.startsWith("/demo") ||
     // 복습 — 학생 공개 경로 (로그인 불필요)
     path.startsWith("/quiz") ||
     path.startsWith("/api/review/quiz") ||

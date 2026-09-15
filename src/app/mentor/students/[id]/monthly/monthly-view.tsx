@@ -19,14 +19,14 @@ const fmtDot = (d: string) => (d || "").replace(/-/g, ".");
 const WAKE_CELL_SHEEN =
   "linear-gradient(150deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.06) 45%, rgba(0,0,0,0.05) 100%)";
 
-const CARD_BG: CSSProperties = {
+export const CARD_BG: CSSProperties = {
   backgroundColor: "#FFFFFF",
   backgroundImage: "linear-gradient(135deg, #F3FAFF 0%, #FBFDFF 40%, #FFFFFF 100%)",
 };
 
 // 일별 공부 시간 카드 — 꺾은선(#6366f1) 톤에 맞춘 인디고 계열 그라데이션.
 // 위 CARD_BG 와 같은 밝기라 나란히 놓아도 어색하지 않다.
-const CARD_BG_INDIGO: CSSProperties = {
+export const CARD_BG_INDIGO: CSSProperties = {
   backgroundColor: "#FFFFFF",
   backgroundImage: "linear-gradient(135deg, #F4F5FE 0%, #FBFBFF 40%, #FFFFFF 100%)",
 };
@@ -336,12 +336,12 @@ function wakeTimeColor(min: number): string {
 // 주차별 과제 완료율 — 가로 진행바(트랙 위 그라데이션 채움 + 우측 퍼센트).
 // recharts 막대차트 대신 순수 CSS 진행바로 그려 인쇄(PDF) 잘림/사라짐 없이 안정적으로 표시.
 // 섹션 제목 — 카드 바깥이 아니라 카드 "안" 맨 위에 놓는다 (멘토 총평 카드와 동일한 배치).
-function SectionTitle({ children }: { children: ReactNode }) {
+export function SectionTitle({ children }: { children: ReactNode }) {
   // 검정에 가까운 --color-ink 를 그대로 쓰면 너무 무거워서, 살짝 투명도를 줘 톤을 낮춘다.
   return <h2 className="mb-3 text-[15px] font-bold text-ink/70">{children}</h2>;
 }
 
-function WeekRateBars({
+export function WeekRateBars({
   weekRates,
 }: {
   weekRates: { week: string; rate: number; hasData: boolean }[];
@@ -379,7 +379,7 @@ const STUDY_CAT_COLOR: Record<StudyCat, string> = {
   below: "#7dd3fc", // 평균 이하 — 연한 하늘색
   missed: "#f47272", // 미제출 — 부드러운 빨강
 };
-function studyCategory(d: DayData, avgMin: number): StudyCat {
+export function studyCategory(d: DayData, avgMin: number): StudyCat {
   if (d.status === "paused") return "below";
   const s = d.study_minutes ?? 0;
   if (s <= 0) return "missed"; // 공부 시간 없음/미제출
@@ -393,7 +393,7 @@ function hmShort(min: number): string {
 
 // 순수 SVG 라인 차트 — recharts(ResponsiveContainer)가 인쇄(PDF)·초기 렌더에서
 // 폭 0으로 측정돼 차트가 깨지던 문제를 방지하기 위해 고정 viewBox SVG 로 직접 그린다.
-function StudyTrendChart({
+export function StudyTrendChart({
   data,
   avgMin,
 }: {
@@ -522,7 +522,7 @@ function StudyTimeValue({ minutes }: { minutes: number }) {
 }
 
 // 주간 레포트(완성 미리보기)의 PreviewStat과 동일 — 흰 카드 + 그라데이션 블러 + 하늘색 그라데이션 숫자
-function PreviewStat({
+export function PreviewStat({
   label,
   value,
   sub,
@@ -564,7 +564,7 @@ function mdLabel(dateStr: string): string {
 
 // 기상 시간 기록 — 실제 요일(일~토)에 맞춰 정렬된 달력. 각 칸에 날짜(M/D) + 기상 시각,
 // 미제출은 "미제출", 미입력은 날짜만 옅게 표시. (색상 의미는 기존과 동일)
-function WakeCalendar({ days }: { days: DayData[] }) {
+export function WakeCalendar({ days }: { days: DayData[] }) {
   if (!days.length) return null;
   const lead = weekdaySunFirst(days[0].date); // 첫 날 앞의 빈 칸 수
   const cells: (DayData | null)[] = [
@@ -620,7 +620,7 @@ function WakeCell({ day }: { day: DayData }) {
   );
 }
 
-function WakeLegend() {
+export function WakeLegend() {
   return (
     <div className="wake-legend mt-3 flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-[11px] text-ink/55">
       <LegendCatDot color={WAKE_FAST} label="빠른 기상" />
@@ -683,18 +683,21 @@ function parseBlocks(raw: string): CommentLine[][] {
     .filter((block) => block.length > 0);
 }
 
-function CommentField({
+export function CommentField({
   label,
   icon,
   variant,
   value: initial,
   onSave,
+  readOnly = false,
 }: {
   label: string;
   icon: string;
   variant: keyof typeof COMMENT_TONE;
   value: string;
-  onSave: (v: string) => void;
+  onSave?: (v: string) => void;
+  /** 입력칸 없이 PDF와 같은 서식 본문을 화면에도 보여준다 (체험 페이지용). */
+  readOnly?: boolean;
 }) {
   const [text, setText] = useState(initial);
   useEffect(() => setText(initial), [initial]);
@@ -734,21 +737,23 @@ function CommentField({
         </span>
       </div>
 
-      <textarea
-        rows={5}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={() => text !== initial && onSave(text)}
-        className="mt-3 w-full rounded-xl border border-ink/10 bg-white/80 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm leading-relaxed print:hidden"
-        placeholder={
-          variant === "bullets"
-            ? "한 줄에 한 항목씩 작성하세요.\n빈 줄을 넣으면 문단이 나뉘고, '국어 :' 또는 '[국어]' 처럼 쓰면 소제목이 됩니다."
-            : "자유롭게 작성하세요. 빈 줄로 문단을 나눌 수 있습니다."
-        }
-      />
+      {!readOnly && (
+        <textarea
+          rows={5}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={() => text !== initial && onSave?.(text)}
+          className="mt-3 w-full rounded-xl border border-ink/10 bg-white/80 px-3 py-2 outline-none focus:border-indigo focus:ring-2 focus:ring-indigo/15 transition text-sm leading-relaxed print:hidden"
+          placeholder={
+            variant === "bullets"
+              ? "한 줄에 한 항목씩 작성하세요.\n빈 줄을 넣으면 문단이 나뉘고, '국어 :' 또는 '[국어]' 처럼 쓰면 소제목이 됩니다."
+              : "자유롭게 작성하세요. 빈 줄로 문단을 나눌 수 있습니다."
+          }
+        />
+      )}
 
-      {/* PDF/인쇄용 서식 본문 */}
-      <div className="hidden print:block mt-3 text-[15px] text-ink/90 leading-[1.7]">
+      {/* PDF/인쇄용 서식 본문 (readOnly 면 화면에도 표시) */}
+      <div className={`${readOnly ? "block" : "hidden print:block"} mt-3 text-[15px] text-ink/90 leading-[1.7]`}>
         {variant === "bullets" ? (
           <div className="space-y-3.5">
             {blocks.map((lines, bi) => (
