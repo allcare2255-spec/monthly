@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import type { DayData, DayPhoto, DayStatus, WeeklyReport, WeeklyPlanData, WeekdayKey } from "@/types";
 import { addDays, hmToMinutes, minutesToHm } from "@/lib/dates";
 
@@ -84,6 +84,34 @@ export function WeeklyReportEditor({
     else document.body.classList.remove("preview-active");
     return () => document.body.classList.remove("preview-active");
   }, [preview]);
+
+  // 미리보기를 열지 않고 편집 화면에서 바로 인쇄(Ctrl+P·브라우저 메뉴)해도
+  // 배너가 있는 완성 레포트가 찍히도록, 인쇄 직전에 미리보기를 동기로 띄웠다가 끝나면 닫는다.
+  // (브라우저는 beforeprint 처리 후 화면을 다시 그려서 인쇄하므로 flushSync 로 충분하다)
+  const previewRef = useRef(preview);
+  previewRef.current = preview;
+  const hasReport = !!report;
+  useEffect(() => {
+    if (!hasReport) return;
+    let autoOpened = false;
+    const before = () => {
+      if (previewRef.current) return;
+      autoOpened = true;
+      flushSync(() => setPreview(true));
+      document.body.classList.add("preview-active");
+    };
+    const after = () => {
+      if (!autoOpened) return;
+      autoOpened = false;
+      setPreview(false);
+    };
+    window.addEventListener("beforeprint", before);
+    window.addEventListener("afterprint", after);
+    return () => {
+      window.removeEventListener("beforeprint", before);
+      window.removeEventListener("afterprint", after);
+    };
+  }, [hasReport]);
 
   async function patch(patchObj: Partial<WeeklyReport>, fieldKey: string) {
     const current = reportRef.current;
@@ -371,12 +399,14 @@ function CertCard({
         {/* 게이지바 */}
         <SemiGauge value={value} total={total} label={gaugeLabel} />
         {/* 요일별 구름 스트릭 */}
-        <div className="mt-6 flex items-end justify-center gap-1.5 sm:gap-2">
+        {/* 7칸 그리드 + 칸 폭에 맞춰 줄어드는 원 — 인쇄 여백·배율이 PC 마다 달라 카드가 좁아져도
+            양 끝 요일이 카드 밖으로 잘리지 않는다 */}
+        <div className="mt-6 mx-auto grid max-w-[300px] grid-cols-7 items-end gap-1 sm:gap-1.5">
           {days.map((d, i) => {
             const s = CLOUD_TONE_STYLE[tones[i]];
             return (
-              <div key={d.date} className="flex flex-col items-center gap-1.5">
-                <div className={`grid h-9 w-9 place-items-center rounded-full ${s.bg}`}>
+              <div key={d.date} className="flex min-w-0 flex-col items-center gap-1.5">
+                <div className={`grid aspect-square w-full max-w-9 place-items-center rounded-full ${s.bg}`}>
                   <CloudIcon className={`h-5 w-5 ${s.icon}`} />
                 </div>
                 <span className={`text-[11px] font-semibold ${s.label}`}>{WEEKDAY_KO[i]}</span>
@@ -1568,9 +1598,19 @@ function ReportPreview({
       </div>
 
       {/* 완성 문서 */}
-      <div className="preview-doc mx-auto max-w-[860px] px-4 sm:px-6 py-6 sm:py-8">
+      {/* 배너는 화면에서도 인쇄본처럼 맨 위에 붙인다 — 인쇄 설정을 타지 않는 방식(캡처 도구 등)으로
+          저장해도 배너가 떠 보이지 않게 (위쪽 여백 0 · 아래 모서리만 둥글게) */}
+      <div className="preview-doc mx-auto max-w-[860px] px-4 sm:px-6 pt-0 pb-6 sm:pb-8">
         {/* 상단 브랜드 헤더 배너 */}
-        <header className="preview-banner overflow-hidden rounded-3xl bg-gradient-to-r from-[#38bdf8] via-[#0ea5e9] to-[#0284c7] px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25">
+        {/* 그라데이션은 인라인 + 단색 폴백 (월간 레포트와 동일) — 어떤 브라우저·인쇄 환경에서도
+            배너 색이 빠져 흰 바탕에 흰 글씨만 남는 일이 없게 한다. */}
+        <header
+          className="preview-banner overflow-hidden rounded-b-3xl px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25"
+          style={{
+            backgroundColor: "#0ea5e9",
+            backgroundImage: "linear-gradient(90deg, #38bdf8 0%, #0ea5e9 50%, #0284c7 100%)",
+          }}
+        >
           <div className="flex flex-wrap items-start justify-between gap-4">
             {/* 좌측: 심볼 로고 + 브랜드명 + 부제목 */}
             <div className="flex items-center gap-3.5">

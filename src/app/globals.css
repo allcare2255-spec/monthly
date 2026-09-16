@@ -16,6 +16,15 @@
   --color-sunset: #FB923C;
 }
 
+/* 구형 브라우저(크롬·엣지 110 이하 등) 호환 — Tailwind v4 의 그라데이션 클래스는
+   "to right in oklab" 처럼 색 보간 방식을 붙여 쓰는데, 이를 모르는 브라우저는 배경 전체를 버린다.
+   → 배너가 사라지고 흰 배경에 흰 글씨만 남는 문제. 이런 브라우저에서는 보간 방식을 뺀 값으로 바꾼다. */
+@supports not (background-image: linear-gradient(in oklab, red, red)) {
+  .bg-gradient-to-r { --tw-gradient-position: to right !important; }
+  .bg-gradient-to-br { --tw-gradient-position: to bottom right !important; }
+  .bg-gradient-to-b { --tw-gradient-position: to bottom !important; }
+}
+
 :root {
   --background: #f9fafb;
   --foreground: #0B1020;
@@ -733,7 +742,8 @@ body.preview-active .editor-drag-handle { display: none !important; }
   /* 접어둔 토글도 PDF 에는 내용이 남아야 한다 — 기록이 통째로 사라지면 안 되므로 펼쳐서 인쇄 */
   .rich-content details > [data-type="detailsContent"] { display: block !important; }
   .rich-content details > summary::before { content: "▼" !important; }
-  body { background: #FFFFFF !important; }
+  /* html 도 흰색으로 — 내용이 끝난 마지막 장 아래에 화면 배경(연회색)이 찍히지 않게 */
+  html, body { background: #FFFFFF !important; }
   .mesh-bg, .mesh-bg-soft { background: #FFFFFF !important; }
   .glass, .glass-dark {
     background: #FFFFFF !important;
@@ -769,10 +779,22 @@ body.preview-active .editor-drag-handle { display: none !important; }
   .stat-card { padding: 11px 14px !important; }
   .week-rate-card { padding: 15px 18px !important; }
   .week-rate-bars > * + * { margin-top: 8px !important; }
-  /* [월간 레포트] 기상 시간 기록 타일: 위에서 아낀 여백만큼 높이를 키워 찌그러짐 방지.
-     빈 칸도 같은 높이로 맞춰야 요일 줄마다 높이가 들쭉날쭉하지 않다. */
+  /* [월간 레포트] 기상 시간 기록 타일 높이.
+     빈 칸도 같은 높이로 맞춰야 요일 줄마다 높이가 들쭉날쭉하지 않다.
+     19.5mm 일 때는 1페이지 여유가 1cm 남짓이라, 폰트·여백이 조금만 다른 PC 에서도
+     달력 카드가 통째로 2페이지로 밀려 1페이지 아래가 비었다 → 16mm 로 줄여 여유를 확보. */
   .wake-cell,
-  .wake-cell-empty { min-height: 19.5mm !important; }
+  .wake-cell-empty { min-height: 16mm !important; }
+  /* 타일 광택 그라데이션도 인쇄에서는 빼고 단색만 — 어떤 뷰어·프린터에서도 색이 그대로 찍힌다 */
+  .wake-cell { background-image: none !important; }
+  /* 그래도 1페이지에 안 들어가는 환경이면, 카드를 통째로 넘기지 말고 달력 "줄" 사이에서만 나눈다
+     (1페이지 아래가 텅 비는 것 방지). 줄 자체는 잘리지 않게 유지. */
+  .preview-day-card.wake-card,
+  .preview-day-card.wake-card > div.wake-calendar {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+  .wake-row { page-break-inside: avoid; break-inside: avoid; }
   .wake-legend { margin-top: 6px !important; }
   /* [PDF 안정화] blur 장식 그라데이션은 일부 인쇄 환경(GPU/드라이버)에서 검정 박스로
      렌더되는 경우가 있어 인쇄 시 숨긴다 (색은 카드 본색·숫자 색으로 충분히 표현됨) */

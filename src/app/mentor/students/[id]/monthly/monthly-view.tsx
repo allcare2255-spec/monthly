@@ -259,8 +259,8 @@ export function MonthlyReportView({
             </div>
 
             {/* 기상 시간 기록 — 요일 정렬 달력 (제목은 카드 안에) */}
-            <div className="mb-8 print-avoid-break">
-              <div className="preview-day-card border border-ink/[0.05] rounded-2xl p-5 sm:p-6" style={CARD_BG}>
+            <div className="mb-8">
+              <div className="wake-card preview-day-card border border-ink/[0.05] rounded-2xl p-5 sm:p-6" style={CARD_BG}>
                 <SectionTitle>기상 시간 기록</SectionTitle>
                 <WakeCalendar days={allDays} />
                 <WakeLegend />
@@ -594,14 +594,14 @@ export function WakeCalendar({ days }: { days: DayData[] }) {
   for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
 
   return (
-    <div className="space-y-2">
+    <div className="wake-calendar space-y-2">
       <div className="grid grid-cols-7 gap-2 text-[11px] font-semibold text-ink/40 text-center">
         {["일", "월", "화", "수", "목", "금", "토"].map((w) => (
           <div key={w}>{w}</div>
         ))}
       </div>
       {rows.map((row, ri) => (
-        <div key={ri} className="grid grid-cols-7 gap-2">
+        <div key={ri} className="wake-row grid grid-cols-7 gap-2">
           {row.map((d, ci) =>
             d ? (
               <WakeCell key={d.date} day={d} />
