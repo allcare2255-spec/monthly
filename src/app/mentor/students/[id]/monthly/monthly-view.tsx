@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import type { DayData, MonthlyReport, WeeklyReport } from "@/types";
 import { addDays, hmToMinutes } from "@/lib/dates";
 
@@ -15,9 +15,14 @@ const fmtDot = (d: string) => (d || "").replace(/-/g, ".");
 // (blur 는 일부 인쇄 환경에서 검정 박스로 깨져 PDF 에서 숨겨왔고, 그래서 카드가 흰색으로 보였음.
 //  단색 폴백 + 부드러운 linear-gradient 는 화면·PDF 모두 동일하게 안전하게 렌더된다.)
 // 기상 시간 기록 타일 — 칸 색(파랑/빨강) 위에 얹는 은은한 광택 그라데이션.
-// 색상별로 따로 만들지 않고 흰색→투명→살짝 어둡게 로 덮어, 어떤 배경색이든 같은 결로 보이게 한다.
-const WAKE_CELL_SHEEN =
-  "linear-gradient(150deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.06) 45%, rgba(0,0,0,0.05) 100%)";
+// 반투명(rgba) 그라데이션은 일부 PC 의 PDF 뷰어·프린터 드라이버에서 검정/진한 박스로
+// 깨지므로, 칸 색에 흰색·검정을 미리 섞은 "불투명" 색으로만 그라데이션을 만든다.
+function wakeCellSheen(color: string): string {
+  const top = mixRgb(color, "#ffffff", 0.26);
+  const mid = mixRgb(color, "#ffffff", 0.06);
+  const end = mixRgb(color, "#000000", 0.05);
+  return `linear-gradient(150deg, ${top} 0%, ${mid} 45%, ${end} 100%)`;
+}
 
 export const CARD_BG: CSSProperties = {
   backgroundColor: "#FFFFFF",
@@ -318,9 +323,16 @@ const WAKE_LATE = "#a9d4f5"; // 늦은 기상 (연한 하늘, ~09:00+)
 const WAKE_MISSED = "#f47272"; // 미제출 (부드러운 빨강)
 const WAKE_PAUSED = "#94A3B8"; // 일시 정지 (중립 slate)
 
-function lerpHexColor(a: string, b: string, t: number): string {
-  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
-  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
+// "#rrggbb" 또는 "rgb(r, g, b)" → [r, g, b]
+function parseColor(c: string): number[] {
+  if (c.startsWith("#")) return [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+  return (c.match(/\d+/g) || []).slice(0, 3).map(Number);
+}
+
+// 두 색을 t 비율로 섞은 불투명 색
+function mixRgb(a: string, b: string, t: number): string {
+  const pa = parseColor(a);
+  const pb = parseColor(b);
   const c = pa.map((v, i) => Math.round(v + (pb[i] - v) * t));
   return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
 }
@@ -330,7 +342,7 @@ function wakeTimeColor(min: number): string {
   const EARLY = 6 * 60; // 06:00
   const LATE = 9 * 60; // 09:00
   const t = Math.max(0, Math.min(1, (min - EARLY) / (LATE - EARLY)));
-  return lerpHexColor(WAKE_FAST, WAKE_LATE, t);
+  return mixRgb(WAKE_FAST, WAKE_LATE, t);
 }
 
 // 주차별 과제 완료율 — 가로 진행바(트랙 위 그라데이션 채움 + 우측 퍼센트).
@@ -435,16 +447,23 @@ export function StudyTrendChart({
   const step = Math.max(1, Math.ceil(n / 14));
   const avgY = yOf(avgMin);
   const showAvg = avgMin > 0 && avgMin <= yMax;
+  // 한 화면에 차트가 여러 개여도 그라데이션 id 가 겹치지 않게
+  const gradId = `studyArea-${useId().replace(/:/g, "")}`;
 
   return (
     <>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="일별 공부 시간">
         <defs>
-          <linearGradient id="studyArea" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+          {/* stopOpacity(반투명)는 일부 PC 의 PDF 뷰어·프린터에서 무시돼 면적이 진한 보라로
+              꽉 차므로, 카드 배경(#F8F8FF)에 인디고 22%→0% 를 미리 섞은 불투명 색을 쓴다. */}
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#D7D8FC" />
+            <stop offset="100%" stopColor="#F8F8FF" />
           </linearGradient>
         </defs>
+
+        {/* 면적(불투명)은 그리드보다 먼저 그려야 점선이 가려지지 않는다 */}
+        {n > 0 && <path d={area} fill={`url(#${gradId})`} stroke="none" />}
 
         {/* 가로 그리드 + Y 라벨(H/M) */}
         {yTicks.map((v) => {
@@ -468,8 +487,7 @@ export function StudyTrendChart({
           ) : null,
         )}
 
-        {/* 면적 + 라인 */}
-        {n > 0 && <path d={area} fill="url(#studyArea)" stroke="none" />}
+        {/* 라인 */}
         {n > 0 && (
           <path d={line} fill="none" stroke="#6366f1" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
         )}
@@ -606,7 +624,7 @@ function WakeCell({ day }: { day: DayData }) {
   return (
     <div
       className="wake-cell min-h-[68px] rounded-2xl flex flex-col items-center justify-center gap-1 px-1 py-2 sm:min-h-[82px]"
-      style={{ backgroundColor: bg, backgroundImage: WAKE_CELL_SHEEN }}
+      style={{ backgroundColor: bg, backgroundImage: wakeCellSheen(bg) }}
     >
       <div className="text-[11px] font-semibold text-white/90">{mdLabel(day.date)}</div>
       {time ? (
