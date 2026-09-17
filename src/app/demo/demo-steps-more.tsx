@@ -299,7 +299,7 @@ export function TestStep({ n }: { n: number }) {
                     <span className="rounded-md bg-sky-50 px-1.5 py-0.5 text-[11px] font-bold text-sky-700">{q.subject}</span>
                     <span className="text-[11px] text-ink/40">{q.weak}</span>
                   </div>
-                  <div className="mt-2 text-[14.5px] font-semibold leading-relaxed">{q.question}</div>
+                  <div className="mt-2 whitespace-pre-line text-[14.5px] font-semibold leading-relaxed">{q.question}</div>
                   <div className={`mt-3 grid gap-1.5 ${q.choices.length === 2 ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"}`}>
                     {q.choices.map((c) => {
                       const isAnswer = c === q.answer;

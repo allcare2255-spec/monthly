@@ -492,7 +492,7 @@ export const DEMO_TEST = {
   title: `고2 ${DEMO_STUDENT.name} 주간 테스트 3 (${DEMO_STUDENT.mentor}T)`,
   date: "2026-08-22",
   /** 이번 주 인증·회고·질문에서 드러난 약점 → 문제로 */
-  weakPoints: ["수학 · 0/0 꼴 극한", "수학 · 좌극한과 우극한", "영어 · 빈칸 추론 접근", "영어 · 누적 복습 단어", "생명 · 세포호흡"],
+  weakPoints: ["수학 · 0/0 꼴 극한", "수학 · 좌극한과 우극한", "영어 · 빈칸 추론", "영어 · 누적 복습 단어", "생명 · 세포호흡"],
   questions: [
     {
       subject: "수학",
@@ -512,11 +512,12 @@ export const DEMO_TEST = {
     },
     {
       subject: "영어",
-      weak: "빈칸 추론 접근",
-      question: "빈칸 추론 문제에서 가장 먼저 해야 할 일로 알맞은 것은?",
-      choices: ["빈칸 문장만 정확히 해석한다", "글 전체의 주제를 한 줄로 잡는다", "선지의 모르는 단어부터 찾는다", "마지막 문장만 읽는다"],
-      answer: "글 전체의 주제를 한 줄로 잡는다",
-      explain: "빈칸은 대부분 글의 주제와 연결돼요. 해석이 되는데 틀린다면 주제를 먼저 잡는 순서로 바꿔봐요.",
+      weak: "빈칸 추론",
+      question:
+        "다음 빈칸에 들어갈 말로 가장 적절한 것은?\nMany people believe that talent is fixed at birth. However, studies show that the brain keeps changing as we practice, so our abilities can ______ over time.",
+      choices: ["grow", "disappear", "stay the same", "be ignored"],
+      answer: "grow",
+      explain: "'However'로 앞 문장(재능은 타고난 그대로다)을 뒤집고, 뇌가 연습으로 계속 변한다고 했으니 능력은 시간이 지나며 '자란다(grow)'가 알맞아요.",
     },
     {
       subject: "영어",
