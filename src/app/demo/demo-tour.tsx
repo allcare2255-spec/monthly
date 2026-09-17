@@ -60,6 +60,7 @@ import {
   MatchStep,
   PreStep,
   QnaStep,
+  ResultsStep,
   TeamStep,
   TestStep,
 } from "./demo-steps-more";
@@ -89,6 +90,7 @@ export function DemoTour() {
       { key: "monthly", label: "월간 레포트", render: (n) => <MonthlyStep n={n} /> },
       TEAM.length > 0 && { key: "team", label: "3인 관리", render: (n) => <TeamStep n={n} /> },
       { key: "compare", label: "비교", render: (n) => <CompareStep n={n} /> },
+      { key: "results", label: "성적 향상 사례", render: (n) => <ResultsStep n={n} /> },
       TESTIMONIALS.length > 0 && { key: "reviews", label: "후기", render: (n) => <ReviewStep n={n} /> },
     ];
     return list.filter((s): s is Step => Boolean(s));

@@ -15,10 +15,13 @@ import {
   DEMO_QNA_ROOM,
   DEMO_STUDENT,
   DEMO_TEST,
+  RESULT_CASES,
   TEAM,
   type CompareMark,
+  type ResultCase,
+  type ResultRow,
 } from "./demo-data";
-import { Reveal, useInView, useStepper } from "./demo-motion";
+import { Reveal, useInView, useProgress, useStepper } from "./demo-motion";
 import { FlowNote, Frame, KakaoRoom, Points, StepHeader, ZoomMock } from "./demo-ui";
 
 // ─────────────────────────────────────────────────────────────
@@ -475,4 +478,162 @@ function Mark({ m, highlight }: { m: CompareMark; highlight: boolean }) {
     );
   if (m === "tri") return <span className="text-[15px] font-bold text-ink/35">△</span>;
   return <span className="text-[15px] font-bold text-ink/20">✕</span>;
+}
+
+// ─────────────────────────────────────────────────────────────
+// 실제 성적 향상 사례 — 등급 막대 위에서 점이 올라간다
+// ─────────────────────────────────────────────────────────────
+
+export function ResultsStep({ n }: { n: number }) {
+  return (
+    <>
+      <StepHeader
+        n={n}
+        title="실제 성적이 이렇게 올랐어요"
+        desc="SKY MATE 고등 코칭을 받은 학생들의 실제 성적 기록이에요. 학생 이름만 가렸어요."
+      />
+      <div className="space-y-5">
+        {RESULT_CASES.map((c, i) => (
+          <ResultCard key={i} c={c} />
+        ))}
+      </div>
+      <p className="mt-4 text-center text-[11px] leading-relaxed text-ink/40">
+        ※ 학생이 코칭방에 직접 공유한 성적을 옮겼어요. 개인별 결과는 다를 수 있어요.
+      </p>
+    </>
+  );
+}
+
+function ResultCard({ c }: { c: ResultCase }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, 0.3);
+  const p = useProgress(inView, 1400, 300);
+  const graded = c.rows.filter((r) => r.from != null && r.to != null);
+  const table = c.rows.filter((r) => r.from == null);
+
+  return (
+    <Reveal from="scale">
+      <div ref={ref} className="overflow-hidden rounded-3xl border border-ink/[0.06] bg-white shadow-[0_8px_30px_rgba(15,40,80,0.06)]">
+        <div
+          className="px-5 py-4 text-white"
+          style={{ backgroundImage: "linear-gradient(90deg, #38bdf8 0%, #0ea5e9 50%, #0284c7 100%)" }}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[17px] font-extrabold">{c.who}</span>
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold">{c.tag}</span>
+          </div>
+          <div className="mt-0.5 text-[12px] text-white/80">{c.period}</div>
+          <div className="mt-2 text-[16px] font-extrabold leading-snug">{c.headline}</div>
+        </div>
+
+        <div className="p-4 sm:p-5">
+          {graded.length > 0 && (
+            <div className="space-y-4">
+              {graded.map((r) => (
+                <GradeTrack key={r.subject} r={r} p={p} beforeLabel={c.beforeLabel} afterLabel={c.afterLabel} />
+              ))}
+            </div>
+          )}
+
+          {table.length > 0 && (
+            <table className={`w-full text-[13px] ${graded.length ? "mt-5" : ""}`}>
+              <thead>
+                <tr className="text-[11.5px] text-ink/45">
+                  <th className="py-1.5 text-left font-semibold">과목</th>
+                  <th className="py-1.5 text-right font-semibold">{c.beforeLabel}</th>
+                  <th className="w-6" />
+                  <th className="py-1.5 text-left font-semibold">{c.afterLabel}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {table.map((r, i) => (
+                  <tr key={r.subject} className="border-t border-ink/[0.06]">
+                    <td className="py-2 font-bold text-ink/75">{r.subject}</td>
+                    <td className="py-2 text-right tabular-nums text-ink/45">{r.before}</td>
+                    <td className="py-2 text-center text-sky-500">→</td>
+                    <td className="py-2">
+                      <span
+                        className="inline-block rounded-md bg-sky-50 px-2 py-0.5 font-extrabold text-sky-700 transition-all duration-500"
+                        style={{
+                          opacity: inView ? 1 : 0,
+                          transform: inView ? "none" : "translateX(-8px)",
+                          transitionDelay: `${400 + i * 150}ms`,
+                        }}
+                      >
+                        {r.after}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {c.extra && (
+            <div className="mt-4 rounded-xl bg-emerald-50 px-3 py-2 text-[12.5px] font-semibold leading-relaxed text-emerald-800">
+              ➕ {c.extra}
+            </div>
+          )}
+          <div className="mt-4 border-l-[3px] border-sky-300 pl-3 text-[13.5px] leading-relaxed text-ink/70">
+            “{c.quote}”
+            <div className="mt-1 text-[11px] text-ink/40">— 학생이 코칭방에 남긴 회고</div>
+          </div>
+        </div>
+      </div>
+    </Reveal>
+  );
+}
+
+// 9등급(왼쪽) → 1등급(오른쪽) 막대. 점이 이전 등급에서 지금 등급으로 이동한다.
+function GradeTrack({ r, p, beforeLabel, afterLabel }: { r: ResultRow; p: number; beforeLabel: string; afterLabel: string }) {
+  const pos = (g: number) => ((9 - g) / 8) * 100;
+  const from = pos(r.from ?? 9);
+  const to = pos(r.to ?? 9);
+  const cur = from + (to - from) * p;
+  return (
+    <div>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+        <span className="text-[14px] font-extrabold">{r.subject}</span>
+        <span className="text-[12.5px]">
+          <span className="text-ink/45">
+            {beforeLabel} {r.before}
+          </span>
+          <span className="mx-1.5 text-sky-500">→</span>
+          <span className="font-extrabold text-sky-700">
+            {afterLabel} {r.after}
+          </span>
+        </span>
+      </div>
+      <div className="relative mx-3 mt-2.5 h-3 rounded-full bg-slate-100">
+        <div
+          className="absolute inset-y-0 rounded-full bg-gradient-to-r from-sky-200 to-sky-500"
+          style={{ left: `${from}%`, width: `${Math.max(0, cur - from)}%` }}
+        />
+        <div
+          className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-slate-300"
+          style={{ left: `${from}%` }}
+        />
+        <div
+          className="absolute top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-sky-600 shadow-md"
+          style={{ left: `${cur}%` }}
+        />
+      </div>
+      <div className="relative mx-3 mt-1.5 h-4 text-[10px] text-ink/35">
+        {[9, 8, 7, 6, 5, 4, 3, 2, 1].map((g) => (
+          <span
+            key={g}
+            className={`absolute -translate-x-1/2 ${g === r.to ? "font-bold text-sky-700" : ""}`}
+            style={{ left: `${pos(g)}%` }}
+          >
+            {g}
+          </span>
+        ))}
+      </div>
+      <div className="mx-3 flex justify-between text-[10px] text-ink/30">
+        <span>등급 낮음</span>
+        <span>등급 높음</span>
+      </div>
+      {r.note && <div className="mt-1 text-[11.5px] font-semibold text-emerald-700">✓ {r.note}</div>}
+    </div>
+  );
 }

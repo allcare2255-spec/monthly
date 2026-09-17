@@ -591,3 +591,51 @@ export const TEAM: TeamMember[] = [
     ],
   },
 ];
+
+// ── 실제 성적 향상 사례 (실제 코칭방 기록 · 이름 비공개) ─────────────────
+/** from/to 가 있으면 등급(1~9) 막대 위에서 점이 이동하는 그래프로 보여준다 */
+export type ResultRow = { subject: string; before: string; after: string; from?: number; to?: number; note?: string };
+export type ResultCase = {
+  who: string;
+  tag: string;
+  period: string;
+  beforeLabel: string;
+  afterLabel: string;
+  headline: string;
+  rows: ResultRow[];
+  extra?: string;
+  quote: string;
+};
+
+export const RESULT_CASES: ResultCase[] = [
+  {
+    who: "고3 김OO 학생",
+    tag: "정시 · 코칭 2개월",
+    period: "2026년 3월 → 5월 학력평가",
+    beforeLabel: "3월 학평",
+    afterLabel: "5월 학평",
+    headline: "국어·수학·영어 모두 2등급, 윤리와사상 만점",
+    rows: [
+      { subject: "영어", before: "72점 (3등급)", after: "2등급", from: 3, to: 2 },
+      { subject: "국어", before: "52점", after: "2등급" },
+      { subject: "수학", before: "60점", after: "2등급" },
+      { subject: "윤리와사상", before: "46점", after: "50점 만점" },
+      { subject: "정치와법", before: "45점", after: "1문제 오답" },
+    ],
+    extra: "이어진 1학기 기말고사(내신)에서도 국어 1등급 · 영어 2등급 (학생 가채점 기준)",
+    quote: "지금까지 봤던 영어 모의고사 중에서 가장 만족스러운 결과였다",
+  },
+  {
+    who: "고3 김OO 학생",
+    tag: "수시·정시 병행 · 코칭 3개월차",
+    period: "코칭 전 모의고사 → 2026년 9월 모의평가",
+    beforeLabel: "코칭 전",
+    afterLabel: "9월 모평",
+    headline: "한 번도 벗어난 적 없던 영어 4~5등급 → 처음으로 2등급",
+    rows: [
+      { subject: "영어", before: "4~5등급", after: "2등급", from: 4.5, to: 2, note: "듣기 전부 정답" },
+      { subject: "국어", before: "5등급", after: "4등급", from: 5, to: 4 },
+    ],
+    quote: "한 번도 4~5등급에서 벗어난 적이 없었는데 처음으로 2등급이 나왔고 찍어서 맞힌 문제도 없었다",
+  },
+];
