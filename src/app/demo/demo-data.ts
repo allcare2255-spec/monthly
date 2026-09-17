@@ -619,10 +619,10 @@ export const COMPARE_ROWS: { label: string; marks: [CompareMark, CompareMark, Co
   { label: "매주 1:1 줌 컨설팅", marks: ["x", "x", "tri", "o"] },
   { label: "주간 · 월간 학습 레포트", marks: ["x", "tri", "x", "o"] },
   { label: "전 과목 공부 방향 관리", marks: ["x", "x", "x", "o"] },
-  { label: "멘토 · 매니저 · 대표강사 3중 관리", marks: ["x", "x", "x", "o"] },
+  { label: "멘토 · 매니저 · 고예찬 대표 3중 관리", marks: ["x", "x", "x", "o"] },
 ];
 
-// ── 멘토 · 매니저 · 대표강사 3인 관리 (실제 코칭방 운영 방식 기준) ────────
+// ── 멘토 · 매니저 · 고예찬 대표 3인 관리 (실제 코칭방 운영 방식 기준) ────────
 export type TeamMember = { role: string; icon: string; tagline: string; lines: string[] };
 export const TEAM: TeamMember[] = [
   {
@@ -647,7 +647,7 @@ export const TEAM: TeamMember[] = [
     ],
   },
   {
-    role: "대표강사",
+    role: "고예찬 대표",
     icon: "🎓",
     tagline: "코칭 전체의 방향을 잡아요",
     lines: [
