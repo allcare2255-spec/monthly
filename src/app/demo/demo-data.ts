@@ -543,10 +543,14 @@ export const DEMO_QNA_CHAT: ChatMessage[] = [
 ];
 
 // ── 약점 맞춤 테스트지 ────────────────────────────────────────
+// 실제 매니저가 보내는 주간 테스트(미적분Ⅰ 함수의 극한~연속) 형식을 따르고,
+// 문항은 실제 문제의 숫자·식을 바꾼 변형 문제다.
+// 수식 표기: [[lim:x→2]] = 아래첨자 달린 lim, [[frac:분자|분모]] = 분수
 export type DemoTestQuestion = {
-  subject: string;
-  weak: string;
+  unit: string;
   question: string;
+  /** <보기> 상자 줄들 */
+  box?: string[];
   choices: string[];
   answer: string;
   explain: string;
@@ -554,50 +558,54 @@ export type DemoTestQuestion = {
 
 export const DEMO_TEST = {
   title: `고2 ${DEMO_STUDENT.name} 주간 테스트 3 (${DEMO_STUDENT.mentor}T)`,
-  date: "2026-08-22",
+  subject: "미적분Ⅰ",
+  date: "2026.08.22",
+  range: "함수의 극한 ~ 함수의 연속",
   /** 이번 주 인증·회고·질문에서 드러난 약점 → 문제로 */
-  weakPoints: ["수학 · 0/0 꼴 극한", "수학 · 좌극한과 우극한", "영어 · 빈칸 추론", "영어 · 누적 복습 단어", "생명 · 세포호흡"],
+  weakPoints: ["0/0 꼴 극한", "좌극한과 우극한", "극한값의 성질", "함수의 연속 조건"],
   questions: [
     {
-      subject: "수학",
-      weak: "0/0 꼴 극한",
-      question: "lim(x→2) (x² − 4) / (x − 2) 의 값은?",
-      choices: ["0", "2", "4", "존재하지 않는다"],
-      answer: "4",
-      explain: "x² − 4 = (x − 2)(x + 2) 로 인수분해해서 약분하면 x + 2 → x에 2를 넣어 4예요.",
+      unit: "1-1. 함수의 극한",
+      question: "[[lim:x→2]] (−x² + 5x − 3) 의 값은?",
+      choices: ["1", "2", "3", "4", "5"],
+      answer: "3",
+      explain: "다항함수는 x에 2를 그대로 대입하면 돼요. −4 + 10 − 3 = 3",
     },
     {
-      subject: "수학",
-      weak: "좌극한과 우극한",
-      question: "lim(x→1−) f(x) = 2, lim(x→1+) f(x) = 2, f(1) = 5 일 때 lim(x→1) f(x) 의 값은?",
-      choices: ["2", "5", "7", "존재하지 않는다"],
-      answer: "2",
-      explain: "좌극한과 우극한이 2로 같으면 극한값은 2예요. 극한값은 x = 1에서의 함숫값 f(1)과 상관없어요.",
+      unit: "1-1. 함수의 극한",
+      question: "[[lim:x→−2]] [[frac:x² − 4|x + 2]] 의 값은?",
+      choices: ["−4", "−2", "0", "2", "4"],
+      answer: "−4",
+      explain: "대입하면 0/0 꼴이에요. x² − 4 = (x + 2)(x − 2) 로 인수분해해 약분하면 x − 2 → x = −2 를 넣어 −4",
     },
     {
-      subject: "영어",
-      weak: "빈칸 추론",
+      unit: "1-1. 함수의 극한",
+      question: "다음 <보기> 중에서 옳은 것의 개수는?",
+      box: [
+        "ㄱ. [[lim:x→1]] [[frac:x² − 1|x − 1]] = 2",
+        "ㄴ. [[lim:x→∞]] (3 + [[frac:2|x]]) = 3",
+        "ㄷ. [[lim:x→0]] 5 = 5",
+        "ㄹ. [[lim:x→2]] [[frac:1|(x − 2)²]] = −∞",
+      ],
+      choices: ["0개", "1개", "2개", "3개", "4개"],
+      answer: "3개",
+      explain: "ㄱ(약분하면 x+1 → 2), ㄴ(2/x → 0), ㄷ(상수함수)은 옳아요. ㄹ은 분모가 항상 양수라 +∞로 발산해요.",
+    },
+    {
+      unit: "1-1. 함수의 극한",
       question:
-        "다음 빈칸에 들어갈 말로 가장 적절한 것은?\nMany people believe that talent is fixed at birth. However, studies show that the brain keeps changing as we practice, so our abilities can ______ over time.",
-      choices: ["grow", "disappear", "stay the same", "be ignored"],
-      answer: "grow",
-      explain: "'However'로 앞 문장(재능은 타고난 그대로다)을 뒤집고, 뇌가 연습으로 계속 변한다고 했으니 능력은 시간이 지나며 '자란다(grow)'가 알맞아요.",
+        "함수 f(x) = [[frac:∣x − 1∣|x − 1]] 에 대하여 [[lim:x→1+]] f(x) = a, [[lim:x→1−]] f(x) = b 일 때, a − b 의 값은?",
+      choices: ["−2", "−1", "0", "1", "2"],
+      answer: "2",
+      explain: "x > 1 이면 ∣x − 1∣ = x − 1 이라 f(x) = 1, x < 1 이면 f(x) = −1 이에요. a = 1, b = −1 → a − b = 2",
     },
     {
-      subject: "영어",
-      weak: "누적 복습 단어",
-      question: "단어 'deprive'의 뜻으로 알맞은 것은?",
-      choices: ["제공하다", "빼앗다", "묘사하다", "유래하다"],
-      answer: "빼앗다",
-      explain: "deprive A of B = A에게서 B를 빼앗다. 이번 주 Day 14에서 틀렸던 단어예요.",
-    },
-    {
-      subject: "생명",
-      weak: "세포호흡",
-      question: "세포호흡에서 포도당이 분해될 때 방출된 에너지의 일부는 ATP에 저장된다. (O / X)",
-      choices: ["O", "X"],
-      answer: "O",
-      explain: "방출된 에너지의 일부는 ATP에 저장되고, 나머지는 열에너지로 방출돼요.",
+      unit: "1-2. 함수의 연속",
+      question:
+        "모든 실수에서 연속인 함수 f(x) 가 x ≠ 2 일 때 f(x) = [[frac:x² + kx − 6|x − 2]], f(2) = m 이다. k + m 의 값은? (단, k는 상수)",
+      choices: ["4", "5", "6", "7", "8"],
+      answer: "6",
+      explain: "x = 2에서 분모가 0이니 분자도 0이어야 해요: 4 + 2k − 6 = 0 → k = 1. 그러면 f(x) = x + 3 이라 m = f(2) = 5 → k + m = 6",
     },
   ] as DemoTestQuestion[],
 };

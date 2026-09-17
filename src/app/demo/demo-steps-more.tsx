@@ -252,6 +252,7 @@ export function TestStep({ n }: { n: number }) {
   const [answers, setAnswers] = useState<(string | null)[]>(() => qs.map(() => null));
   const done = answers.every((a) => a !== null);
   const correct = useMemo(() => answers.filter((a, i) => a === qs[i].answer).length, [answers, qs]);
+  const score = Math.round((correct / qs.length) * 100);
 
   return (
     <>
@@ -264,44 +265,74 @@ export function TestStep({ n }: { n: number }) {
         items={[
           { icon: "🎯", title: "약한 단원 맞춤", text: "학생이 고른 단원·난이도로 문제를 만들어요" },
           { icon: "📱", title: "QR로 제출 · 채점", text: "정답을 입력하면 다음 날 채점 결과가 와요" },
-          { icon: "🔁", title: "[오답] 테스트", text: "틀린 유형만 모아 다시 풀고, 멘토 퀴즈로 복습해요" },
+          { icon: "🔁", title: "[오답] 테스트", text: "틀린 유형만 모아 다시 풀고, 해설지도 함께 받아요" },
         ]}
       />
-      <Frame label="직접 풀어보세요 — 누르면 바로 채점돼요">
-        <div className="rounded-2xl border border-ink/10">
-          <div className="border-b border-ink/10 px-4 py-3">
-            <div className="text-[11px] font-bold tracking-[0.18em] text-sky-600">SKY MATE · 맞춤 테스트</div>
-            <div className="mt-1 text-[16px] font-extrabold leading-snug">{DEMO_TEST.title}</div>
-            <div className="mt-0.5 text-[11.5px] text-ink/45">{DEMO_TEST.date} · 문제지 PDF + QR 전용 코드 · 채점·오답 제공</div>
-          </div>
-          <div className="px-4 py-3">
-            <div className="text-[12px] font-bold text-ink/55">이번 주 약점에서 출제</div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {DEMO_TEST.weakPoints.map((w, i) => (
-                <Reveal key={w} delay={i * 80} from="scale">
-                  <span className="inline-block rounded-full bg-pink-50 px-2.5 py-1 text-[11.5px] font-semibold text-fuchsia">
-                    {w}
-                  </span>
-                </Reveal>
-              ))}
+      <Frame label="실제 테스트지 형식 그대로 — 직접 풀어보세요 (누르면 바로 채점)">
+        {/* 시험지 머리 */}
+        <div className="rounded-2xl border border-ink/10 bg-white px-4 pb-3 pt-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-1.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.jpg" alt="" className="h-7 w-7 object-contain" />
+              <span className="text-[13px] font-extrabold tracking-tight">SKY MATE</span>
             </div>
+            <span className="text-[20px] font-extrabold leading-none text-sky-400">{DEMO_TEST.subject}</span>
+          </div>
+          <div className="mt-2 text-center text-[16px] font-extrabold leading-snug sm:text-[18px]">{DEMO_TEST.title}</div>
+          <div className="mt-2 flex items-end justify-between gap-2 text-[11.5px] text-ink/60">
+            <div>
+              <div>총 {qs.length} 문제</div>
+              <div className="mt-0.5">{DEMO_TEST.range}</div>
+            </div>
+            <div className="flex items-end gap-2">
+              <div className="text-right">
+                <div>{DEMO_TEST.date}</div>
+                <div className="mt-0.5">이름 : {DEMO_STUDENT.name}</div>
+              </div>
+              <FakeQr />
+            </div>
+          </div>
+          <div className="mt-2.5 flex items-center gap-2">
+            <div className="h-1.5 flex-1 rounded-full bg-gradient-to-r from-sky-200 to-sky-500" />
+            <div className="h-1.5 flex-1 rounded-full bg-gradient-to-r from-sky-500 to-sky-200" />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <span className="text-[11.5px] font-bold text-ink/50">이번 주 약점에서 출제</span>
+            {DEMO_TEST.weakPoints.map((w, i) => (
+              <Reveal key={w} delay={i * 80} from="scale">
+                <span className="inline-block rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-semibold text-fuchsia">{w}</span>
+              </Reveal>
+            ))}
           </div>
         </div>
 
+        {/* 문항 */}
         <div className="mt-4 space-y-3">
           {qs.map((q, i) => {
             const picked = answers[i];
             return (
               <Reveal key={q.question} delay={i * 90}>
                 <div className="rounded-2xl border border-ink/[0.08] p-4">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-[13px] font-extrabold text-ink/80">{i + 1}.</span>
-                    <span className="rounded-md bg-sky-50 px-1.5 py-0.5 text-[11px] font-bold text-sky-700">{q.subject}</span>
-                    <span className="text-[11px] text-ink/40">{q.weak}</span>
+                  <div className="text-right text-[11px] font-bold text-ink/55">{q.unit}</div>
+                  <div className="mt-1 flex gap-2">
+                    <span className="text-[18px] font-extrabold leading-none text-sky-500">{i + 1}.</span>
+                    <div className="min-w-0 flex-1 text-[14.5px] font-semibold leading-[2]">
+                      <MathText text={q.question} />
+                    </div>
                   </div>
-                  <div className="mt-2 whitespace-pre-line text-[14.5px] font-semibold leading-relaxed">{q.question}</div>
-                  <div className={`mt-3 grid gap-1.5 ${q.choices.length === 2 ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"}`}>
-                    {q.choices.map((c) => {
+                  {q.box && (
+                    <div className="mt-2 border border-ink/40 px-3 pb-2 pt-1 text-[13.5px] leading-[2.1]">
+                      <div className="text-center text-[12px] text-ink/60">&lt;보기&gt;</div>
+                      {q.box.map((line) => (
+                        <div key={line}>
+                          <MathText text={line} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-3 grid grid-cols-2 gap-1.5">
+                    {q.choices.map((c, k) => {
                       const isAnswer = c === q.answer;
                       const isPicked = c === picked;
                       const tone =
@@ -317,11 +348,12 @@ export function TestStep({ n }: { n: number }) {
                           key={c}
                           disabled={picked !== null}
                           onClick={() => setAnswers((a) => a.map((x, j) => (j === i ? c : x)))}
-                          className={`rounded-xl border px-3 py-2.5 text-left text-[13.5px] font-medium transition active:scale-[0.99] ${tone}`}
+                          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-left text-[14px] font-medium tabular-nums transition active:scale-[0.99] ${tone}`}
                         >
-                          {picked !== null && isAnswer && "✓ "}
-                          {picked !== null && isPicked && !isAnswer && "✕ "}
-                          {c}
+                          <span className="text-[13px]">{CIRCLED[k]}</span>
+                          <MathText text={c} />
+                          {picked !== null && isAnswer && <span className="ml-auto text-[12px]">✓</span>}
+                          {picked !== null && isPicked && !isAnswer && <span className="ml-auto text-[12px]">✕</span>}
                         </button>
                       );
                     })}
@@ -340,14 +372,17 @@ export function TestStep({ n }: { n: number }) {
 
         {done && (
           <div className="mt-4 animate-[demoPop_.45s_ease_both] rounded-2xl bg-gradient-to-br from-sky-500 to-sky-700 p-5 text-center text-white">
-            <div className="text-[13px] font-semibold text-white/80">채점 결과</div>
-            <div className="mt-1 text-[30px] font-extrabold tabular-nums">
-              {correct} / {qs.length}
+            <div className="text-[13px] font-semibold text-white/80">
+              [{DEMO_TEST.date} 주간 테스트 3 채점 결과]
             </div>
-            <div className="mt-1 text-[13px] text-white/85">
+            <div className="mt-1 text-[32px] font-extrabold tabular-nums">{score}점</div>
+            <div className="text-[12.5px] text-white/75">
+              {correct} / {qs.length} 문항 정답
+            </div>
+            <div className="mt-1.5 text-[13px] text-white/85">
               {correct === qs.length
-                ? "완벽해요! 다음 테스트는 한 단계 어려운 유형으로 넘어가요."
-                : "틀린 유형은 멘토가 다음 주 계획표와 테스트지에 다시 넣어요."}
+                ? "완벽해요! 다음 테스트는 난이도를 한 단계 올려요."
+                : "틀린 문항은 해설로 오답 정리하고, 비슷한 유형을 [오답] 테스트로 다시 풀어요."}
             </div>
             <button
               onClick={() => setAnswers(qs.map(() => null))}
@@ -359,6 +394,48 @@ export function TestStep({ n }: { n: number }) {
         )}
       </Frame>
     </>
+  );
+}
+
+const CIRCLED = ["①", "②", "③", "④", "⑤"];
+
+/** [[lim:x→2]] · [[frac:분자|분모]] 를 시험지처럼 그린다 */
+function MathText({ text }: { text: string }) {
+  const parts = text.split(/(\[\[[^\]]+\]\])/);
+  return (
+    <>
+      {parts.map((p, i) => {
+        const m = p.match(/^\[\[(lim|frac):(.*)\]\]$/);
+        if (!m) return <span key={i}>{p}</span>;
+        if (m[1] === "lim") {
+          return (
+            <span key={i} className="mx-0.5 inline-flex flex-col items-center align-middle leading-none">
+              <span className="font-serif text-[1em]">lim</span>
+              <span className="mt-0.5 whitespace-nowrap font-serif text-[0.62em]">{m[2]}</span>
+            </span>
+          );
+        }
+        const [num, den] = m[2].split("|");
+        return (
+          <span key={i} className="mx-0.5 inline-flex flex-col items-center align-middle font-serif text-[0.9em] leading-tight">
+            <span className="whitespace-nowrap border-b border-current px-1">{num}</span>
+            <span className="whitespace-nowrap px-1">{den}</span>
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+// 시험지 오른쪽 위 QR (모양만)
+function FakeQr() {
+  const cells = "1110111100101101111010001011101001101101011101110".split("");
+  return (
+    <div className="grid h-9 w-9 shrink-0 grid-cols-7 gap-px rounded-sm bg-white p-0.5 ring-1 ring-ink/15" aria-label="QR 코드">
+      {cells.map((c, i) => (
+        <span key={i} className={c === "1" ? "bg-ink" : "bg-white"} />
+      ))}
+    </div>
   );
 }
 
