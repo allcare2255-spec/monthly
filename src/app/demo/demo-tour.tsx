@@ -57,6 +57,7 @@ import {
 } from "./demo-ui";
 import {
   CompareStep,
+  FirstZoomStep,
   MatchStep,
   PreStep,
   QnaStep,
@@ -80,8 +81,9 @@ export function DemoTour() {
   const steps: Step[] = useMemo(() => {
     const list: (Step | false)[] = [
       { key: "match", label: "멘토 매칭", render: (n) => <MatchStep n={n} /> },
-      { key: "pre", label: "사전 질문지 · 첫 컨설팅", render: (n) => <PreStep n={n} /> },
-      { key: "plan", label: "커리큘럼 · 계획표", render: (n) => <PlanStep n={n} /> },
+      { key: "pre", label: "사전 질문지", render: (n) => <PreStep n={n} /> },
+      { key: "first-zoom", label: "첫 컨설팅", render: (n) => <FirstZoomStep n={n} /> },
+      { key: "plan", label: "주간 계획", render: (n) => <PlanStep n={n} /> },
       { key: "kakao", label: "매일 카톡 관리", render: (n) => <KakaoStep n={n} /> },
       { key: "qna", label: "질의응답", render: (n) => <QnaStep n={n} /> },
       { key: "test", label: "맞춤 테스트지", render: (n) => <TestStep n={n} /> },
