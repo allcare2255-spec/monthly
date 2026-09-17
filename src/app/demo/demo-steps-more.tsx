@@ -15,6 +15,7 @@ import {
   DEMO_QNA_ROOM,
   DEMO_STUDENT,
   DEMO_TEST,
+  PARENT_REVIEWS,
   RESULT_CASES,
   TEAM,
   type CompareMark,
@@ -257,7 +258,14 @@ export function TestStep({ n }: { n: number }) {
       <StepHeader
         n={n}
         title="부족한 부분은 맞춤 테스트지로 다시 채워요"
-        desc="한 주 동안의 인증·회고·질문과 모의고사에서 드러난 약한 단원을 모아, 그 학생만을 위한 주간 테스트로 만들어요. 문제지의 QR로 들어가 전용 코드로 풀면 채점과 오답 정리까지 받을 수 있어요. 내신 기간엔 학교 기출·변형 자료도 준비해드려요."
+        desc="학생이 약한 단원을 고르면 매니저가 난이도를 맞춰 맞춤 테스트지를 만들어요. 예를 들어 월·화·목·토 아침마다 5문제씩 보내고, 문제지의 QR에 정답을 입력하면 다음 날 채점 결과를 알려줘요. 틀린 유형은 [오답] 테스트로 한 번 더 풀어요."
+      />
+      <Points
+        items={[
+          { icon: "🎯", title: "약한 단원 맞춤", text: "학생이 고른 단원·난이도로 문제를 만들어요" },
+          { icon: "📱", title: "QR로 제출 · 채점", text: "정답을 입력하면 다음 날 채점 결과가 와요" },
+          { icon: "🔁", title: "[오답] 테스트", text: "틀린 유형만 모아 다시 풀고, 멘토 퀴즈로 복습해요" },
+        ]}
       />
       <Frame label="직접 풀어보세요 — 누르면 바로 채점돼요">
         <div className="rounded-2xl border border-ink/10">
@@ -490,15 +498,17 @@ export function ResultsStep({ n }: { n: number }) {
       <StepHeader
         n={n}
         title="실제 성적이 이렇게 올랐어요"
-        desc="SKY MATE 고등 코칭을 받은 학생들의 실제 성적 기록이에요. 학생 이름만 가렸어요."
+        desc="SKY MATE 고등 코칭을 받은 학생들의 실제 성적 기록과 학부모님 반응이에요. 학생 이름만 가렸어요."
       />
       <div className="space-y-5">
         {RESULT_CASES.map((c, i) => (
           <ResultCard key={i} c={c} />
         ))}
       </div>
+      <FlowNote>학부모님이 보내주신 이야기</FlowNote>
+      <ParentReviews />
       <p className="mt-4 text-center text-[11px] leading-relaxed text-ink/40">
-        ※ 학생이 코칭방에 직접 공유한 성적을 옮겼어요. 개인별 결과는 다를 수 있어요.
+        ※ 학생·학부모님이 카톡으로 직접 보내주신 내용을 이름만 가리고 옮겼어요. 개인별 결과는 다를 수 있어요.
       </p>
     </>
   );
@@ -509,7 +519,8 @@ function ResultCard({ c }: { c: ResultCase }) {
   const inView = useInView(ref, 0.3);
   const p = useProgress(inView, 1400, 300);
   const graded = c.rows.filter((r) => r.from != null && r.to != null);
-  const table = c.rows.filter((r) => r.from == null);
+  const scored = c.rows.filter((r) => r.from == null && r.scoreFrom != null && r.scoreTo != null);
+  const table = c.rows.filter((r) => r.from == null && r.scoreFrom == null);
 
   return (
     <Reveal from="scale">
@@ -535,8 +546,16 @@ function ResultCard({ c }: { c: ResultCase }) {
             </div>
           )}
 
+          {scored.length > 0 && (
+            <div className={`space-y-4 ${graded.length ? "mt-5" : ""}`}>
+              {scored.map((r) => (
+                <ScoreBar key={r.subject} r={r} p={p} beforeLabel={c.beforeLabel} afterLabel={c.afterLabel} />
+              ))}
+            </div>
+          )}
+
           {table.length > 0 && (
-            <table className={`w-full text-[13px] ${graded.length ? "mt-5" : ""}`}>
+            <table className={`w-full text-[13px] ${graded.length || scored.length ? "mt-5" : ""}`}>
               <thead>
                 <tr className="text-[11.5px] text-ink/45">
                   <th className="py-1.5 text-left font-semibold">과목</th>
@@ -576,11 +595,74 @@ function ResultCard({ c }: { c: ResultCase }) {
           )}
           <div className="mt-4 border-l-[3px] border-sky-300 pl-3 text-[13.5px] leading-relaxed text-ink/70">
             “{c.quote}”
-            <div className="mt-1 text-[11px] text-ink/40">— 학생이 코칭방에 남긴 회고</div>
+            <div className="mt-1 text-[11px] text-ink/40">— {c.quoteBy ?? "학생이 코칭방에 남긴 회고"}</div>
           </div>
         </div>
       </div>
     </Reveal>
+  );
+}
+
+// 점수 막대 — 이전 점수(회색)에서 지금 점수(파랑)까지 늘어난다
+function ScoreBar({ r, p, beforeLabel, afterLabel }: { r: ResultRow; p: number; beforeLabel: string; afterLabel: string }) {
+  const max = r.max ?? 100;
+  const from = r.scoreFrom ?? 0;
+  const to = r.scoreTo ?? 0;
+  const cur = from + (to - from) * p;
+  const pct = (v: number) => `${(v / max) * 100}%`;
+  const diff = Math.round((to - from) * 10) / 10;
+  return (
+    <div>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+        <span className="text-[14px] font-extrabold">{r.subject}</span>
+        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[12px] font-extrabold text-emerald-700">+{diff}점</span>
+      </div>
+      <div className="mt-2 space-y-1.5">
+        <div className="flex items-center gap-2">
+          <span className="w-14 shrink-0 text-[11px] text-ink/45">{beforeLabel}</span>
+          <div className="relative h-5 flex-1 rounded-md bg-slate-100">
+            <div className="absolute inset-y-0 left-0 rounded-md bg-slate-300" style={{ width: pct(from) }} />
+          </div>
+          <span className="w-12 shrink-0 text-right text-[12px] tabular-nums text-ink/50">{r.before}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-14 shrink-0 text-[11px] font-bold text-sky-700">{afterLabel}</span>
+          <div className="relative h-5 flex-1 rounded-md bg-slate-100">
+            <div className="absolute inset-y-0 left-0 rounded-md bg-gradient-to-r from-sky-400 to-sky-600" style={{ width: pct(cur) }} />
+          </div>
+          <span className="w-12 shrink-0 text-right text-[12px] font-extrabold tabular-nums text-sky-700">
+            {Math.round(cur * 10) / 10}점
+          </span>
+        </div>
+      </div>
+      {r.note && <div className="mt-1 text-[11.5px] font-semibold text-emerald-700">✓ {r.note}</div>}
+    </div>
+  );
+}
+
+function ParentReviews() {
+  return (
+    <div className="space-y-2.5">
+      {PARENT_REVIEWS.map((r, i) => (
+        <Reveal key={i} delay={i * 70}>
+          <div className="flex gap-2.5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[14px] bg-gradient-to-br from-amber-300 to-orange-400 text-[15px]">
+              👩
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[11.5px]">
+                <span className="font-bold text-ink/70">{r.student} 학부모님</span>
+                <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10.5px] font-bold text-sky-700">{r.tag}</span>
+              </div>
+              <div className="rounded-2xl rounded-tl-md border border-ink/[0.06] bg-white px-3.5 py-2.5 text-[13.5px] leading-relaxed text-ink/80 shadow-[0_4px_16px_rgba(15,40,80,0.05)]">
+                {r.text}
+              </div>
+              <div className="mt-1 text-right text-[10.5px] text-ink/35">{r.date}</div>
+            </div>
+          </div>
+        </Reveal>
+      ))}
+    </div>
   );
 }
 

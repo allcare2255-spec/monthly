@@ -90,7 +90,7 @@ export function DemoTour() {
       { key: "monthly", label: "월간 레포트", render: (n) => <MonthlyStep n={n} /> },
       TEAM.length > 0 && { key: "team", label: "3인 관리", render: (n) => <TeamStep n={n} /> },
       { key: "compare", label: "비교", render: (n) => <CompareStep n={n} /> },
-      { key: "results", label: "성적 향상 사례", render: (n) => <ResultsStep n={n} /> },
+      { key: "results", label: "성적 향상 · 후기", render: (n) => <ResultsStep n={n} /> },
       TESTIMONIALS.length > 0 && { key: "reviews", label: "후기", render: (n) => <ReviewStep n={n} /> },
     ];
     return list.filter((s): s is Step => Boolean(s));
@@ -182,7 +182,7 @@ export function DemoTour() {
           {steps[step].render(step + 1)}
         </div>
         <p className="mt-10 text-center text-[11px] leading-relaxed text-ink/40">
-          ※ 실제 코칭 기록을 바탕으로 재구성한 예시 화면이에요. 학생·멘토 이름 등 개인정보는 모두 가상으로 바꿨어요.
+          ※ 코칭 과정 화면은 실제 코칭 기록을 바탕으로 재구성한 예시예요(학생·멘토 이름은 가상). 성적 향상 사례와 학부모님 반응은 실제 기록이며 이름만 가렸어요.
         </p>
       </main>
 

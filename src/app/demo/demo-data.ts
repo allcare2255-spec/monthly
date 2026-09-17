@@ -576,7 +576,7 @@ export const TEAM: TeamMember[] = [
     lines: [
       "매일 아침 기상 인증을 확인하고 응원해요",
       "과제·컨설팅 폼 제출을 챙기고, 질문이 멘토에게 닿았는지 확인해요",
-      "학교 기출·변형 자료와 약점 맞춤 주간 테스트(채점·오답까지)를 준비해요",
+      "약한 단원으로 맞춤 테스트를 만들어 보내고, 채점과 오답 테스트까지 챙겨요",
       "월간 레포트를 학생·학부모님께 전달해요",
     ],
   },
@@ -587,14 +587,24 @@ export const TEAM: TeamMember[] = [
     lines: [
       "모의고사·내신 등 시기별 전용 대비 자료를 직접 만들어요",
       "코칭 수강생 전용 공부법 강의를 제공해요",
-      "코칭을 이어갈 때 1:1 전화 상담으로 방향을 함께 점검해요",
     ],
   },
 ];
 
 // ── 실제 성적 향상 사례 (실제 코칭방 기록 · 이름 비공개) ─────────────────
 /** from/to 가 있으면 등급(1~9) 막대 위에서 점이 이동하는 그래프로 보여준다 */
-export type ResultRow = { subject: string; before: string; after: string; from?: number; to?: number; note?: string };
+/** scoreFrom/scoreTo 가 있으면 점수 막대(0~max)가 늘어나는 그래프로 보여준다. 떨어진 성적은 절대 넣지 않는다. */
+export type ResultRow = {
+  subject: string;
+  before: string;
+  after: string;
+  from?: number;
+  to?: number;
+  scoreFrom?: number;
+  scoreTo?: number;
+  max?: number;
+  note?: string;
+};
 export type ResultCase = {
   who: string;
   tag: string;
@@ -605,13 +615,56 @@ export type ResultCase = {
   rows: ResultRow[];
   extra?: string;
   quote: string;
+  /** 기본: 학생 회고 */
+  quoteBy?: string;
 };
 
 export const RESULT_CASES: ResultCase[] = [
   {
+    who: "고2 김OO 학생",
+    tag: "내신·정시 병행 · 2026.07 코칭 시작",
+    period: "코칭 전 모의고사 → 2026년 9월 모의고사 (코칭 2개월차 · 가채점)",
+    beforeLabel: "코칭 전",
+    afterLabel: "9월 모평",
+    headline: "영어 71점 → 84점, 3등급에서 2등급으로",
+    rows: [
+      { subject: "영어", before: "71점 (3등급)", after: "84점 (2등급)", from: 3, to: 2, scoreFrom: 71, scoreTo: 84 },
+      { subject: "수학", before: "학원 모의고사 만점 경험 없음", after: "학원 모의고사 만점 · 9월 모평 미적분 전부 정답" },
+    ],
+    quote: "수학싫어병이 고쳐졌어요. 해보니까 미적이 젤 재밌는 듯",
+  },
+  {
     who: "고3 김OO 학생",
-    tag: "정시 · 코칭 2개월",
-    period: "2026년 3월 → 5월 학력평가",
+    tag: "수시·정시 병행 · 2026.06 코칭 시작",
+    period: "코칭 전 모의고사 → 2026년 9월 모의평가 (코칭 3개월차)",
+    beforeLabel: "코칭 전",
+    afterLabel: "9월 모평",
+    headline: "한 번도 벗어난 적 없던 영어 4~5등급 → 처음으로 2등급",
+    rows: [
+      { subject: "영어", before: "4~5등급", after: "2등급", from: 4.5, to: 2, note: "듣기 전부 정답 · 찍어서 맞힌 문제 없음" },
+      { subject: "국어", before: "5등급", after: "4등급", from: 5, to: 4 },
+    ],
+    quote: "한 번도 4~5등급에서 벗어난 적이 없었는데 처음으로 2등급이 나왔고 찍어서 맞힌 문제도 없었다",
+  },
+  {
+    who: "고1 김OO 학생",
+    tag: "내신 · 2025.08 코칭 시작",
+    period: "2학기 중간고사 (코칭 1개월차) → 2학기 기말고사 (코칭 3개월차)",
+    beforeLabel: "중간고사",
+    afterLabel: "기말고사",
+    headline: "수학 38점 → 89점, 영어 50점 → 73.9점",
+    rows: [
+      { subject: "수학", before: "38점", after: "89점", scoreFrom: 38, scoreTo: 89 },
+      { subject: "영어", before: "50점", after: "73.9점", scoreFrom: 50, scoreTo: 73.9 },
+    ],
+    extra: "이어진 고2 1학기에도 수학 중간 33점 → 기말(대수) 54점, 21점 상승",
+    quote: "수학 학원을 정리하고 스스로 공부해본 효과가 진짜 톡톡히 드러나는 것 같네요!!",
+    quoteBy: "담당 멘토가 코칭방에 남긴 말",
+  },
+  {
+    who: "고3 김OO 학생",
+    tag: "정시 · 2026.03 코칭 시작",
+    period: "3월 학력평가 (코칭 3주차) → 5월 학력평가 (코칭 2개월차)",
     beforeLabel: "3월 학평",
     afterLabel: "5월 학평",
     headline: "국어·수학·영어 모두 2등급, 윤리와사상 만점",
@@ -619,23 +672,63 @@ export const RESULT_CASES: ResultCase[] = [
       { subject: "영어", before: "72점 (3등급)", after: "2등급", from: 3, to: 2 },
       { subject: "국어", before: "52점", after: "2등급" },
       { subject: "수학", before: "60점", after: "2등급" },
-      { subject: "윤리와사상", before: "46점", after: "50점 만점" },
-      { subject: "정치와법", before: "45점", after: "1문제 오답" },
+      { subject: "윤리와사상", before: "46점", after: "50점 만점", scoreFrom: 46, scoreTo: 50, max: 50 },
     ],
-    extra: "이어진 1학기 기말고사(내신)에서도 국어 1등급 · 영어 2등급 (학생 가채점 기준)",
+    extra: "이어진 1학기 기말고사(내신)에서도 국어 1등급 · 영어 2등급",
     quote: "지금까지 봤던 영어 모의고사 중에서 가장 만족스러운 결과였다",
   },
+];
+
+// ── 학부모님 반응 (학부모 카톡방에서 옮김 · 이름 비공개) ─────────────────
+export type ParentReview = { student: string; date: string; tag: string; text: string };
+
+export const PARENT_REVIEWS: ParentReview[] = [
   {
-    who: "고3 김OO 학생",
-    tag: "수시·정시 병행 · 코칭 3개월차",
-    period: "코칭 전 모의고사 → 2026년 9월 모의평가",
-    beforeLabel: "코칭 전",
-    afterLabel: "9월 모평",
-    headline: "한 번도 벗어난 적 없던 영어 4~5등급 → 처음으로 2등급",
-    rows: [
-      { subject: "영어", before: "4~5등급", after: "2등급", from: 4.5, to: 2, note: "듣기 전부 정답" },
-      { subject: "국어", before: "5등급", after: "4등급", from: 5, to: 4 },
-    ],
-    quote: "한 번도 4~5등급에서 벗어난 적이 없었는데 처음으로 2등급이 나왔고 찍어서 맞힌 문제도 없었다",
+    student: "고1 최OO",
+    date: "2026.08.28",
+    tag: "대만족",
+    text: "집에서 그동안 몇 년을 잔소리하고 시켜도 안 하던 걸 요즘 쌤이랑 계획 잡고 시도해보는 것 같아서 너무 감사하고, 문제 푸는 속도도 전에 비하면 너무 빨라진 것 같아서 저는 대만족이에요.",
+  },
+  {
+    student: "고2 김OO",
+    date: "2026.08.15",
+    tag: "취약 과목 극복",
+    text: "수학은 워낙 취약 과목이었는데… 학원에서 레벨1 모의고사를 봐도 만점 받아본 적이 한 번도 없다가 요즘 점수가 나와 고무된 듯해요. 아이에게 동기부여되는 조언 해주셔서 너무 감사합니다!",
+  },
+  {
+    student: "고1 최OO",
+    date: "2026.08.10",
+    tag: "공부량 증가",
+    text: "혼자 할 때보다 학습량도 많아지고 책상 앞에 앉아 있는 시간도 길어져서 너무 좋아요.",
+  },
+  {
+    student: "고2 김OO",
+    date: "2026.08.13",
+    tag: "6개월 연장",
+    text: "선생님과 합이 좋은 것 같아 정말 다행입니다. 수업 연장은 6개월로 하고자 합니다.",
+  },
+  {
+    student: "고1 최OO",
+    date: "2026.09.09",
+    tag: "동기부여",
+    text: "지난 주말 멘토님이랑 줌 미팅하고 나서는 좋은 말씀을 많이 해주셨는지, 공부해야 한다며 다시 의욕이 생기는 것 같더라고요. 감사합니다.",
+  },
+  {
+    student: "고1 손OO",
+    date: "2026.09.17",
+    tag: "스스로 노력",
+    text: "정말 감사드립니다!! 본인 스스로 열심히 노력하는 것 같아 정말 다행이에요.",
+  },
+  {
+    student: "고2 김OO",
+    date: "2026.09.15",
+    tag: "세심한 코칭",
+    text: "백지복습에 대한 코멘트 전적으로 동감합니다. 예쁘게 만드는 데 치중하는 편인데 그게 핵심이 아님을 짚어주셔서 감사합니다.",
+  },
+  {
+    student: "고1 최OO",
+    date: "2026.08.28",
+    tag: "소통",
+    text: "저한테는 말도 잘 안 해서 너무 답답했는데, 이렇게 챙겨주셔서 정말 너무너무 감사합니다!!",
   },
 ];
