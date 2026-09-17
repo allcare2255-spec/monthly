@@ -14,9 +14,9 @@ export type ConsultingField = {
 
 // 주간 성장 코칭 폼 (weekly)
 export const WEEKLY_FIELDS: ConsultingField[] = [
-  { key: "screentime", label: "스크린타임 스크린샷", type: "image", required: true },
+  { key: "screentime", label: "스크린타임 스크린샷", type: "image", required: false },
   { key: "miss_reason", label: "지난 주 계획을 못 지킨 이유가 있다면 간단히", type: "longtext", required: true },
-  { key: "next_plan", label: "다음 주 계획을 적어서 찍어 보내기 (가능한 수준으로)", type: "image", required: true },
+  { key: "next_plan", label: "다음 주 계획을 적어서 찍어 보내기 (가능한 수준으로)", type: "image", required: false },
   { key: "worry_korean", label: "이번주 주요 국어 고민", hint: "구체적일수록 자세한 상담이 가능해요", type: "longtext", required: true },
   { key: "worry_math", label: "이번주 주요 수학 고민", type: "longtext", required: true },
   { key: "worry_english", label: "이번주 주요 영어 고민", type: "longtext", required: true },
@@ -28,10 +28,10 @@ export const WEEKLY_FIELDS: ConsultingField[] = [
 
 // 월간 비전 컨설팅 폼 (monthly)
 export const MONTHLY_FIELDS: ConsultingField[] = [
-  { key: "last_plan_photo", label: "지난 달 계획 사진 (완료된 걸 표시 후)", type: "image", required: true },
+  { key: "last_plan_photo", label: "지난 달 계획 사진 (완료된 걸 표시 후)", type: "image", required: false },
   { key: "achievement_review", label: "계획 달성도가 얼마나 됐는지 + 미달성 이유 회고", type: "longtext", required: true },
   { key: "month_goal_note", label: "이번 4주간 꼭 이뤄야 하는 공부를 과목별로 적은 노트 (큰 틀 목표)", type: "image", required: false },
-  { key: "week_plan_note", label: "4주 목표를 위해 이번주에 이룰 구체적 계획 노트", type: "image", required: true },
+  { key: "week_plan_note", label: "4주 목표를 위해 이번주에 이룰 구체적 계획 노트", type: "image", required: false },
   { key: "growth_goal", label: "이번 달 이루고 싶은 성장 (공부/생활태도/루틴 등 모든 분야 간단히)", type: "longtext", required: true },
   { key: "nearest_exam", label: "가장 임박한 시험 일정 + 그 시험을 위해 필요한 공부", type: "longtext", required: true },
   { key: "help_wanted", label: "멘토님께 이번주 특히 도움받고 싶은 부분 & 고민", type: "longtext", required: true },
