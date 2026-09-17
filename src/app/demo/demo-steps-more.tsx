@@ -1,12 +1,10 @@
 "use client";
 
-// 체험(/demo) 추가 단계 — 매칭, 사전 질문지·첫 컨설팅, 커리큘럼, 질의응답, 맞춤 테스트지, 3인 관리, 비교
+// 체험(/demo) 추가 단계 — 매칭, 사전 질문지·첫 컨설팅, 질의응답, 맞춤 테스트지, 3인 관리, 비교
 import { useMemo, useRef, useState } from "react";
 import {
   COMPARE_COLUMNS,
   COMPARE_ROWS,
-  DEMO_CURRICULUM,
-  DEMO_FIRST_WRAPUP,
   DEMO_FIRST_ZOOM,
   DEMO_MATCH,
   DEMO_MATCH_CHAT,
@@ -69,8 +67,6 @@ export function PreStep({ n }: { n: number }) {
         captions={DEMO_FIRST_ZOOM.captions}
         screen={(inView) => <PreScreen inView={inView} />}
       />
-      <FlowNote>컨설팅이 끝나면 멘토가 내용을 정리해 보내요</FlowNote>
-      <KakaoRoom title={DEMO_MATCH.room} count={3} messages={DEMO_FIRST_WRAPUP} height={520} pinned={DEMO_MATCH.pinned} />
     </>
   );
 }
@@ -160,61 +156,6 @@ function PreScreen({ inView }: { inView: boolean }) {
         4주 목표: 영단어 1회독 · 수열의 극한 완성 · 문학 기출 매일
       </div>
     </>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// 4주 커리큘럼 (주간 계획표 단계 위에 붙는다)
-// ─────────────────────────────────────────────────────────────
-
-export function CurriculumCard({ current }: { current: number }) {
-  return (
-    <Frame label={`컨설팅을 바탕으로 짠 ${DEMO_STUDENT.cycle}개월차 4주 커리큘럼 (예시)`}>
-      <div className="-mx-1 overflow-x-auto px-1">
-        <table className="w-full min-w-[520px] border-separate border-spacing-1 text-left">
-          <thead>
-            <tr>
-              <th className="w-14" />
-              {[1, 2, 3, 4].map((w) => (
-                <th
-                  key={w}
-                  className={`rounded-lg px-2 py-1.5 text-center text-[12px] font-bold ${
-                    w === current ? "bg-sky-600 text-white" : "bg-slate-100 text-ink/55"
-                  }`}
-                >
-                  {w}주차{w === current && " · 이번 주"}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {DEMO_CURRICULUM.map((row, r) => (
-              <tr key={row.subject}>
-                <td className="px-1 text-[12.5px] font-bold text-ink/70">{row.subject}</td>
-                {row.weeks.map((txt, w) => (
-                  <td key={w} className="p-0 align-top">
-                    <Reveal delay={r * 90 + w * 60}>
-                      <div
-                        className={`h-full min-h-[52px] rounded-lg px-2 py-1.5 text-[11.5px] leading-snug ${
-                          w + 1 === current
-                            ? "bg-sky-50 font-semibold text-sky-800 ring-1 ring-sky-200"
-                            : w + 1 < current
-                              ? "bg-slate-50 text-ink/45"
-                              : "bg-slate-50 text-ink/70"
-                        }`}
-                      >
-                        {w + 1 < current && <span className="mr-0.5 text-sky-500">✓</span>}
-                        {txt}
-                      </div>
-                    </Reveal>
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Frame>
   );
 }
 

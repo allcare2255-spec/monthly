@@ -48,7 +48,6 @@ import {
 } from "./demo-motion";
 import {
   CaptureGallery,
-  FlowNote,
   Frame,
   KakaoRoom,
   Points,
@@ -58,7 +57,6 @@ import {
 } from "./demo-ui";
 import {
   CompareStep,
-  CurriculumCard,
   MatchStep,
   PreStep,
   QnaStep,
@@ -298,8 +296,6 @@ function PlanStep({ n }: { n: number }) {
           { icon: "📈", title: "달성률 점검", text: "밀린 계획은 이유를 찾아 다음 주에 반영해요" },
         ]}
       />
-      <CurriculumCard current={DEMO_STUDENT.featuredWeek} />
-      <FlowNote>이번 주({DEMO_STUDENT.featuredWeek}주차) 커리큘럼 → 요일별 계획표로</FlowNote>
       <div ref={ref}>
         <Frame label="멘토와 함께 세우는 주간 계획표 (예시)">
           <WeeklyPlanView key={run} plan={plan} dates={dates} weekLabel={DEMO_STUDENT.featuredCumWeek} />
