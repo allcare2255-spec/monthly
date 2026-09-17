@@ -27,6 +27,7 @@ import {
   DEMO_FEATURED_WEEK,
   DEMO_MONTHLY,
   DEMO_PLAN,
+  DEMO_PLAN_RATE,
   DEMO_STUDENT,
   DEMO_WEEKS,
   DEMO_ZOOM,
@@ -410,12 +411,12 @@ function ZoomStep({ n }: { n: number }) {
 }
 
 const ZOOM_PLAN_ROWS = [
-  { d: "월", t: "영단어 복습 · 미적분 1강 · 문학 2지문", ok: true },
-  { d: "화", t: "영단어 · 극한의 성질 2강 · 문학", ok: true },
-  { d: "수", t: "문학 표시 연습 · 미적분 2강 문제", ok: false },
-  { d: "목", t: "대화 중심 읽기 · 헷갈린 문제 다시", ok: true },
-  { d: "금", t: "영어 모의고사 실전 · 빈칸 오답", ok: false },
-];
+  { d: "월", t: "영단어 · 미적분 1강 · 쎈 · 문학 2지문" },
+  { d: "화", t: "영단어 · 미적분 2강 · 문학 · 학원 숙제" },
+  { d: "수", t: "문학 표시 연습 · 인강 복습 · 마더텅" },
+  { d: "목", t: "대화 중심 읽기 · 쎈 오답 · 듣기 · 생명" },
+  { d: "금", t: "영어 모고 실전 · 빈칸 오답 · 문학" },
+].map((r, i) => ({ ...r, ...DEMO_PLAN_RATE.perDay[i] }));
 
 function ZoomPlanScreen({ inView }: { inView: boolean }) {
   const rows = useStepper(inView, ZOOM_PLAN_ROWS.length, 380, 500);
@@ -424,7 +425,7 @@ function ZoomPlanScreen({ inView }: { inView: boolean }) {
     <>
       <div className="flex items-center justify-between">
         <div className="text-[13px] font-extrabold">{DEMO_STUDENT.featuredCumWeek}주차 계획 점검</div>
-        <div className="text-[11px] font-bold tabular-nums text-sky-600">달성률 {Math.round(89 * rate)}%</div>
+        <div className="text-[11px] font-bold tabular-nums text-sky-600">달성률 {Math.round(DEMO_PLAN_RATE.percent * rate)}%</div>
       </div>
       <div className="mt-2 space-y-1.5">
         {ZOOM_PLAN_ROWS.map((r, i) => {
@@ -442,14 +443,14 @@ function ZoomPlanScreen({ inView }: { inView: boolean }) {
               <span className="w-4 font-bold text-ink/50">{r.d}</span>
               <span className="flex-1 truncate text-ink/75">{r.t}</span>
               <span
-                className={`text-[10.5px] font-bold ${r.ok ? "text-sky-600" : "text-rose"}`}
+                className={`text-[10.5px] font-bold tabular-nums ${r.done === r.total ? "text-sky-600" : "text-rose"}`}
                 style={{
                   display: "inline-block",
                   transform: on ? "scale(1)" : "scale(0)",
                   transition: "transform .35s cubic-bezier(.3,1.6,.5,1) .25s",
                 }}
               >
-                {r.ok ? "완료" : "일부 밀림"}
+                {r.done === r.total ? "완료" : `${r.done}/${r.total} 완료`}
               </span>
             </div>
           );
@@ -459,7 +460,7 @@ function ZoomPlanScreen({ inView }: { inView: boolean }) {
         className="mt-2.5 rounded-md border-l-[3px] border-fuchsia bg-pink-50 px-2 py-1.5 text-[11.5px] text-ink/75"
         style={{ opacity: rate >= 1 ? 1 : 0, transition: "opacity .6s ease" }}
       >
-        다음 주: 인강 1강 → 관련 문제 → 틀린 문제 확인을 한 세트로!
+        다음 주: 인강 1강 → 쎈 해당 단원 → 틀린 문제 확인을 한 세트로!
       </div>
     </>
   );
