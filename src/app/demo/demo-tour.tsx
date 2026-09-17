@@ -25,6 +25,7 @@ import {
   CONSULT_URL,
   DEMO_CHAT,
   DEMO_FEATURED_WEEK,
+  DEMO_MATCH,
   DEMO_MONTHLY,
   DEMO_PLAN,
   DEMO_PLAN_RATE,
@@ -331,7 +332,7 @@ function KakaoStep({ n }: { n: number }) {
       {KAKAO_CAPTURES.length ? (
         <CaptureGallery images={KAKAO_CAPTURES} />
       ) : (
-        <KakaoRoom title={`${DEMO_STUDENT.name} 코칭방`} count={3} messages={DEMO_CHAT} height={560} />
+        <KakaoRoom title={DEMO_MATCH.room} count={3} messages={DEMO_CHAT} height={560} pinned={DEMO_MATCH.pinned} />
       )}
     </>
   );

@@ -12,7 +12,6 @@ import {
   DEMO_MATCH_CHAT,
   DEMO_PRE_ANSWERS,
   DEMO_QNA_CHAT,
-  DEMO_QNA_ROOM,
   DEMO_STUDENT,
   DEMO_TEST,
   PARENT_REVIEWS,
@@ -71,7 +70,7 @@ export function PreStep({ n }: { n: number }) {
         screen={(inView) => <PreScreen inView={inView} />}
       />
       <FlowNote>컨설팅이 끝나면 멘토가 내용을 정리해 보내요</FlowNote>
-      <KakaoRoom title={DEMO_MATCH.room} count={3} messages={DEMO_FIRST_WRAPUP} height={520} />
+      <KakaoRoom title={DEMO_MATCH.room} count={3} messages={DEMO_FIRST_WRAPUP} height={520} pinned={DEMO_MATCH.pinned} />
     </>
   );
 }
@@ -228,17 +227,17 @@ export function QnaStep({ n }: { n: number }) {
     <>
       <StepHeader
         n={n}
-        title="모르는 문제는 사진 찍어 바로 물어봐요"
-        desc="공부하다 막힌 문제는 수강생 전용 문제풀이방에 올려요. 내 풀이와 막힌 지점을 함께 적으면, 멘토가 풀이 과정과 함께 어떤 개념에서 막혔는지까지 짚어줘요."
+        title="모르는 문제, SKY 멘토가 다 알려줘요"
+        desc="국어·수학·영어·탐구 어떤 과목이든 공부하다 막힌 문제는 사진 찍어 코칭방에 올리면 돼요. SKY 멘토가 풀이 과정부터 어떤 개념에서 막혔는지까지 직접 알려줘요."
       />
       <Points
         items={[
-          { icon: "📷", title: "사진 한 장이면 끝", text: "막힌 문제를 찍어서 문제풀이방에 올려요" },
+          { icon: "📷", title: "사진 한 장이면 끝", text: "막힌 문제를 찍어서 코칭방에 올려요" },
           { icon: "✍️", title: "풀이 + 개념 짚기", text: "답만이 아니라 막힌 개념부터 설명해요" },
           { icon: "💬", title: "막힌 지점부터", text: "어디서 막혔는지 적으면 딱 그 부분을 풀어줘요" },
         ]}
       />
-      <KakaoRoom title={DEMO_QNA_ROOM} count={128} messages={DEMO_QNA_CHAT} height={560} mentorName="SKY MATE 멘토" />
+      <KakaoRoom title={DEMO_MATCH.room} count={3} messages={DEMO_QNA_CHAT} height={560} pinned={DEMO_MATCH.pinned} />
     </>
   );
 }

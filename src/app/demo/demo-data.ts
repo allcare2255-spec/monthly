@@ -310,7 +310,7 @@ export const DEMO_CHAT: ChatMessage[] = [
   {
     from: "mentor",
     time: "오후 6:05",
-    text: "오늘도 저녁까지 힘내봐요! 막히는 문제는 어디가 이해되지 않는지 적어서 문제풀이방에 사진과 함께 올려주세요 😊",
+    text: "오늘도 저녁까지 힘내봐요! 막히는 문제는 어디가 이해되지 않는지 적어서 사진과 함께 여기 코칭방에 올려주세요 😊",
   },
   { from: "student", time: "오후 10:48", photos: 2 },
   {
@@ -514,8 +514,7 @@ export const DEMO_CURRICULUM: { subject: string; weeks: [string, string, string,
   { subject: "탐구", weeks: ["생명 세포 단원 개념", "생명 세포 단원 문제", "세포와 물질대사 개념", "물질대사 단원 문제 + 오답"] },
 ];
 
-// ── 모르는 문제 질의응답 (수강생 전용 문제풀이방) ─────────────────────
-export const DEMO_QNA_ROOM = "SKY MATE 수강생 문제풀이방";
+// ── 모르는 문제 질의응답 (같은 코칭방) ─────────────────────
 
 export const DEMO_QNA_CHAT: ChatMessage[] = [
   { kind: "date", text: "2026년 8월 19일 수요일" },
@@ -525,7 +524,6 @@ export const DEMO_QNA_CHAT: ChatMessage[] = [
     time: "오후 8:13",
     text: "멘토님 이 문제 질문 가능할까요?ㅠㅠ\nx에 1을 넣으면 0/0이 나와서 여기서부터 막혔어요. 분모가 0이 되면 극한이 없는 건가요?",
   },
-  { from: "mentor", time: "오후 8:20", text: "이거 잠시만요!" },
   { from: "mentor", time: "오후 8:31", image: "solution" },
   {
     from: "mentor",
