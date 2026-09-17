@@ -457,10 +457,7 @@ export function TeamStep({ n }: { n: number }) {
             <div className="flex gap-4 rounded-3xl border border-ink/[0.06] bg-white p-5 shadow-[0_8px_30px_rgba(15,40,80,0.05)]">
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-sky-50 text-2xl">{m.icon}</span>
               <div className="min-w-0">
-                <div className="flex flex-wrap items-baseline gap-x-2">
-                  <span className="text-[16px] font-extrabold">{m.role}</span>
-                  <span className="text-[12.5px] font-semibold text-sky-600">{m.tagline}</span>
-                </div>
+                <div className="text-[16px] font-extrabold">{m.role}</div>
                 <ul className="mt-1.5 space-y-1">
                   {m.lines.map((l) => (
                     <li key={l} className="flex gap-1.5 text-[13.5px] leading-relaxed text-ink/70">

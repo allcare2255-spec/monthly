@@ -623,12 +623,11 @@ export const COMPARE_ROWS: { label: string; marks: [CompareMark, CompareMark, Co
 ];
 
 // ── 멘토 · 매니저 · 고예찬 대표 3인 관리 (실제 코칭방 운영 방식 기준) ────────
-export type TeamMember = { role: string; icon: string; tagline: string; lines: string[] };
+export type TeamMember = { role: string; icon: string; lines: string[] };
 export const TEAM: TeamMember[] = [
   {
     role: "담당 멘토",
     icon: "🧑‍🏫",
-    tagline: "매일 · 매주 공부를 직접 코칭해요",
     lines: [
       "코칭방을 열고 사전 질문지로 첫 컨설팅을 준비해요",
       "매일 밤 계획 달성현황 + 장문 피드백 + 요약을 보내요",
@@ -638,7 +637,6 @@ export const TEAM: TeamMember[] = [
   {
     role: "매니저",
     icon: "🙋‍♀️",
-    tagline: "하루하루 빠짐없이 챙겨요",
     lines: [
       "매일 아침 기상 인증을 확인하고 응원해요",
       "과제·컨설팅 폼 제출을 챙기고, 질문이 멘토에게 닿았는지 확인해요",
@@ -649,7 +647,6 @@ export const TEAM: TeamMember[] = [
   {
     role: "고예찬 대표",
     icon: "🎓",
-    tagline: "코칭 전체의 방향을 잡아요",
     lines: [
       "모의고사·내신 등 시기별 전용 대비 자료를 직접 만들어요",
       "코칭 수강생 전용 공부법 강의를 제공해요",
