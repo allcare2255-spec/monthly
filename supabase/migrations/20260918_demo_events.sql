@@ -2,7 +2,7 @@
 -- Supabase 대시보드 > SQL Editor 에 붙여넣고 RUN 하세요.
 --
 -- ※ 이 데이터는 사이트 화면에 절대 노출하지 않는다.
---    조회 경로는 scripts/demo-stats.mjs (service_role) 하나뿐이다.
+--    조회는 관리자 탭 /admin/demo (로그인 + admin 권한) 에서만 한다.
 
 -- 개인 링크 발급 대장 (?c=<code> → 누구에게 준 링크인지)
 create table if not exists demo_links (
