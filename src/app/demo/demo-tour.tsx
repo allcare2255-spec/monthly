@@ -33,10 +33,11 @@ import {
   DEMO_WEEKS,
   DEMO_ZOOM,
   KAKAO_CAPTURES,
-  TEAM,
   TESTIMONIALS,
   ZOOM_CAPTURES,
 } from "./demo-data";
+import { DEMO_STEPS } from "./demo-steps";
+import { trackConsult, trackInit, trackStep, trackStop } from "./demo-track";
 import {
   InViewClass,
   MotionStyles,
@@ -77,28 +78,40 @@ export function DemoTour() {
   const [toast, setToast] = useState<string | null>(null);
   const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  // 대표님 피드백 순서: 매칭 → 사전 질문지·첫 컨설팅 → 계획 → 매일 관리 → 질의응답 → 테스트지 → …
+  // 단계 정의는 demo-steps.ts 에 모아둔다(집계 퍼널과 순서를 맞추기 위해).
   const steps: Step[] = useMemo(() => {
-    const list: (Step | false)[] = [
-      { key: "match", label: "멘토 매칭", render: (n) => <MatchStep n={n} /> },
-      { key: "pre", label: "사전 질문지", render: (n) => <PreStep n={n} /> },
-      { key: "first-zoom", label: "첫 컨설팅", render: (n) => <FirstZoomStep n={n} /> },
-      { key: "plan", label: "주간 계획", render: (n) => <PlanStep n={n} /> },
-      { key: "kakao", label: "매일 카톡 관리", render: (n) => <KakaoStep n={n} /> },
-      { key: "qna", label: "질의응답", render: (n) => <QnaStep n={n} /> },
-      { key: "test", label: "맞춤 테스트지", render: (n) => <TestStep n={n} /> },
-      { key: "zoom", label: "주간 줌 컨설팅", render: (n) => <ZoomStep n={n} /> },
-      { key: "weekly", label: "주간 레포트", render: (n) => <WeeklyStep n={n} /> },
-      { key: "monthly", label: "월간 레포트", render: (n) => <MonthlyStep n={n} /> },
-      TEAM.length > 0 && { key: "team", label: "3인 관리", render: (n) => <TeamStep n={n} /> },
-      { key: "compare", label: "비교", render: (n) => <CompareStep n={n} /> },
-      { key: "results", label: "성적 향상 · 후기", render: (n) => <ResultsStep n={n} /> },
-      TESTIMONIALS.length > 0 && { key: "reviews", label: "후기", render: (n) => <ReviewStep n={n} /> },
-    ];
-    return list.filter((s): s is Step => Boolean(s));
+    const render: Record<string, (n: number) => ReactNode> = {
+      match: (n) => <MatchStep n={n} />,
+      pre: (n) => <PreStep n={n} />,
+      "first-zoom": (n) => <FirstZoomStep n={n} />,
+      plan: (n) => <PlanStep n={n} />,
+      kakao: (n) => <KakaoStep n={n} />,
+      qna: (n) => <QnaStep n={n} />,
+      test: (n) => <TestStep n={n} />,
+      zoom: (n) => <ZoomStep n={n} />,
+      weekly: (n) => <WeeklyStep n={n} />,
+      monthly: (n) => <MonthlyStep n={n} />,
+      team: (n) => <TeamStep n={n} />,
+      compare: (n) => <CompareStep n={n} />,
+      results: (n) => <ResultsStep n={n} />,
+      reviews: (n) => <ReviewStep n={n} />,
+    };
+    return DEMO_STEPS.map((s) => ({ ...s, render: render[s.key] }));
   }, []);
 
   const isLast = step === steps.length - 1;
+
+  // 방문 기록 — 결과는 관리자 탭(/admin/demo)에서만 본다.
+  useEffect(() => {
+    trackInit({ index: 0, key: steps[0].key, label: steps[0].label });
+    return trackStop;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function go(next: number, nav: "next" | "back" | "chip") {
+    setStep(next);
+    trackStep(next, steps[next].key, steps[next].label, nav);
+  }
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -111,7 +124,8 @@ export function DemoTour() {
     return () => clearTimeout(id);
   }, [toast]);
 
-  function openConsult() {
+  function openConsult(from: "header" | "footer" = "footer") {
+    trackConsult(from);
     if (CONSULT_URL) window.open(CONSULT_URL, "_blank", "noopener,noreferrer");
     else setToast("상담 신청 링크는 곧 연결될 예정이에요");
   }
@@ -130,7 +144,7 @@ export function DemoTour() {
             <span className="rounded-md bg-sky-50 px-1.5 py-0.5 text-[11px] font-bold text-sky-600">고등 코칭 체험</span>
           </div>
           <button
-            onClick={openConsult}
+            onClick={() => openConsult("header")}
             className="rounded-full bg-ink px-3.5 py-1.5 text-[13px] font-semibold text-white transition hover:bg-ink/85 active:scale-95"
           >
             상담하기
@@ -156,7 +170,7 @@ export function DemoTour() {
                 ref={(el) => {
                   chipRefs.current[i] = el;
                 }}
-                onClick={() => setStep(i)}
+                onClick={() => go(i, "chip")}
                 className={`flex shrink-0 items-center gap-1.5 rounded-full py-1.5 pl-1.5 pr-3 text-[13px] font-semibold transition-all duration-300 ${
                   i === step
                     ? "bg-sky-600 text-white shadow-md shadow-sky-600/25"
@@ -193,7 +207,7 @@ export function DemoTour() {
         <div className="mx-auto flex max-w-[760px] gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {step > 0 && (
             <button
-              onClick={() => setStep(step - 1)}
+              onClick={() => go(step - 1, "back")}
               aria-label="이전 단계"
               className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink/[0.05] text-lg text-ink/60 transition hover:bg-ink/10 active:scale-95"
             >
@@ -201,7 +215,7 @@ export function DemoTour() {
             </button>
           )}
           <button
-            onClick={() => (isLast ? openConsult() : setStep(step + 1))}
+            onClick={() => (isLast ? openConsult("footer") : go(step + 1, "next"))}
             className={`btn-gradient h-12 flex-1 rounded-2xl text-[15px] font-bold transition active:scale-[0.98] ${isLast ? "demo-shine" : ""}`}
           >
             {isLast ? "상담 신청하기" : `다음 · ${steps[step + 1].label}`}
