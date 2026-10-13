@@ -47,7 +47,15 @@ export async function POST(req: Request) {
   const answers: Record<string, string> = {};
   const filePaths: Record<string, ConsultingFile[]> = {};
   for (const f of fields) {
-    if (f.type === "longtext") {
+    if (f.type === "choice") {
+      // 보기 중 하나만 허용 — 임의 문자열이 들어오면 버린다
+      const v = (rawAnswers[f.key] ?? "").toString().trim();
+      const ok = v && (f.choices || []).includes(v);
+      if (f.required && !ok) {
+        return NextResponse.json({ error: `'${f.label}' 항목을 선택해주세요.` }, { status: 400 });
+      }
+      if (ok) answers[f.key] = v;
+    } else if (f.type === "longtext") {
       const v = (rawAnswers[f.key] ?? "").toString().trim();
       if (f.required && !v) {
         return NextResponse.json({ error: `'${f.label}' 항목을 작성해주세요.` }, { status: 400 });

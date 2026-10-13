@@ -3,7 +3,7 @@
 import type { ConsultingFormType } from "@/types";
 import { todaySeoul } from "@/lib/dates";
 
-export type ConsultingFieldType = "image" | "longtext";
+export type ConsultingFieldType = "image" | "longtext" | "choice";
 
 export type ConsultingField = {
   key: string;
@@ -11,6 +11,10 @@ export type ConsultingField = {
   hint?: string;
   type: ConsultingFieldType;
   required: boolean;
+  /** type === "choice" 일 때 고르는 보기 */
+  choices?: string[];
+  /** 특정 보기를 고르면 그 아래에 뜨는 안내문 — { 보기: 안내문 } */
+  revealOn?: Record<string, string>;
 };
 
 /**
@@ -25,10 +29,12 @@ export type ConsultingField = {
  * 선택 항목이라 제출이 막히지 않고, 기간이 지난 뒤에도 받아둔 답이 라벨과 함께 보인다.
  */
 export const MIDTERM_FIELD: ConsultingField = {
-  key: "midterm_result",
-  label: "중간고사 결과",
-  hint: "과목별 점수·등급을 적고, 직전 시험 대비 변화와 잘된 점 / 아쉬운 점과 그 원인까지 함께 적어주세요",
-  type: "longtext",
+  key: "midterm_report_received",
+  label: "중간고사 성적표를 받았나요?",
+  type: "choice",
+  choices: ["예", "아니오"],
+  // 성적표 사진은 폼으로 받지 않고 단톡방으로 모은다 (업로드 칸 없음)
+  revealOn: { 예: "단톡방에 꼭 성적표 올려주세요!" },
   required: false,
 };
 
@@ -37,6 +43,12 @@ export const MIDTERM_WINDOW = { from: "2026-10-13", to: "2026-10-20" } as const;
 
 /** 내신 중간고사를 치는 재학생만 — N수생·재수생 폼에는 띄우지 않는다. */
 export const MIDTERM_GRADES = ["고1", "고2"] as const;
+
+/** 컨설팅 화면 고정 섹션 / 학생 폼 항목이 묶이는 시험 식별자 (저장 키) */
+export const MIDTERM_EXAM_KEY = "2026-2-midterm";
+
+/** 화면에 띄울 시험 이름 */
+export const MIDTERM_EXAM_LABEL = "2학기 중간고사";
 
 /** 지금 이 학생 폼에 중간고사 결과 항목을 띄울지 */
 export function showsMidterm(

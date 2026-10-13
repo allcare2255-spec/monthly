@@ -503,3 +503,62 @@ export async function getSharedNoteByToken(
   if (!row || !row.share_enabled) return null;
   return { studentId: row.student_id, weekNumber: row.week_number, note: row.note ?? "" };
 }
+
+
+// ── 중간고사 결과 (컨설팅 화면 고정 섹션) ───────────────────────────
+//
+// 주차가 아니라 '시험' 단위로 저장한다. 한 번 적어두면 그 시험 기간 동안
+// 어느 주차 컨설팅 화면에서도 같은 내용이 보인다.
+// 테이블(midterm_results)은 마이그레이션을 돌려야 생기므로, 아직 없으면
+// 화면이 죽지 않도록 "준비 안 됨"으로 구분해 조용히 넘어간다.
+
+export class MidtermNotReadyError extends Error {
+  constructor() {
+    super("midterm_results 테이블이 아직 없습니다. 마이그레이션을 실행해주세요.");
+    this.name = "MidtermNotReadyError";
+  }
+}
+
+function isMissingMidtermTable(message: string): boolean {
+  return /midterm_results/i.test(message) && /(does not exist|schema cache|relation)/i.test(message);
+}
+
+/** 이 학생의 해당 시험 결과 (없으면 빈 문자열). 테이블이 없으면 MidtermNotReadyError. */
+export async function getMidtermResult(studentId: string, examKey: string): Promise<string> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("midterm_results")
+    .select("content")
+    .eq("student_id", studentId)
+    .eq("exam_key", examKey)
+    .maybeSingle();
+  if (error) {
+    if (isMissingMidtermTable(error.message)) throw new MidtermNotReadyError();
+    throw new Error(error.message);
+  }
+  return (data as { content?: string } | null)?.content ?? "";
+}
+
+/** 중간고사 결과 저장 (학생+시험 단위 upsert). */
+export async function upsertMidtermResult(input: {
+  studentId: string;
+  examKey: string;
+  content: string;
+  authorName?: string | null;
+}): Promise<void> {
+  const supabase = getServiceClient();
+  const { error } = await supabase.from("midterm_results").upsert(
+    {
+      student_id: input.studentId,
+      exam_key: input.examKey,
+      content: input.content,
+      author_name: input.authorName ?? null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "student_id,exam_key" },
+  );
+  if (error) {
+    if (isMissingMidtermTable(error.message)) throw new MidtermNotReadyError();
+    throw new Error(error.message);
+  }
+}

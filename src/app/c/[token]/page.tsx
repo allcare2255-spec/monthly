@@ -198,7 +198,13 @@ function ConsultingForm({
       <div className="space-y-4">
         {cfg.fields.map((f, i) => (
           <FieldCard key={f.key} index={i + 1} field={f}>
-            {f.type === "longtext" ? (
+            {f.type === "choice" ? (
+              <ChoiceField
+                field={f}
+                value={answers[f.key] || ""}
+                onChange={(v) => setAnswers((s) => ({ ...s, [f.key]: v }))}
+              />
+            ) : f.type === "longtext" ? (
               <textarea
                 rows={3}
                 value={answers[f.key] || ""}
@@ -294,6 +300,49 @@ function FieldCard({
         </div>
       </div>
       <div className="mt-3">{children}</div>
+    </div>
+  );
+}
+
+/** 예/아니오 같은 보기 중 하나 고르기 — 고른 보기에 안내문이 걸려 있으면 아래에 띄운다 */
+function ChoiceField({
+  field,
+  value,
+  onChange,
+}: {
+  field: ConsultingField;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const choices = field.choices || [];
+  const reveal = value ? field.revealOn?.[value] : undefined;
+  return (
+    <div>
+      <div className="flex flex-wrap gap-2">
+        {choices.map((c) => {
+          const on = value === c;
+          return (
+            <button
+              key={c}
+              type="button"
+              // 같은 보기를 다시 누르면 선택 해제 (선택 항목이라 비워둘 수 있어야 한다)
+              onClick={() => onChange(on ? "" : c)}
+              className={`rounded-xl border px-5 py-2.5 text-sm font-semibold transition ${
+                on
+                  ? "border-indigo bg-indigo/[0.08] text-indigo"
+                  : "border-ink/10 bg-white text-ink/70 hover:border-indigo/40"
+              }`}
+            >
+              {c}
+            </button>
+          );
+        })}
+      </div>
+      {reveal && (
+        <div className="mt-3 rounded-xl bg-fuchsia/[0.07] border border-fuchsia/20 px-3.5 py-2.5 text-sm font-semibold text-fuchsia leading-relaxed">
+          {reveal}
+        </div>
+      )}
     </div>
   );
 }

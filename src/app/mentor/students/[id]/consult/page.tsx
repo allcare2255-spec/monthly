@@ -3,12 +3,19 @@ import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
 import { addDays, buildCycleAnchors, cumulativeWeek, resolveCycleStart } from "@/lib/dates";
-import { getSubmissionByWeekAnyForm, getNoteByWeek } from "@/lib/consulting/store";
+import { getSubmissionByWeekAnyForm, getNoteByWeek, getMidtermResult } from "@/lib/consulting/store";
 import { weekStateFromWeek } from "@/lib/consulting/week";
-import { FORM_TITLE } from "@/lib/consulting/forms";
+import {
+  FORM_TITLE,
+  showsMidterm,
+  MIDTERM_EXAM_KEY,
+  MIDTERM_EXAM_LABEL,
+  MIDTERM_FIELD,
+} from "@/lib/consulting/forms";
 import { isEmptyNoteHtml } from "@/lib/consulting/note-html";
 import type { ConsultingSubmission, ConsultingNote, ConsultingFormType } from "@/types";
 import { ConsultWorkspace } from "./consult-workspace";
+import { MidtermPanel } from "./midterm-panel";
 import { MoveWeekButton } from "./move-week-button";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +65,17 @@ export default async function ConsultPage({
   const effectiveStart = start ? resolveCycleStart(start, cycle, anchors) : null;
   const weekStart = effectiveStart ? addDays(effectiveStart, (week - 1) * 7) : null;
   const weekEnd = weekStart ? addDays(weekStart, 6) : null;
+
+  // 중간고사 고정 섹션 — 대상 학년(고1·고2) + 시험 기간일 때만 띄운다.
+  // 폼 종류와 무관하게 컨설팅 화면에 뜨므로 weekly 기준으로 판정한다.
+  const midtermOn = showsMidterm("weekly", student.grade);
+  // 테이블이 아직 없으면(마이그레이션 미적용) 저장만 막고 화면은 그대로 띄운다
+  const midterm = midtermOn
+    ? await getMidtermResult(id, MIDTERM_EXAM_KEY).then(
+        (content) => ({ ready: true, content }),
+        () => ({ ready: false, content: "" }),
+      )
+    : null;
 
   // 이 주차에 예정된 폼 종류 (제출물이 없을 때 안내용)
   const state = weekStateFromWeek(cumWeek);
@@ -120,6 +138,24 @@ export default async function ConsultPage({
         <div className="rounded-2xl bg-gradient-to-br from-sunset/10 to-rose/10 border border-sunset/30 p-5 text-sm text-ink/75 no-print">
           멘토 메모 저장 기능은 DB 마이그레이션(
           <code className="text-xs">20260804_consulting_notes.sql</code>) 적용 후 사용할 수 있습니다.
+        </div>
+      )}
+
+      {midterm && (
+        <MidtermPanel
+          studentId={id}
+          examKey={MIDTERM_EXAM_KEY}
+          examLabel={MIDTERM_EXAM_LABEL}
+          initialContent={midterm.content}
+          reportReceived={submission?.answers?.[MIDTERM_FIELD.key] ?? null}
+          savable={midterm.ready}
+        />
+      )}
+
+      {midterm && !midterm.ready && (
+        <div className="rounded-2xl bg-gradient-to-br from-sunset/10 to-rose/10 border border-sunset/30 p-5 text-sm text-ink/75 no-print">
+          중간고사 결과 저장 기능은 DB 마이그레이션(
+          <code className="text-xs">20261013_midterm_results.sql</code>) 적용 후 사용할 수 있습니다.
         </div>
       )}
 
