@@ -1,19 +1,25 @@
 import { NextResponse } from "next/server";
 import { getStudentByToken } from "@/lib/consulting/store";
 import { weekStateForStudent } from "@/lib/consulting/week";
-import { fieldsFor, FORM_TITLE, FORM_INTRO, FORM_OUTRO, AGREEMENTS } from "@/lib/consulting/forms";
+import { studentFormFields, FORM_TITLE, FORM_INTRO, FORM_OUTRO, AGREEMENTS } from "@/lib/consulting/forms";
 import type { ConsultingFormType } from "@/types";
 
 type Prefill = { name: string; phone: string | null; mentorName: string | null };
 
-function formPayload(formType: ConsultingFormType, week: number, prefill: Prefill) {
+function formPayload(
+  formType: ConsultingFormType,
+  week: number,
+  prefill: Prefill,
+  grade: string | null,
+) {
   return {
     prefill,
     state: "form" as const,
     week,
     formType,
     title: FORM_TITLE[formType],
-    fields: fieldsFor(formType),
+    // 기간 한정 문항(중간고사 결과)은 대상 학년 + 기간일 때만 끼워진다
+    fields: studentFormFields(formType, grade),
     // pre 는 동의 항목 없음
     agreements: formType === "pre" ? [] : AGREEMENTS,
     intro: FORM_INTRO[formType] ?? null,
@@ -43,12 +49,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
   if (forced === "pre" || forced === "weekly" || forced === "monthly") {
     // 사전 질문지는 제출 시점과 무관하게 항상 1주차로 저장된다 (submit 라우트와 동일 기준)
     const week = forced === "pre" ? 1 : state.kind === "form" ? state.week : 1;
-    return NextResponse.json(formPayload(forced, week, prefill));
+    return NextResponse.json(formPayload(forced, week, prefill, student.grade));
   }
 
   if (state.kind === "not_started") {
     return NextResponse.json({ prefill, state: "not_started" });
   }
 
-  return NextResponse.json(formPayload(state.formType, state.week, prefill));
+  return NextResponse.json(formPayload(state.formType, state.week, prefill, student.grade));
 }

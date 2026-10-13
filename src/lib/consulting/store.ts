@@ -23,6 +23,8 @@ export type ConsultingStudent = {
   phone: string | null;
   mentorName: string | null;
   coachingStartDate: string | null;
+  /** 학년 (고1/고2/고3/N수생/재수생) — 기간 한정 문항(중간고사 결과) 노출 판정에 쓴다 */
+  grade: string | null;
   /** 재시작 / 월차 시작일 오버라이드 — 통으로 쉰 주를 반영한 주차 계산에 필요 */
   cycleAnchors: CycleAnchor[];
 };
@@ -33,12 +35,13 @@ export async function getStudentByToken(token: string): Promise<ConsultingStuden
   const supabase = getServiceClient();
   const { data, error } = await supabase
     .from("coaching_students")
-    .select("id, name, phone, coaching_start_date, mentor:coaching_mentors(name)")
+    .select("id, name, phone, grade, coaching_start_date, mentor:coaching_mentors(name)")
     .eq("consulting_token", token)
     .maybeSingle<{
       id: string;
       name: string;
       phone: string | null;
+      grade: string | null;
       coaching_start_date: string | null;
       mentor: { name: string } | null;
     }>();
@@ -53,6 +56,7 @@ export async function getStudentByToken(token: string): Promise<ConsultingStuden
     id: data.id,
     name: data.name,
     phone: data.phone ?? null,
+    grade: data.grade ?? null,
     mentorName: data.mentor?.name ?? null,
     coachingStartDate: data.coaching_start_date ?? null,
     cycleAnchors: buildCycleAnchors(restartRows, cycleRows),

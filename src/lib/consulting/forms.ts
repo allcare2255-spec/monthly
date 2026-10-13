@@ -1,6 +1,7 @@
 // 컨설팅 폼 정의 — 공개 폼(렌더)과 멘토 prep 뷰(라벨 조회)가 공유한다.
 // (server-only 아님: 클라이언트 컴포넌트에서도 import)
 import type { ConsultingFormType } from "@/types";
+import { todaySeoul } from "@/lib/dates";
 
 export type ConsultingFieldType = "image" | "longtext";
 
@@ -11,6 +12,42 @@ export type ConsultingField = {
   type: ConsultingFieldType;
   required: boolean;
 };
+
+/**
+ * [기간 한정] 중간고사 결과 항목.
+ *
+ * 중간고사는 1년에 두 번뿐이라 주간/월간 폼에 상시로 두면 나머지 주차엔 계속 빈칸으로 뜬다.
+ * 그래서 MIDTERM_WINDOW 기간 + 대상 학년(내신 치는 재학생)일 때만 학생 폼에 노출한다.
+ * 기말고사 때 다시 받으려면 MIDTERM_WINDOW 날짜만 바꾸면 된다.
+ *
+ * 노출 판정은 '학생이 폼을 볼 때'만 적용하고(studentFormFields),
+ * 제출 검증과 멘토 화면의 라벨 조회에는 항상 포함한다(fieldsFor).
+ * 선택 항목이라 제출이 막히지 않고, 기간이 지난 뒤에도 받아둔 답이 라벨과 함께 보인다.
+ */
+export const MIDTERM_FIELD: ConsultingField = {
+  key: "midterm_result",
+  label: "중간고사 결과",
+  hint: "과목별 점수·등급을 적고, 직전 시험 대비 변화와 잘된 점 / 아쉬운 점과 그 원인까지 함께 적어주세요",
+  type: "longtext",
+  required: false,
+};
+
+/** 중간고사 결과를 받는 기간 (KST, 양끝 포함) — 10/17~18 컨설팅 주말을 감싸는 범위. */
+export const MIDTERM_WINDOW = { from: "2026-10-13", to: "2026-10-20" } as const;
+
+/** 내신 중간고사를 치는 재학생만 — N수생·재수생 폼에는 띄우지 않는다. */
+export const MIDTERM_GRADES = ["고1", "고2"] as const;
+
+/** 지금 이 학생 폼에 중간고사 결과 항목을 띄울지 */
+export function showsMidterm(
+  formType: ConsultingFormType,
+  grade: string | null | undefined,
+  today: string = todaySeoul(),
+): boolean {
+  if (formType === "pre") return false; // 사전 질문지엔 이미 성적 문항이 있다
+  if (!grade || !(MIDTERM_GRADES as readonly string[]).includes(grade)) return false;
+  return today >= MIDTERM_WINDOW.from && today <= MIDTERM_WINDOW.to;
+}
 
 // 주간 성장 코칭 폼 (weekly)
 export const WEEKLY_FIELDS: ConsultingField[] = [
@@ -53,10 +90,29 @@ export const PRE_FIELDS: ConsultingField[] = [
   { key: "other_goal", label: "그 밖에 4주간 코칭을 통해 이루고 싶은 것 (있다면 상세히)", type: "longtext", required: false },
 ];
 
+/**
+ * 폼 종류별 전체 항목 — 저장된 제출물의 라벨 조회와 제출 검증에 쓴다.
+ * 기간 한정 항목(중간고사 결과)도 항상 포함한다. 멘토 화면은 값이 빈 항목을 건너뛰므로
+ * 기간 밖 제출물에 빈칸이 생기지 않고, 받아둔 답은 기간이 지나도 계속 보인다.
+ */
 export function fieldsFor(formType: ConsultingFormType): ConsultingField[] {
   if (formType === "pre") return PRE_FIELDS;
-  if (formType === "monthly") return MONTHLY_FIELDS;
-  return WEEKLY_FIELDS;
+  const base = formType === "monthly" ? MONTHLY_FIELDS : WEEKLY_FIELDS;
+  return [MIDTERM_FIELD, ...base];
+}
+
+/**
+ * 학생에게 실제로 보여줄 항목 — 기간/학년 조건을 만족할 때만 중간고사 결과를 맨 앞에 끼운다.
+ * (제출 검증은 fieldsFor 를 쓰므로, 작성 중에 기간이 지나도 적어둔 답이 버려지지 않는다)
+ */
+export function studentFormFields(
+  formType: ConsultingFormType,
+  grade: string | null | undefined,
+  today: string = todaySeoul(),
+): ConsultingField[] {
+  if (formType === "pre") return PRE_FIELDS;
+  const base = formType === "monthly" ? MONTHLY_FIELDS : WEEKLY_FIELDS;
+  return showsMidterm(formType, grade, today) ? [MIDTERM_FIELD, ...base] : base;
 }
 
 export const FORM_TITLE: Record<ConsultingFormType, string> = {
