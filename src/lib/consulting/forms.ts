@@ -38,14 +38,27 @@ export const MIDTERM_FIELD: ConsultingField = {
   required: false,
 };
 
-/** 중간고사 결과를 받는 기간 (KST, 양끝 포함) — 10/17~18 컨설팅 주말을 감싸는 범위. */
-export const MIDTERM_WINDOW = { from: "2026-10-13", to: "2026-10-20" } as const;
+/**
+ * 중간고사 결과를 받는 기간 (KST, 양끝 포함).
+ * 10/17~18 컨설팅 주말부터, 결과를 보며 코칭하는 11월 말까지 열어둔다.
+ */
+export const MIDTERM_WINDOW = { from: "2026-10-13", to: "2026-11-30" } as const;
 
 /** 내신 중간고사를 치는 재학생만 — N수생·재수생 폼에는 띄우지 않는다. */
 export const MIDTERM_GRADES = ["고1", "고2"] as const;
 
-/** 컨설팅 화면 고정 섹션 / 학생 폼 항목이 묶이는 시험 식별자 (저장 키) */
+/** 중간고사 식별자 — 저장 키의 앞부분. 기말고사를 받을 땐 이 값을 바꾼다. */
 export const MIDTERM_EXAM_KEY = "2026-2-midterm";
+
+/**
+ * 중간고사 결과 저장 키 — 시험 + 누적 주차.
+ *
+ * 멘토 메모와 같이 '적은 그 주차에서만' 보이게 하기 위해 주차를 키에 넣는다.
+ * (처음에는 시험 단위로만 저장해 모든 주차에 같은 내용이 떴다)
+ */
+export function midtermExamKey(cumWeek: number): string {
+  return `${MIDTERM_EXAM_KEY}:w${cumWeek}`;
+}
 
 /** 화면에 띄울 시험 이름 */
 export const MIDTERM_EXAM_LABEL = "2학기 중간고사";

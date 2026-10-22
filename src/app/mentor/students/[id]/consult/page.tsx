@@ -8,7 +8,7 @@ import { weekStateFromWeek } from "@/lib/consulting/week";
 import {
   FORM_TITLE,
   showsMidterm,
-  MIDTERM_EXAM_KEY,
+  midtermExamKey,
   MIDTERM_EXAM_LABEL,
   MIDTERM_FIELD,
 } from "@/lib/consulting/forms";
@@ -70,8 +70,9 @@ export default async function ConsultPage({
   // 폼 종류와 무관하게 컨설팅 화면에 뜨므로 weekly 기준으로 판정한다.
   const midtermOn = showsMidterm("weekly", student.grade);
   // 테이블이 아직 없으면(마이그레이션 미적용) 저장만 막고 화면은 그대로 띄운다
+  const midtermKey = midtermExamKey(cumWeek);
   const midterm = midtermOn
-    ? await getMidtermResult(id, MIDTERM_EXAM_KEY).then(
+    ? await getMidtermResult(id, midtermKey).then(
         (content) => ({ ready: true, content }),
         () => ({ ready: false, content: "" }),
       )
@@ -144,7 +145,7 @@ export default async function ConsultPage({
       {midterm && (
         <MidtermPanel
           studentId={id}
-          examKey={MIDTERM_EXAM_KEY}
+          examKey={midtermKey}
           examLabel={MIDTERM_EXAM_LABEL}
           initialContent={midterm.content}
           reportReceived={submission?.answers?.[MIDTERM_FIELD.key] ?? null}
