@@ -66,17 +66,23 @@ export default async function ConsultPage({
   const weekStart = effectiveStart ? addDays(effectiveStart, (week - 1) * 7) : null;
   const weekEnd = weekStart ? addDays(weekStart, 6) : null;
 
-  // 중간고사 고정 섹션 — 대상 학년(고1·고2) + 시험 기간일 때만 띄운다.
-  // 폼 종류와 무관하게 컨설팅 화면에 뜨므로 weekly 기준으로 판정한다.
-  const midtermOn = showsMidterm("weekly", student.grade);
-  // 테이블이 아직 없으면(마이그레이션 미적용) 저장만 막고 화면은 그대로 띄운다
+  // 중간고사 고정 섹션.
+  //
+  // 한 번 적은 내용은 그 주차에 영구히 남는다 — 시험 기간이 끝나도 사라지지 않는다.
+  // 그래서 기간 판정과 무관하게 저장된 내용을 먼저 읽고,
+  //   - 내용이 있으면  → 언제나 띄운다 (기록 보존)
+  //   - 내용이 없으면  → 시험 기간 + 대상 학년(고1·고2)일 때만 띄운다 (새로 적는 칸)
+  // 덕분에 시험이 끝나면 빈 칸은 조용히 사라지고, 적어둔 기록만 남는다.
+  //
+  // 테이블이 아직 없으면(마이그레이션 미적용) 저장만 막고 화면은 그대로 띄운다.
   const midtermKey = midtermExamKey(cumWeek);
-  const midterm = midtermOn
-    ? await getMidtermResult(id, midtermKey).then(
-        (content) => ({ ready: true, content }),
-        () => ({ ready: false, content: "" }),
-      )
-    : null;
+  const saved = await getMidtermResult(id, midtermKey).then(
+    (content) => ({ ready: true, content }),
+    () => ({ ready: false, content: "" }),
+  );
+  // 폼 종류와 무관하게 컨설팅 화면에 뜨므로 기간 판정은 weekly 기준으로 한다
+  const midtermOn = saved.content.trim() !== "" || showsMidterm("weekly", student.grade);
+  const midterm = midtermOn ? saved : null;
 
   // 이 주차에 예정된 폼 종류 (제출물이 없을 때 안내용)
   const state = weekStateFromWeek(cumWeek);
