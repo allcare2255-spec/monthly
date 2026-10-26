@@ -4,7 +4,7 @@ import { extractWeeklyPlan } from "@/lib/plan/extract";
 import type { UploadAsset } from "@/lib/review/anthropic";
 
 export const runtime = "nodejs";
-export const maxDuration = 120; // 비전 추출은 시간이 걸릴 수 있음
+export const maxDuration = 300; // 비전 추출은 시간이 걸릴 수 있음 (Pro 플랜 상한)
 
 export async function POST(req: Request) {
   const session = await getSession();

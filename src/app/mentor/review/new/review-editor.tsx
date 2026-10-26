@@ -9,8 +9,17 @@ interface Asset {
   data: string;
   mediaType: string;
   name: string;
+  size: number;
   previewUrl?: string;
 }
+
+/**
+ * 한 번에 보낼 수 있는 자료 용량. base64 로 바꾸면 약 1.33배가 되고
+ * Vercel 요청 본문 한도가 4.5MB 라 원본 기준 3.2MB 까지만 받는다.
+ */
+const MAX_UPLOAD_BYTES = 3_200_000;
+
+const mb = (bytes: number) => `${(bytes / 1_000_000).toFixed(1)}MB`;
 
 const TYPE_LABEL: Record<QuestionType, string> = {
   multiple_choice: "객관식",
@@ -71,22 +80,38 @@ export function ReviewEditor({
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
 
+  const totalBytes = assets.reduce((sum, a) => sum + a.size, 0);
+
   const onFiles = async (files: FileList | null) => {
     if (!files) return;
     setError("");
     const next: Asset[] = [];
+    const tooBig: string[] = [];
+    let used = totalBytes;
     for (const file of Array.from(files)) {
       const isPdf = file.type === "application/pdf";
       const isImg = file.type.startsWith("image/");
       if (!isPdf && !isImg) continue;
+      if (used + file.size > MAX_UPLOAD_BYTES) {
+        tooBig.push(`${file.name} (${mb(file.size)})`);
+        continue;
+      }
+      used += file.size;
       const { data, mediaType } = await readFileAsBase64(file);
       next.push({
         kind: isPdf ? "pdf" : "image",
         data,
         mediaType,
         name: file.name,
+        size: file.size,
         previewUrl: isImg ? URL.createObjectURL(file) : undefined,
       });
+    }
+    if (tooBig.length > 0) {
+      setError(
+        `용량이 커서 올리지 못한 자료가 있어요: ${tooBig.join(", ")}. ` +
+          `한 번에 ${mb(MAX_UPLOAD_BYTES)} 까지만 보낼 수 있어요. 자료를 나눠서 여러 번 만들어 주세요.`
+      );
     }
     setAssets((prev) => [...prev, ...next]);
   };
@@ -329,9 +354,15 @@ export function ReviewEditor({
       <label className="rounded-2xl bg-white border-2 border-dashed border-ink/15 p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo transition">
         <span className="text-3xl">📤</span>
         <span className="mt-2 font-medium text-ink">클릭해서 파일 선택</span>
-        <span className="text-xs text-ink/40">이미지(JPG/PNG) 또는 PDF · 여러 개 가능</span>
+        <span className="text-xs text-ink/40">이미지(JPG/PNG) 또는 PDF · 여러 개 가능 · 한 번에 {mb(MAX_UPLOAD_BYTES)}까지</span>
         <input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => onFiles(e.target.files)} />
       </label>
+
+      {assets.length > 0 && (
+        <p className="text-xs text-ink/45">
+          자료 {assets.length}개 · {mb(totalBytes)} / {mb(MAX_UPLOAD_BYTES)}
+        </p>
+      )}
 
       {assets.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

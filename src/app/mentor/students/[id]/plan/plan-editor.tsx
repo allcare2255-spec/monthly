@@ -3,6 +3,9 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import type { PlanTask, PlanDay, WeekdayKey, WeeklyPlanData } from "@/types";
 
+/** base64 로 1.33배가 되므로 Vercel 요청 한도(4.5MB) 안쪽으로 원본 3.2MB 까지만 받는다. */
+const MAX_UPLOAD_BYTES = 3_200_000;
+
 const WEEKDAY_LABEL: { key: WeekdayKey; en: string; ko: string }[] = [
   { key: "mon", en: "Monday", ko: "월" },
   { key: "tue", en: "Tuesday", ko: "화" },
@@ -122,6 +125,15 @@ export function WeeklyPlanEditor({
       if (fileRef.current) fileRef.current.value = "";
       return;
     }
+    const totalBytes = Array.from(files).reduce((sum, f) => sum + f.size, 0);
+    if (totalBytes > MAX_UPLOAD_BYTES) {
+      setImportErr(
+        `사진 용량이 커서 보낼 수 없어요 (${(totalBytes / 1_000_000).toFixed(1)}MB). ` +
+          "한 번에 3.2MB 까지만 가능해요. 몇 장씩 나눠서 올려주세요."
+      );
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
     setImporting(true);
     setImportErr(null);
     try {
@@ -131,7 +143,17 @@ export function WeeklyPlanEditor({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ assets }),
       });
-      const data = await res.json();
+      const raw = await res.text();
+      let data: any = null;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        throw new Error(
+          res.status === 504
+            ? "인식 시간이 초과됐어요(최대 5분). 사진을 나눠서 올려주세요."
+            : `서버 오류 (${res.status}). 잠시 후 다시 시도해 주세요.`
+        );
+      }
       if (!res.ok) throw new Error(data.error || "사진 인식에 실패했습니다.");
       update(data.plan_data as WeeklyPlanData);
     } catch (e: any) {
