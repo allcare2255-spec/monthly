@@ -206,10 +206,12 @@ export async function gradeOpenEnded(
 ): Promise<AiGradeOutput[]> {
   if (items.length === 0) return [];
 
+  // 번호는 목록 안의 순번으로 매긴다. 실제 문제 번호를 그대로 쓰면
+  // 모델이 순번으로 돌려줄 때 엉뚱한 문제에 점수가 붙는다.
   const payload = items
     .map(
-      (it) =>
-        `문제 ${it.index}: ${it.question}\n모범답안: ${it.modelAnswer}\n학생답안: ${
+      (it, pos) =>
+        `문제 ${pos}: ${it.question}\n모범답안: ${it.modelAnswer}\n학생답안: ${
           it.studentAnswer || "(무응답)"
         }`
     )
@@ -225,7 +227,14 @@ export async function gradeOpenEnded(
   });
 
   const parsed = message.parsed_output as { results: AiGradeOutput[] } | null;
-  return parsed?.results ?? [];
+  const results = parsed?.results ?? [];
+
+  // 받은 순번을 실제 문제 번호로 되돌린다. 번호가 어긋나면 응답 순서대로 맞춘다.
+  return results.flatMap((r, order) => {
+    const source = items[r.index] ?? items[order];
+    if (!source) return [];
+    return [{ ...r, index: source.index }];
+  });
 }
 
 export { MODEL };
