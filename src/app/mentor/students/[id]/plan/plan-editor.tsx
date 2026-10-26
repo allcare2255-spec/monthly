@@ -2,9 +2,7 @@
 
 import { forwardRef, useEffect, useRef, useState } from "react";
 import type { PlanTask, PlanDay, WeekdayKey, WeeklyPlanData } from "@/types";
-
-/** base64 로 1.33배가 되므로 Vercel 요청 한도(4.5MB) 안쪽으로 원본 3.2MB 까지만 받는다. */
-const MAX_UPLOAD_BYTES = 3_200_000;
+import { MAX_UPLOAD_BYTES, formatBytes, uploadAssets } from "@/lib/upload-client";
 
 const WEEKDAY_LABEL: { key: WeekdayKey; en: string; ko: string }[] = [
   { key: "mon", en: "Monday", ko: "월" },
@@ -49,10 +47,12 @@ function downscaleToDataUrl(file: File, maxDim: number, quality: number): Promis
   });
 }
 
-async function fileToImageAsset(file: File) {
+/** 축소한 사진을 스토리지에 올릴 수 있는 JPEG 파일로 만든다. */
+async function toDownscaledFile(file: File) {
   const dataUrl = await downscaleToDataUrl(file, 1600, 0.85);
-  const comma = dataUrl.indexOf(",");
-  return { kind: "image" as const, data: dataUrl.slice(comma + 1), mediaType: "image/jpeg" };
+  const blob = await (await fetch(dataUrl)).blob();
+  const name = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+  return new File([blob], name, { type: "image/jpeg" });
 }
 
 export function WeeklyPlanEditor({
@@ -125,11 +125,11 @@ export function WeeklyPlanEditor({
       if (fileRef.current) fileRef.current.value = "";
       return;
     }
-    const totalBytes = Array.from(files).reduce((sum, f) => sum + f.size, 0);
-    if (totalBytes > MAX_UPLOAD_BYTES) {
+    const tooBig = Array.from(files).filter((f) => f.size > MAX_UPLOAD_BYTES);
+    if (tooBig.length > 0) {
       setImportErr(
-        `사진 용량이 커서 보낼 수 없어요 (${(totalBytes / 1_000_000).toFixed(1)}MB). ` +
-          "한 번에 3.2MB 까지만 가능해요. 몇 장씩 나눠서 올려주세요."
+        `사진 용량이 너무 커요: ${tooBig.map((f) => `${f.name} (${formatBytes(f.size)})`).join(", ")}. ` +
+          `사진 하나당 ${formatBytes(MAX_UPLOAD_BYTES)} 까지 올릴 수 있어요.`
       );
       if (fileRef.current) fileRef.current.value = "";
       return;
@@ -137,11 +137,12 @@ export function WeeklyPlanEditor({
     setImporting(true);
     setImportErr(null);
     try {
-      const assets = await Promise.all(Array.from(files).map(fileToImageAsset));
+      const shrunk = await Promise.all(Array.from(files).map(toDownscaledFile));
+      const uploads = await uploadAssets(shrunk, "plan");
       const res = await fetch("/api/plans/extract", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ assets }),
+        body: JSON.stringify({ uploads }),
       });
       const raw = await res.text();
       let data: any = null;

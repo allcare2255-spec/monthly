@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { extractWeeklyPlan } from "@/lib/plan/extract";
 import type { UploadAsset } from "@/lib/review/anthropic";
+import { parseStoredAssets, readStoredAssets, removeStoredAssets } from "@/lib/uploads";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // 비전 추출은 시간이 걸릴 수 있음 (Pro 플랜 상한)
@@ -10,9 +11,13 @@ export async function POST(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "권한 없음" }, { status: 403 });
 
+  const body = await req.json().catch(() => ({}));
+  // 스토리지에 올린 사진(uploads)을 우선 쓰고, 예전 방식(assets, base64)도 받아준다.
+  const stored = parseStoredAssets(body.uploads);
+
   try {
-    const body = await req.json();
-    const assets: UploadAsset[] = body.assets ?? [];
+    const assets: UploadAsset[] =
+      stored.length > 0 ? await readStoredAssets(stored) : body.assets ?? [];
     if (!Array.isArray(assets) || assets.length === 0) {
       return NextResponse.json(
         { error: "주간 계획표 사진을 1개 이상 올려주세요." },
@@ -29,5 +34,7 @@ export async function POST(req: Request) {
         ? "Claude API 키가 올바르지 않습니다. .env.local 을 확인하세요."
         : e?.message || "계획표 인식 중 오류가 발생했습니다.";
     return NextResponse.json({ error: msg }, { status: 500 });
+  } finally {
+    await removeStoredAssets(stored);
   }
 }

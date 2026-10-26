@@ -3,23 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { ReviewQuiz, ReviewQuestion, QuestionType } from "@/types";
+import { MAX_UPLOAD_BYTES, formatBytes as mb, uploadAssets } from "@/lib/upload-client";
 
 interface Asset {
   kind: "image" | "pdf";
-  data: string;
-  mediaType: string;
+  file: File;
   name: string;
   size: number;
   previewUrl?: string;
 }
-
-/**
- * 한 번에 보낼 수 있는 자료 용량. base64 로 바꾸면 약 1.33배가 되고
- * Vercel 요청 본문 한도가 4.5MB 라 원본 기준 3.2MB 까지만 받는다.
- */
-const MAX_UPLOAD_BYTES = 3_200_000;
-
-const mb = (bytes: number) => `${(bytes / 1_000_000).toFixed(1)}MB`;
 
 const TYPE_LABEL: Record<QuestionType, string> = {
   multiple_choice: "객관식",
@@ -27,19 +19,6 @@ const TYPE_LABEL: Record<QuestionType, string> = {
   short_answer: "단답",
   essay: "서술형",
 };
-
-function readFileAsBase64(file: File): Promise<{ data: string; mediaType: string }> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const comma = result.indexOf(",");
-      resolve({ data: result.slice(comma + 1), mediaType: file.type });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 /** JSON 이 아닌 응답(타임아웃·서버 에러 페이지)도 사람이 읽을 수 있는 메시지로 바꿔준다. */
 async function postJson(url: string, body: unknown, fallback: string) {
@@ -75,6 +54,7 @@ export function ReviewEditor({
   const [hint, setHint] = useState("");
   const [studentId, setStudentId] = useState(initialStudentId);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [quiz, setQuiz] = useState<ReviewQuiz | null>(null);
   const [code, setCode] = useState("");
@@ -87,21 +67,17 @@ export function ReviewEditor({
     setError("");
     const next: Asset[] = [];
     const tooBig: string[] = [];
-    let used = totalBytes;
     for (const file of Array.from(files)) {
       const isPdf = file.type === "application/pdf";
       const isImg = file.type.startsWith("image/");
       if (!isPdf && !isImg) continue;
-      if (used + file.size > MAX_UPLOAD_BYTES) {
+      if (file.size > MAX_UPLOAD_BYTES) {
         tooBig.push(`${file.name} (${mb(file.size)})`);
         continue;
       }
-      used += file.size;
-      const { data, mediaType } = await readFileAsBase64(file);
       next.push({
         kind: isPdf ? "pdf" : "image",
-        data,
-        mediaType,
+        file,
         name: file.name,
         size: file.size,
         previewUrl: isImg ? URL.createObjectURL(file) : undefined,
@@ -110,7 +86,7 @@ export function ReviewEditor({
     if (tooBig.length > 0) {
       setError(
         `용량이 커서 올리지 못한 자료가 있어요: ${tooBig.join(", ")}. ` +
-          `한 번에 ${mb(MAX_UPLOAD_BYTES)} 까지만 보낼 수 있어요. 자료를 나눠서 여러 번 만들어 주세요.`
+          `파일 하나당 ${mb(MAX_UPLOAD_BYTES)} 까지 올릴 수 있어요.`
       );
     }
     setAssets((prev) => [...prev, ...next]);
@@ -126,18 +102,23 @@ export function ReviewEditor({
     setLoading(true);
     setError("");
     try {
+      setUploading(true);
+      const uploads = await uploadAssets(
+        assets.map((a) => a.file),
+        "review"
+      );
+      setUploading(false);
+
       const json = await postJson(
         "/api/review/generate",
-        {
-          assets: assets.map((a) => ({ kind: a.kind, data: a.data, mediaType: a.mediaType })),
-          hint: hint.trim() || undefined,
-        },
+        { uploads, hint: hint.trim() || undefined },
         "생성 실패"
       );
       setQuiz(json.quiz);
     } catch (e: any) {
       setError(e.message);
     } finally {
+      setUploading(false);
       setLoading(false);
     }
   };
@@ -354,13 +335,13 @@ export function ReviewEditor({
       <label className="rounded-2xl bg-white border-2 border-dashed border-ink/15 p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo transition">
         <span className="text-3xl">📤</span>
         <span className="mt-2 font-medium text-ink">클릭해서 파일 선택</span>
-        <span className="text-xs text-ink/40">이미지(JPG/PNG) 또는 PDF · 여러 개 가능 · 한 번에 {mb(MAX_UPLOAD_BYTES)}까지</span>
+        <span className="text-xs text-ink/40">이미지(JPG/PNG) 또는 PDF · 여러 개 가능 · 파일당 {mb(MAX_UPLOAD_BYTES)}까지</span>
         <input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => onFiles(e.target.files)} />
       </label>
 
       {assets.length > 0 && (
         <p className="text-xs text-ink/45">
-          자료 {assets.length}개 · {mb(totalBytes)} / {mb(MAX_UPLOAD_BYTES)}
+          자료 {assets.length}개 · {mb(totalBytes)}
         </p>
       )}
 
@@ -389,7 +370,11 @@ export function ReviewEditor({
       {error && <p className="text-sm text-rose">{error}</p>}
 
       <button onClick={generate} disabled={loading || assets.length === 0} className="btn-gradient w-full rounded-xl py-3.5 text-base font-semibold">
-        {loading ? "AI가 문제를 만드는 중… (자료가 많으면 최대 5분)" : "🤖 문제 생성하기"}
+        {uploading
+          ? "자료 올리는 중…"
+          : loading
+            ? "AI가 문제를 만드는 중… (자료가 많으면 최대 5분)"
+            : "🤖 문제 생성하기"}
       </button>
     </div>
   );
