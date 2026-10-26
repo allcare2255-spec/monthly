@@ -32,6 +32,29 @@ function readFileAsBase64(file: File): Promise<{ data: string; mediaType: string
   });
 }
 
+/** JSON 이 아닌 응답(타임아웃·서버 에러 페이지)도 사람이 읽을 수 있는 메시지로 바꿔준다. */
+async function postJson(url: string, body: unknown, fallback: string) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const raw = await res.text();
+  let json: any = null;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    if (res.status === 504 || /timeout/i.test(raw)) {
+      throw new Error(
+        "생성 시간이 초과됐어요(최대 5분). 자료를 몇 장씩 나눠 올리거나 문제 수를 줄여서 다시 시도해 주세요."
+      );
+    }
+    throw new Error(`서버 오류 (${res.status}). 잠시 후 다시 시도해 주세요.`);
+  }
+  if (!res.ok) throw new Error(json.error || fallback);
+  return json;
+}
+
 export function ReviewEditor({
   students,
   initialStudentId,
@@ -78,16 +101,14 @@ export function ReviewEditor({
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/review/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const json = await postJson(
+        "/api/review/generate",
+        {
           assets: assets.map((a) => ({ kind: a.kind, data: a.data, mediaType: a.mediaType })),
           hint: hint.trim() || undefined,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "생성 실패");
+        },
+        "생성 실패"
+      );
       setQuiz(json.quiz);
     } catch (e: any) {
       setError(e.message);
@@ -111,13 +132,11 @@ export function ReviewEditor({
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/review/sets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quiz, studentId: studentId || null }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "배포 실패");
+      const json = await postJson(
+        "/api/review/sets",
+        { quiz, studentId: studentId || null },
+        "배포 실패"
+      );
       setCode(json.code);
     } catch (e: any) {
       setError(e.message);
@@ -339,7 +358,7 @@ export function ReviewEditor({
       {error && <p className="text-sm text-rose">{error}</p>}
 
       <button onClick={generate} disabled={loading || assets.length === 0} className="btn-gradient w-full rounded-xl py-3.5 text-base font-semibold">
-        {loading ? "AI가 문제를 만드는 중… (최대 1~2분)" : "🤖 문제 생성하기"}
+        {loading ? "AI가 문제를 만드는 중… (자료가 많으면 최대 5분)" : "🤖 문제 생성하기"}
       </button>
     </div>
   );

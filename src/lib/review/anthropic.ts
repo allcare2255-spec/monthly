@@ -139,20 +139,23 @@ export async function generateQuiz(
     "첨부한 자료를 분석해 복습 테스트를 만들어줘." +
     (hint ? `\n추가 요청: ${hint}` : "");
 
-  const message = await client.beta.messages.parse({
-    model: MODEL,
-    max_tokens: 16000,
-    // Opus 4.8 의 adaptive thinking. (SDK 타입에 아직 없어 캐스팅)
-    thinking: { type: "adaptive" } as any,
-    system: SYSTEM_PROMPT,
-    output_format: betaJSONSchemaOutputFormat(QUIZ_SCHEMA as any),
-    messages: [
-      {
-        role: "user",
-        content: [...toContentBlocks(assets), { type: "text", text: instruction }],
-      },
-    ],
-  });
+  // 자료가 많으면 2분을 넘기므로 스트리밍으로 받아 연결이 끊기지 않게 한다.
+  const message = await client.beta.messages
+    .stream({
+      model: MODEL,
+      max_tokens: 16000,
+      // Opus 4.8 의 adaptive thinking. (SDK 타입에 아직 없어 캐스팅)
+      thinking: { type: "adaptive" } as any,
+      system: SYSTEM_PROMPT,
+      output_format: betaJSONSchemaOutputFormat(QUIZ_SCHEMA as any),
+      messages: [
+        {
+          role: "user",
+          content: [...toContentBlocks(assets), { type: "text", text: instruction }],
+        },
+      ],
+    })
+    .finalMessage();
 
   const quiz = message.parsed_output as ReviewQuiz | null;
   if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {

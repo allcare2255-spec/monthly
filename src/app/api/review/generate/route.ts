@@ -3,7 +3,7 @@ import { getSession } from "@/lib/session";
 import { generateQuiz, type UploadAsset } from "@/lib/review/anthropic";
 
 export const runtime = "nodejs";
-export const maxDuration = 120; // AI 생성은 시간이 걸릴 수 있음
+export const maxDuration = 300; // AI 생성은 시간이 걸릴 수 있음 (Pro 플랜 상한)
 
 export async function POST(req: Request) {
   const session = await getSession();
