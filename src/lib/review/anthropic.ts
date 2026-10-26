@@ -1,6 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { betaJSONSchemaOutputFormat } from "@anthropic-ai/sdk/helpers/beta/json-schema";
+import { jsonSchemaOutputFormat } from "@anthropic-ai/sdk/helpers/json-schema";
 import type { ReviewQuiz } from "@/types";
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -140,14 +140,13 @@ export async function generateQuiz(
     (hint ? `\n추가 요청: ${hint}` : "");
 
   // 자료가 많으면 2분을 넘기므로 스트리밍으로 받아 연결이 끊기지 않게 한다.
-  const message = await client.beta.messages
+  const message = await client.messages
     .stream({
       model: MODEL,
       max_tokens: 16000,
-      // Opus 4.8 의 adaptive thinking. (SDK 타입에 아직 없어 캐스팅)
-      thinking: { type: "adaptive" } as any,
+      thinking: { type: "adaptive" },
       system: SYSTEM_PROMPT,
-      output_format: betaJSONSchemaOutputFormat(QUIZ_SCHEMA as any),
+      output_config: { format: jsonSchemaOutputFormat(QUIZ_SCHEMA as any) },
       messages: [
         {
           role: "user",
@@ -216,12 +215,12 @@ export async function gradeOpenEnded(
     )
     .join("\n\n");
 
-  const message = await client.beta.messages.parse({
+  const message = await client.messages.parse({
     model: MODEL,
     max_tokens: 4000,
     system:
       "너는 공정한 채점자다. 모범답안과 비교해 학생답안의 핵심 포함 여부로 0~1 부분점수를 매기고, 한국어로 짧고 건설적인 피드백을 준다. 표현이 달라도 의미가 맞으면 인정한다.",
-    output_format: betaJSONSchemaOutputFormat(GRADE_SCHEMA as any),
+    output_config: { format: jsonSchemaOutputFormat(GRADE_SCHEMA as any) },
     messages: [{ role: "user", content: `다음 답안들을 채점해줘.\n\n${payload}` }],
   });
 

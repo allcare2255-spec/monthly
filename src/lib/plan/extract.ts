@@ -1,6 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { betaJSONSchemaOutputFormat } from "@anthropic-ai/sdk/helpers/beta/json-schema";
+import { jsonSchemaOutputFormat } from "@anthropic-ai/sdk/helpers/json-schema";
 import type { PlanTask, WeekdayKey, WeeklyPlanData } from "@/types";
 import type { UploadAsset } from "@/lib/review/anthropic";
 
@@ -160,13 +160,12 @@ function toContentBlocks(assets: UploadAsset[]): any[] {
 export async function extractWeeklyPlan(assets: UploadAsset[]): Promise<WeeklyPlanData> {
   if (assets.length === 0) throw new Error("이미지가 최소 1개 필요합니다.");
 
-  const message = await client.beta.messages.parse({
+  const message = await client.messages.parse({
     model: MODEL,
     max_tokens: 8000,
-    // Opus 4.8 adaptive thinking (SDK 타입에 아직 없어 캐스팅)
-    thinking: { type: "adaptive" } as any,
+    thinking: { type: "adaptive" },
     system: SYSTEM_PROMPT,
-    output_format: betaJSONSchemaOutputFormat(PLAN_SCHEMA as any),
+    output_config: { format: jsonSchemaOutputFormat(PLAN_SCHEMA as any) },
     messages: [
       {
         role: "user",
