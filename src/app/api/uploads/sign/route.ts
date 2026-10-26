@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       }
       if (typeof f.size === "number" && f.size > MAX_UPLOAD_BYTES) {
         return NextResponse.json(
-          { error: `파일 하나당 ${MAX_UPLOAD_BYTES / 1024 / 1024}MB 까지만 올릴 수 있습니다.` },
+          { error: `파일 하나당 ${MAX_UPLOAD_BYTES / 1_000_000}MB 까지만 올릴 수 있습니다.` },
           { status: 400 }
         );
       }

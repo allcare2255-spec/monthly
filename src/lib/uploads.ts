@@ -12,7 +12,7 @@ import { getServiceClient } from "@/lib/supabase";
 export const UPLOAD_BUCKET = "ai-uploads";
 
 /** 파일 1개 최대 용량. 버킷에도 같은 한도가 걸려 있다. */
-export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 25_000_000;
 
 const EXT: Record<string, string> = {
   "application/pdf": "pdf",

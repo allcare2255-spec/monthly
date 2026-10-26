@@ -6,7 +6,7 @@
  */
 
 /** 파일 1개 최대 용량. 서버·버킷에도 같은 한도가 걸려 있다. */
-export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 25_000_000;
 
 export interface StoredUpload {
   kind: "image" | "pdf";
