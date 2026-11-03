@@ -39,10 +39,13 @@ export const MIDTERM_FIELD: ConsultingField = {
 };
 
 /**
- * 중간고사 결과를 받는 기간 (KST, 양끝 포함).
- * 10/17~18 컨설팅 주말부터, 결과를 보며 코칭하는 11월 말까지 열어둔다.
+ * 중간고사 결과를 새로 적을 수 있는 기간 (KST, 양끝 포함) — 10/17~18 컨설팅 주말.
+ *
+ * 이 기간이 지나면 빈 칸은 어느 주차에도 뜨지 않는다.
+ * 이미 적어둔 내용은 기간과 무관하게 그 주차에 계속 남는다(consult/page.tsx 참고).
+ * 기말고사 때 다시 받으려면 이 날짜를 그 시험 주말로 바꾼다.
  */
-export const MIDTERM_WINDOW = { from: "2026-10-13", to: "2026-11-30" } as const;
+export const MIDTERM_WINDOW = { from: "2026-10-13", to: "2026-10-20" } as const;
 
 /** 내신 중간고사를 치는 재학생만 — N수생·재수생 폼에는 띄우지 않는다. */
 export const MIDTERM_GRADES = ["고1", "고2"] as const;
