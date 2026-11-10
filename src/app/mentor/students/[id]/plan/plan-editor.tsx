@@ -336,9 +336,9 @@ function DayColumn({
 }) {
   return (
     <div className="rounded-2xl bg-white border border-ink/5 p-4 shadow-sm flex flex-col">
-      <div className="flex items-baseline justify-between mb-2">
-        <h3 className="text-sm font-extrabold text-ink">{label}</h3>
-        <span className="text-[11px] text-[#111111] whitespace-nowrap">
+      <div className="flex items-baseline justify-between gap-2 mb-2">
+        <h3 className="text-sm font-extrabold text-ink whitespace-nowrap shrink-0">{label}</h3>
+        <span className="text-[11px] text-[#111111] whitespace-nowrap shrink-0">
           {ko}{date ? ` · ${date.slice(5)}` : ""}
         </span>
       </div>
