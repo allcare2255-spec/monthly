@@ -6,7 +6,7 @@ import { addDays, buildCycleAnchors, cumulativeWeek, resolveCycleStart } from "@
 import { MonthlyReportView } from "./monthly-view";
 import { EditableCycleDate, AdminMemoPanel, type CycleNote } from "../report-extras";
 import { ConsultingRefPanel } from "../consulting-ref-panel";
-import { getSubmissionByWeek } from "@/lib/consulting/store";
+import { listSubmissionsByWeek } from "@/lib/consulting/store";
 import type { DayData, WeeklyReport, ConsultingSubmission } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +52,7 @@ export default async function MonthlyReportPage({
     // [변경 2] 월차 오버라이드·메모 — 이후 월차가 이어지도록 전체 월차를 가져온다
     supabase.from("coaching_cycles").select("cycle_number, start_date, end_date, notes").eq("student_id", id),
     // 5단계 — 이 사이클 첫 주(=월간 주차)의 월간 비전 컨설팅 폼 제출(있으면 참고용 표시)
-    getSubmissionByWeek(id, cumulativeWeek(cycle, 1), "monthly").catch(() => null as ConsultingSubmission | null),
+    listSubmissionsByWeek(id, cumulativeWeek(cycle, 1), "monthly").catch(() => [] as ConsultingSubmission[]),
   ]);
 
   // 재시작 + 월차 시작일 오버라이드를 모두 앵커로 삼아, 수정한 월차 이후가 자동으로 이어지게 한다
@@ -112,7 +112,7 @@ export default async function MonthlyReportPage({
         </span>
       </div>
 
-      <ConsultingRefPanel submission={consultingSub} />
+      <ConsultingRefPanel submissions={consultingSub} />
 
       <MonthlyReportView
         studentId={id}

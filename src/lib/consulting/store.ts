@@ -191,6 +191,18 @@ export async function getSubmissionByWeek(
   return rows[0] ?? null;
 }
 
+/**
+ * 특정 누적 주차 + 폼 종류의 제출 전체 (최신순).
+ * 같은 주차에 두 번 이상 제출해도 이전 제출이 가려지지 않도록, 1건만 집어오지 않는다.
+ */
+export async function listSubmissionsByWeek(
+  studentId: string,
+  weekNumber: number,
+  formType: ConsultingFormType,
+): Promise<ConsultingSubmission[]> {
+  return querySubmissions({ studentId, weekNumber, formType, scope: "active" });
+}
+
 /** 학생의 제출 내역 (최신순). 기본은 휴지통 제외. */
 export async function listSubmissionsByStudent(
   studentId: string,
@@ -221,6 +233,18 @@ export async function getSubmissionByWeekAnyForm(
 ): Promise<ConsultingSubmission | null> {
   const rows = await querySubmissions({ studentId, weekNumber, scope: "active", limit: 1 });
   return rows[0] ?? null;
+}
+
+/**
+ * 특정 누적 주차의 제출 전체 (폼 종류 무관, 최신순).
+ * 학생이 같은 주차에 여러 번 제출했을 때 최신 1건만 남기면 이전 제출이 화면에서
+ * 사라져 버리므로, 컨설팅/공유 화면은 전부 받아 탭으로 보여준다.
+ */
+export async function listSubmissionsByWeekAnyForm(
+  studentId: string,
+  weekNumber: number,
+): Promise<ConsultingSubmission[]> {
+  return querySubmissions({ studentId, weekNumber, scope: "active" });
 }
 
 /**

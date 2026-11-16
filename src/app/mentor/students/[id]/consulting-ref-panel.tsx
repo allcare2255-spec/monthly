@@ -9,9 +9,28 @@ import type { ConsultingSubmission } from "@/types";
  * 제출 데이터는 레포트 본문에 자동 반영하지 않고, 멘토가 보고 참고만 한다.
  * 인쇄(PDF)에는 포함하지 않음(no-print).
  */
-export function ConsultingRefPanel({ submission }: { submission: ConsultingSubmission | null }) {
+export function ConsultingRefPanel({ submissions }: { submissions: ConsultingSubmission[] }) {
+  // 같은 주차에 여러 번 제출됐으면 전부 띄운다 (최신순)
+  if (!submissions.length) return null;
+  return (
+    <div className="no-print space-y-2">
+      {submissions.map((s, i) => (
+        <RefCard key={s.id} submission={s} latest={i === 0} multiple={submissions.length > 1} />
+      ))}
+    </div>
+  );
+}
+
+function RefCard({
+  submission,
+  latest,
+  multiple,
+}: {
+  submission: ConsultingSubmission;
+  latest: boolean;
+  multiple: boolean;
+}) {
   const [open, setOpen] = useState(false);
-  if (!submission) return null;
 
   const fields = fieldsFor(submission.form_type);
   const when = new Date(submission.submitted_at).toLocaleString("ko-KR", {
@@ -39,6 +58,7 @@ export function ConsultingRefPanel({ submission }: { submission: ConsultingSubmi
           </span>
           <span className="text-xs text-ink/55">
             {submission.week_number}주차 · {typeLabel} · {when}
+            {multiple ? (latest ? " · 최신 제출" : " · 이전 제출") : ""}
           </span>
         </div>
         <span className="text-ink/40 text-sm">{open ? "접기 ▲" : "펼치기 ▼"}</span>

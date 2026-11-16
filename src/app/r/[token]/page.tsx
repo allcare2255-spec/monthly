@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getServiceClient } from "@/lib/supabase";
 import { addDays, buildCycleAnchors, resolveCycleStart } from "@/lib/dates";
-import { getSharedNoteByToken, getSubmissionByWeekAnyForm } from "@/lib/consulting/store";
+import { getSharedNoteByToken, listSubmissionsByWeekAnyForm } from "@/lib/consulting/store";
 import { noteToHtml, isEmptyNoteHtml } from "@/lib/consulting/note-html";
 import { fieldsFor, FORM_TITLE } from "@/lib/consulting/forms";
 import { weekStateFromWeek } from "@/lib/consulting/week";
@@ -37,10 +37,11 @@ export default async function SharedConsultPage({
   const cycle = Math.floor((cumWeek - 1) / 4) + 1;
   const week = ((cumWeek - 1) % 4) + 1;
 
-  const [{ data: restarts }, { data: cycleRows }, submission] = await Promise.all([
+  const [{ data: restarts }, { data: cycleRows }, submissions] = await Promise.all([
     supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", studentId),
     supabase.from("coaching_cycles").select("cycle_number, start_date, end_date").eq("student_id", studentId),
-    getSubmissionByWeekAnyForm(studentId, cumWeek).catch(() => null as ConsultingSubmission | null),
+    // 같은 주차에 두 번 이상 제출됐어도 전부 싣는다 (이전 제출이 사라지지 않게)
+    listSubmissionsByWeekAnyForm(studentId, cumWeek).catch(() => [] as ConsultingSubmission[]),
   ]);
 
   const anchors = buildCycleAnchors(restarts, cycleRows);
@@ -51,12 +52,12 @@ export default async function SharedConsultPage({
 
   const state = weekStateFromWeek(cumWeek);
   const expectedType: ConsultingFormType = state.kind === "form" ? state.formType : "weekly";
+  const submission = submissions[0] ?? null;
   const typeLabel = FORM_TITLE[submission?.form_type ?? expectedType];
   const mentorName = (student as unknown as { mentor?: { name: string } | null }).mentor?.name || "";
 
   const html = noteToHtml(note);
   const fmtDot = (d: string | null) => (d || "").replace(/-/g, ".");
-  const fields = submission ? fieldsFor(submission.form_type) : [];
 
   return (
     <main data-preview-root className="min-h-screen bg-white">
@@ -117,13 +118,25 @@ export default async function SharedConsultPage({
             </div>
           </section>
 
-          {submission && (
-            <section className="mt-8">
-              <h2 className="mb-3 text-lg font-extrabold text-ink">학생 제출 내용 · {typeLabel}</h2>
+          {submissions.map((sub, idx) => (
+            <section key={sub.id} className="mt-8">
+              <h2 className="mb-3 text-lg font-extrabold text-ink">
+                학생 제출 내용 · {FORM_TITLE[sub.form_type]}
+                {submissions.length > 1 && (
+                  <span className="ml-2 text-sm font-semibold text-ink/45">
+                    {new Date(sub.submitted_at).toLocaleString("ko-KR", {
+                      month: "numeric",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}{idx === 0 ? " · 최신 제출" : " · 이전 제출"}
+                  </span>
+                )}
+              </h2>
               <div className="space-y-4">
-                {fields.map((f) => {
+                {fieldsFor(sub.form_type).map((f) => {
                   if (f.type === "image") {
-                    const imgs = submission.file_paths?.[f.key] || [];
+                    const imgs = sub.file_paths?.[f.key] || [];
                     if (!imgs.length) return null;
                     return (
                       <div key={f.key} className="preview-photos rounded-2xl border border-ink/10 px-5 py-4">
@@ -142,7 +155,7 @@ export default async function SharedConsultPage({
                       </div>
                     );
                   }
-                  const text = submission.answers?.[f.key];
+                  const text = sub.answers?.[f.key];
                   if (!text) return null;
                   return (
                     <div key={f.key} className="print-avoid-break rounded-2xl border border-ink/10 px-5 py-4">
@@ -153,9 +166,9 @@ export default async function SharedConsultPage({
                 })}
               </div>
             </section>
-          )}
+          ))}
 
-          {!submission && (
+          {submissions.length === 0 && (
             <section className="mt-8">
               <div className="rounded-2xl border border-ink/10 px-5 py-4 text-sm text-ink/45">
                 이 주차에 제출된 학생 작성 내용이 없습니다.

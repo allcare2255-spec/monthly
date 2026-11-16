@@ -17,7 +17,7 @@ export function ConsultWorkspace({
   cycle,
   weekStart,
   weekEnd,
-  submission,
+  submissions,
   expectedType,
   initialNote,
   noteSavable,
@@ -29,11 +29,15 @@ export function ConsultWorkspace({
   cycle: number;
   weekStart: string | null;
   weekEnd: string | null;
-  submission: ConsultingSubmission | null;
+  /** 이 주차의 학생 제출 전체 (최신순). 두 번 이상 제출했으면 탭으로 모두 볼 수 있다. */
+  submissions: ConsultingSubmission[];
   expectedType: ConsultingFormType;
   initialNote: string;
   noteSavable: boolean;
 }) {
+  // 여러 번 제출된 경우 어느 제출을 보고 있는지 (기본값: 가장 최근 제출)
+  const [subIdx, setSubIdx] = useState(0);
+  const submission = submissions[subIdx] ?? submissions[0] ?? null;
   // 예전 평문 메모도 그대로 열리도록 HTML 로 정규화해 시작한다
   const initialHtml = useMemo(() => noteToHtml(initialNote), [initialNote]);
 
@@ -115,7 +119,14 @@ export function ConsultWorkspace({
       {/* 좌: 학생 제출 폼 / 우: 멘토 메모 — 화면 공유용 2단.
           items-stretch(기본) + flex 로 양쪽 카드 높이를 같게 맞춘다. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 no-print">
-        <SubmissionPanel submission={submission} typeLabel={typeLabel} cumWeek={cumWeek} />
+        <SubmissionPanel
+          submissions={submissions}
+          submission={submission}
+          selected={subIdx}
+          onSelect={setSubIdx}
+          typeLabel={typeLabel}
+          cumWeek={cumWeek}
+        />
 
         <section className="flex flex-col rounded-2xl bg-white border border-ink/5 shadow-sm">
           <div className="flex items-center justify-between gap-3 border-b border-ink/5 px-5 py-3.5">
@@ -341,12 +352,28 @@ function SaveBadge({ state, savable, error }: { state: SaveState; savable: boole
   return null;
 }
 
+/** 제출 시각 짧은 표기 (탭 라벨용) */
+function shortWhen(iso: string): string {
+  return new Date(iso).toLocaleString("ko-KR", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function SubmissionPanel({
+  submissions,
   submission,
+  selected,
+  onSelect,
   typeLabel,
   cumWeek,
 }: {
+  submissions: ConsultingSubmission[];
   submission: ConsultingSubmission | null;
+  selected: number;
+  onSelect: (i: number) => void;
   typeLabel: string;
   cumWeek: number;
 }) {
@@ -358,6 +385,28 @@ function SubmissionPanel({
           {typeLabel}
         </span>
       </div>
+
+      {/* 같은 주차에 두 번 이상 제출된 경우 — 이전 제출도 그대로 열어볼 수 있게 탭으로 둔다 */}
+      {submissions.length > 1 && (
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-ink/5 bg-ink/[0.015] px-5 py-2.5">
+          <span className="text-[11px] font-semibold text-ink/45">제출 {submissions.length}건</span>
+          {submissions.map((s, i) => (
+            <button
+              key={s.id}
+              onClick={() => onSelect(i)}
+              className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition ${
+                i === selected
+                  ? "bg-gradient-to-r from-indigo to-violet text-white shadow-sm"
+                  : "bg-white text-ink/55 border border-ink/10 hover:text-ink"
+              }`}
+            >
+              {shortWhen(s.submitted_at)}
+              {i === 0 ? " · 최신" : ""}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="p-5">
         {submission ? (
           <SubmissionBody submission={submission} />

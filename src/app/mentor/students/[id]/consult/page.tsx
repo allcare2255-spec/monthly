@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
 import { addDays, buildCycleAnchors, cumulativeWeek, resolveCycleStart } from "@/lib/dates";
-import { getSubmissionByWeekAnyForm, getNoteByWeek, getMidtermResult } from "@/lib/consulting/store";
+import { listSubmissionsByWeekAnyForm, getNoteByWeek, getMidtermResult } from "@/lib/consulting/store";
 import { weekStateFromWeek } from "@/lib/consulting/week";
 import {
   FORM_TITLE,
@@ -46,17 +46,21 @@ export default async function ConsultPage({
 
   const cumWeek = cumulativeWeek(cycle, week);
 
-  const [{ data: restarts }, { data: cycleRows }, submission, noteResult] = await Promise.all([
+  const [{ data: restarts }, { data: cycleRows }, submissions, noteResult] = await Promise.all([
     supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", id),
     // 이후 월차가 이어지도록 전체 월차 오버라이드를 가져온다
     supabase.from("coaching_cycles").select("cycle_number, start_date, end_date").eq("student_id", id),
-    getSubmissionByWeekAnyForm(id, cumWeek).catch(() => null as ConsultingSubmission | null),
+    // 같은 주차에 여러 번 제출됐어도 전부 가져온다 (이전 제출이 가려지지 않게)
+    listSubmissionsByWeekAnyForm(id, cumWeek).catch(() => [] as ConsultingSubmission[]),
     // 마이그레이션 미적용 시에도 페이지가 죽지 않도록 방어
     getNoteByWeek(id, cumWeek).then(
       (n) => ({ ready: true, note: n }),
       () => ({ ready: false, note: null as ConsultingNote | null }),
     ),
   ]);
+
+  // 라벨·중간고사 참고용으로는 가장 최근 제출을 쓴다 (화면에는 전부 보여준다)
+  const submission = submissions[0] ?? null;
 
   // 재시작 + 월차 시작일 오버라이드를 앵커로 삼아, 수정한 월차 이후가 자동으로 이어지게 한다
   const anchors = buildCycleAnchors(restarts, cycleRows);
@@ -175,7 +179,7 @@ export default async function ConsultPage({
         cycle={cycle}
         weekStart={weekStart}
         weekEnd={weekEnd}
-        submission={submission}
+        submissions={submissions}
         expectedType={expectedType}
         initialNote={noteResult.note?.note ?? ""}
         noteSavable={noteResult.ready}
