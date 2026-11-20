@@ -34,16 +34,17 @@ export async function generateMetadata({
   let type: ConsultingFormType | null = forced;
   let week: number | null = forced === "pre" ? 1 : null;
 
-  if (!type) {
-    const student = await getStudentByToken(token).catch(() => null);
-    if (student) {
-      const state = weekStateForStudent(student.coachingStartDate, student.cycleAnchors);
-      if (state.kind === "form") {
-        type = state.formType;
-        week = state.week;
-      }
+  // 제목에 학생 이름을 넣으려면 ?form= 이 붙은 링크라도 학생을 조회해야 한다
+  const student = await getStudentByToken(token).catch(() => null);
+  if (student) {
+    const state = weekStateForStudent(student.coachingStartDate, student.cycleAnchors);
+    if (state.kind === "form") {
+      // ?form= 으로 폼을 지정한 링크라도 주차는 현재 주차를 그대로 쓴다 (사전 질문지는 항상 1주차)
+      if (!type) type = state.formType;
+      if (week === null) week = state.week;
     }
   }
+  const who = student?.name ? `${student.name} 학생 ` : "";
 
   if (!type) {
     return shareMeta("SKY MATE 코칭 질문지", "SKY MATE 코칭 질문지입니다. 눌러서 작성해 주세요.");
@@ -53,13 +54,14 @@ export async function generateMetadata({
   const cycle = week ? Math.floor((week - 1) / 4) + 1 : null;
   const weekInCycle = week ? ((week - 1) % 4) + 1 : null;
   const title =
-    type === "pre"
-      ? "사전 질문지 작성"
+    who +
+    (type === "pre"
+      ? "사전 질문지"
       : cycle && weekInCycle
         ? type === "monthly"
           ? `${cycle}개월차 ${FORM_TITLE[type]}`
           : `${cycle}개월차 ${weekInCycle}주차 ${FORM_TITLE[type]}`
-        : FORM_TITLE[type];
+        : FORM_TITLE[type]);
 
   return shareMeta(title, DESC[type]);
 }
