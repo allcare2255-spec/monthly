@@ -2,20 +2,15 @@ import type { Metadata } from "next";
 import { shareMeta } from "@/lib/share-meta";
 import { getStudentByToken } from "@/lib/consulting/store";
 import { weekStateForStudent } from "@/lib/consulting/week";
-import { FORM_TITLE } from "@/lib/consulting/forms";
 import type { ConsultingFormType } from "@/types";
 import ConsultingForm from "./consulting-form";
 
 export const dynamic = "force-dynamic";
 
-const DESC: Record<ConsultingFormType, string> = {
-  pre: "상담 전에 작성하는 사전 질문지입니다. 성실하게 작성할수록 상담의 퀄리티가 올라갑니다.",
-  weekly: "이번 주 학습을 돌아보는 주간 질문지입니다. 눌러서 작성해 주세요.",
-  monthly: "한 달을 정리하는 월간 비전 컨설팅 질문지입니다. 눌러서 작성해 주세요.",
-};
+const DESC = "컨설팅 전까지 작성해주세요!";
 
-// 카톡에 붙여넣었을 때 어떤 질문지인지 바로 보이도록 폼 종류를 제목에 쓴다.
-// (학생 이름은 넣지 않는다 — 단체방에 붙여넣어도 개인정보가 새지 않게)
+// 카톡에 붙여넣었을 때 누구의 어떤 질문지인지 바로 보이도록
+// "OOO학생 17주차 주간 질문지" 형태로 제목을 만든다.
 export async function generateMetadata({
   params,
   searchParams,
@@ -44,26 +39,28 @@ export async function generateMetadata({
       if (week === null) week = state.week;
     }
   }
-  const who = student?.name ? `${student.name} 학생 ` : "";
+  const who = student?.name ? `${student.name}학생 ` : "";
 
   if (!type) {
-    return shareMeta("SKY MATE 코칭 질문지", "SKY MATE 코칭 질문지입니다. 눌러서 작성해 주세요.");
+    return shareMeta("SKY MATE 코칭 질문지", DESC);
   }
 
-  // week 는 누적 주차(1,2,3…)이므로 학생이 쓰는 "N개월차 M주차"로 바꿔 보여 준다
+  // 주간은 누적 주차 그대로(17주차 18주차…),
+  // 월간은 "N개월차" (1주차가 사전 질문지이므로 5주차=2개월차, 9주차=3개월차)
   const cycle = week ? Math.floor((week - 1) / 4) + 1 : null;
-  const weekInCycle = week ? ((week - 1) % 4) + 1 : null;
   const title =
     who +
     (type === "pre"
       ? "사전 질문지"
-      : cycle && weekInCycle
-        ? type === "monthly"
-          ? `${cycle}개월차 ${FORM_TITLE[type]}`
-          : `${cycle}개월차 ${weekInCycle}주차 ${FORM_TITLE[type]}`
-        : FORM_TITLE[type]);
+      : type === "monthly"
+        ? cycle
+          ? `${cycle}개월차 월간 질문지`
+          : "월간 질문지"
+        : week
+          ? `${week}주차 주간 질문지`
+          : "주간 질문지");
 
-  return shareMeta(title, DESC[type]);
+  return shareMeta(title, DESC);
 }
 
 export default function ConsultingFormRoute({
