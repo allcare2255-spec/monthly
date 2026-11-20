@@ -1,8 +1,14 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
+import { shareMeta } from "@/lib/share-meta";
 import { GatewayForm } from "./gateway-form";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = shareMeta(
+  "SKY MATE 코칭 대시보드 로그인",
+  "멘토·관리자 전용 로그인 페이지입니다.",
+);
 
 // 디자인은 '고등 코칭 ERP'(skymate2) 로그인 화면과 완전히 동일하게 맞춤.
 export default async function Home() {

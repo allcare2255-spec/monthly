@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { shareMeta } from "@/lib/share-meta";
 import { getServiceClient } from "@/lib/supabase";
 import { addDays, buildCycleAnchors, resolveCycleStart } from "@/lib/dates";
 import { getSharedNoteByToken, listSubmissionsByWeekAnyForm } from "@/lib/consulting/store";
@@ -10,10 +11,30 @@ import { PrintButton } from "./print-button";
 
 export const dynamic = "force-dynamic";
 
-// 학생 기록이므로 검색엔진에 절대 노출되지 않게 한다
-export const metadata: Metadata = {
-  robots: { index: false, follow: false, nocache: true },
-};
+// 카톡 미리보기에 몇 주차 레포트인지 보이게 한다. (학생 이름은 넣지 않는다)
+// 학생 기록이므로 검색엔진에 절대 노출되지 않게 robots 도 함께 막는다 — shareMeta 기본값.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const shared = await getSharedNoteByToken(token).catch(() => null);
+  if (!shared) return shareMeta("SKY MATE 코칭 레포트", "SKY MATE 코칭 레포트입니다.");
+  const cycle = Math.floor((shared.weekNumber - 1) / 4) + 1;
+  const week = ((shared.weekNumber - 1) % 4) + 1;
+  const state = weekStateFromWeek(shared.weekNumber);
+  const isMonthly = state.kind === "form" && state.formType === "monthly";
+  const title = isMonthly
+    ? `${cycle}개월차 월간 레포트`
+    : `${cycle}개월차 ${week}주차 주간 레포트`;
+  return shareMeta(
+    title,
+    isMonthly
+      ? "한 달 학습을 정리한 월간 코칭 레포트입니다. 눌러서 확인해 주세요."
+      : "이번 주 학습을 정리한 주간 코칭 레포트입니다. 눌러서 확인해 주세요.",
+  );
+}
 
 export default async function SharedConsultPage({
   params,

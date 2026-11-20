@@ -1,9 +1,22 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/share-meta";
 import "./globals.css";
 
+const DEFAULT_DESC = "SKY MATE 1:1 밀착 코칭 멘토 및 레포트 관리 시스템";
+
+// 카카오톡 미리보기 기본값. 페이지별 제목/설명은 각 page.tsx 의 shareMeta() 로 덮어쓴다.
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "SKY MATE 코칭 대시보드",
-  description: "SKY MATE 1:1 밀착 코칭 멘토 및 레포트 관리 시스템",
+  description: DEFAULT_DESC,
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    siteName: "SKY MATE",
+    title: "SKY MATE 코칭 대시보드",
+    description: DEFAULT_DESC,
+    images: [{ url: "/logo.jpg", width: 200, height: 200, alt: "SKY MATE" }],
+  },
 };
 
 export default function RootLayout({
