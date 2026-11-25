@@ -17,17 +17,17 @@ export function middleware(req: NextRequest) {
   const isPublic =
     path === "/" ||
     path.startsWith("/api/login") ||
-    // 고등 코칭 체험(영업용 데모) — 가상 학생 데이터만 사용, 로그인 불필요
+    // 고등 코칭 체험(영업용 데모), 가상 학생 데이터만 사용, 로그인 불필요
     path.startsWith("/demo") ||
-    // 체험 페이지 방문 기록 수집(쓰기 전용) — 조회 기능 없음
+    // 체험 페이지 방문 기록 수집(쓰기 전용), 조회 기능 없음
     path.startsWith("/api/demo/track") ||
-    // 복습 — 학생 공개 경로 (로그인 불필요)
+    // 복습, 학생 공개 경로 (로그인 불필요)
     path.startsWith("/quiz") ||
     path.startsWith("/api/review/quiz") ||
     path.startsWith("/api/review/submit") ||
-    // 컨설팅 폼 — 학생 공개 경로 (토큰 기반, 로그인 불필요)
+    // 컨설팅 폼, 학생 공개 경로 (토큰 기반, 로그인 불필요)
     path.startsWith("/c/") ||
-    // 컨설팅 기록 열람 — 멘토가 켠 공유 링크 (토큰 기반, 로그인 불필요)
+    // 컨설팅 기록 열람, 멘토가 켠 공유 링크 (토큰 기반, 로그인 불필요)
     path.startsWith("/r/") ||
     path.startsWith("/api/consulting");
   const session = readSession(req);

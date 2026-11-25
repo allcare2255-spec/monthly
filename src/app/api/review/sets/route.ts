@@ -5,7 +5,7 @@ import type { ReviewQuiz } from "@/types";
 
 export const runtime = "nodejs";
 
-/** 복습 세트 저장(배포) — 멘토/관리자. */
+/** 복습 세트 저장(배포), 멘토/관리자. */
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "권한 없음" }, { status: 403 });
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   }
 }
 
-/** 내 복습 세트 목록 — 멘토. (admin은 mentorId 없으면 빈 목록) */
+/** 내 복습 세트 목록, 멘토. (admin은 mentorId 없으면 빈 목록) */
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "권한 없음" }, { status: 403 });

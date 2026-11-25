@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
 
-/** 체험 링크 발급 대장 — 관리자 전용. */
+/** 체험 링크 발급 대장, 관리자 전용. */
 
 function code6() {
   const alphabet = "abcdefghjkmnpqrstuvwxyz23456789"; // 헷갈리는 글자(i, l, o, 0, 1) 제외

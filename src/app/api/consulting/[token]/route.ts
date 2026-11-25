@@ -44,7 +44,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
 
   const state = weekStateForStudent(student.coachingStartDate, student.cycleAnchors);
 
-  // 폼 지정 직접 링크 (?form=pre|weekly|monthly) — 주차 종류 무시, 항상 지정된 폼만 표시
+  // 폼 지정 직접 링크 (?form=pre|weekly|monthly), 주차 종류 무시, 항상 지정된 폼만 표시
   const forced = new URL(req.url).searchParams.get("form");
   if (forced === "pre" || forced === "weekly" || forced === "monthly") {
     // 사전 질문지는 제출 시점과 무관하게 항상 1주차로 저장된다 (submit 라우트와 동일 기준)

@@ -127,7 +127,7 @@ export function RichEditor({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
-  // Ctrl/Cmd+Shift+H — 마지막에 쓴 색을 다시 적용
+  // Ctrl/Cmd+Shift+H, 마지막에 쓴 색을 다시 적용
   const lastColorRef = useRef<{ kind: "text" | "bg"; value: string } | null>(null);
 
   // 슬래시 메뉴 상태
@@ -211,7 +211,7 @@ export function RichEditor({
           // 조합 중인 글자가 사라지고 엉뚱한 항목이 실행된다.
           if (props.event.isComposing || props.event.keyCode === 229) return false;
           // 검색 결과가 없으면 메뉴가 보이지 않는데도 키를 삼켜서
-          // Enter 로 줄바꿈이 안 되던 문제 — 결과가 없으면 에디터에 넘긴다.
+          // Enter 로 줄바꿈이 안 되던 문제, 결과가 없으면 에디터에 넘긴다.
           if (!s.items.length) return false;
           if (props.event.key === "ArrowDown") {
             setSlash((x) => ({ ...x, index: (x.index + 1) % Math.max(x.items.length, 1) }));
@@ -473,7 +473,7 @@ export function RichEditor({
   );
 }
 
-/** 슬래시 메뉴 위치 — 아래 공간이 부족하면 커서 위로, 오른쪽으로 넘치면 안쪽으로 당긴다 */
+/** 슬래시 메뉴 위치, 아래 공간이 부족하면 커서 위로, 오른쪽으로 넘치면 안쪽으로 당긴다 */
 const SLASH_MENU_H = 300;
 const SLASH_MENU_W = 250;
 function slashMenuStyle(rect: { top: number; left: number; bottom: number }): React.CSSProperties {
@@ -1050,7 +1050,7 @@ function ColorMenu({
             ))}
           </div>
           <div className="mt-2 text-[10px] text-ink/45">
-            Ctrl/Cmd + Shift + H — 마지막 색 다시 적용
+            Ctrl/Cmd + Shift + H : 마지막 색 다시 적용
           </div>
         </div>
       )}
@@ -1083,14 +1083,14 @@ function promptLink(editor: Editor) {
   editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
 }
 
-/** 토글 목록 켜기/끄기 — 예전에는 누를 때마다 토글이 겹겹이 쌓였다 */
+/** 토글 목록 켜기/끄기, 예전에는 누를 때마다 토글이 겹겹이 쌓였다 */
 function toggleDetails(editor: Editor) {
   const chain = editor.chain().focus();
   if (editor.isActive("details")) chain.unsetDetails().run();
   else chain.setDetails().run();
 }
 
-/** 목록 들여쓰기/내어쓰기 — 할 일 목록은 항목 타입이 taskItem 이라 따로 넘겨야 한다 */
+/** 목록 들여쓰기/내어쓰기, 할 일 목록은 항목 타입이 taskItem 이라 따로 넘겨야 한다 */
 function shiftListItem(editor: Editor, dir: "in" | "out") {
   const type = editor.isActive("taskItem") ? "taskItem" : "listItem";
   const chain = editor.chain().focus();

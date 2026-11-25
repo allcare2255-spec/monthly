@@ -572,7 +572,7 @@ function StudentTable({
               <td className="px-4 py-3 text-ink/70">{s.phone || "-"}</td>
               <td className="px-4 py-3 text-ink/70">{s.parent_phone || "-"}</td>
               <td className="px-4 py-3 text-ink/70">{s.coaching_start_date || "-"}</td>
-              {/* [수정 5] 담당 멘토 — 드롭다운 제거, 정적 텍스트 (수정은 수정 버튼으로만) */}
+              {/* [수정 5] 담당 멘토, 드롭다운 제거, 정적 텍스트 (수정은 수정 버튼으로만) */}
               <td className="px-4 py-3 text-ink/70">{s.mentor?.name || "미배정"}</td>
               <td className="px-4 py-3">
                 <Link

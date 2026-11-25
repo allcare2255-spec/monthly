@@ -57,13 +57,13 @@ const STATUS: DayStatus[][] = [
   ["submitted", "submitted", "submitted", "submitted", "submitted", "submitted", "submitted"],
 ];
 
-// 체험 주차(12주차) 일별 셀프 피드백 · 멘토 피드백 — 실제 기록처럼 날마다 길이·형식이 다르다
+// 체험 주차(12주차) 일별 셀프 피드백 · 멘토 피드백, 실제 기록처럼 날마다 길이·형식이 다르다
 const P = (name: string) => ({ url: `/demo/${name}.svg`, path: `demo/${name}` });
 
 const FEATURED_NOTES: Pick<DayData, "memo" | "mentor_memo" | "student_question" | "mentor_answer" | "photos">[] = [
   {
     memo:
-      "8월 17일\n1. 영단어 — 한 권 다 끝내서 오늘부터 처음으로 돌아가 복습! 처음엔 하루 50개였는데 복습이라 90개 넘게 했다\n2. 미적분 — 그래프 보고 좌극한·우극한 구분하는 게 헷갈렸다. 어느 방향에서 봐야 하는지 다시 정리해야겠다\n3. 문학 — 수특 2지문, 인물 감정에 표시하면서 읽음\n4. 영어 — 지난 모고 오답 정리\n=> 생명 개념 복습은 못 했다. 내일 앞부분에 넣기!",
+      "8월 17일\n1. 영단어: 한 권 다 끝내서 오늘부터 처음으로 돌아가 복습! 처음엔 하루 50개였는데 복습이라 90개 넘게 했다\n2. 미적분: 그래프 보고 좌극한·우극한 구분하는 게 헷갈렸다. 어느 방향에서 봐야 하는지 다시 정리해야겠다\n3. 문학: 수특 2지문, 인물 감정에 표시하면서 읽음\n4. 영어: 지난 모고 오답 정리\n=> 생명 개념 복습은 못 했다. 내일 앞부분에 넣기!",
     mentor_memo:
       "수고 많았어요 하린님! 영단어 한 권을 끝내고 바로 누적 복습으로 들어간 점이 아주 좋아요. 새 단어만 계속 나가는 것보다, 잊어가는 단어를 다시 꺼내는 복습이 암기의 절반이거든요.\n\n미적분에서 헷갈린 좌극한·우극한은 답만 확인하지 말고, 그래프에서 x가 왼쪽에서 다가올 때와 오른쪽에서 다가올 때 y값이 어디로 가는지를 손가락으로 따라가며 말로 설명해보세요. 스스로 설명이 되면 그 개념은 내 것이 된 거예요.\n\n생명 개념 복습을 스스로 체크하고 내일로 옮긴 것도 좋아요. 밀린 건 바로 다음 날 앞부분에 넣는 습관, 계속 가져가봐요!\n\n📝 26.8.17 피드백 요약 정리\n\n📌 잘한 점 :\n✅ 영단어 1회독 후 바로 누적 복습 시작\n✅ 못 한 계획을 스스로 체크하고 다음 날로 옮김\n\n📌 아쉬운 점 :\n✅ 좌극한·우극한 개념을 정리하지 않고 넘어감\n\n📌 내일 바로 실행해볼 것(Try) :\n✅ 극한 그래프 문제 3개를 말로 설명하며 다시 풀기\n✅ 생명 세포 개념 복습을 공부 시작하자마자 하기\n\n내일 꼭 실행하고 알려주세요!\n오늘도 정말 고생하셨습니다 :)",
     photos: [P("study-planner"), P("study-math")],
@@ -168,7 +168,7 @@ export const DEMO_PLAN: WeeklyPlanData = {
   weekly_goals: [
     g("영단어 1회독 완료분 누적 복습 (하루 90개)"),
     g("미적분 함수의 극한 인강 4강 + 쎈 극한 B단계"),
-    g("수특 문학 — 인물 감정·상황 표시하며 읽기"),
+    g("수특 문학: 인물 감정·상황 표시하며 읽기"),
     g("영어 모고 실전 1회 + 빈칸 오답 분석"),
     g("생명 세포와 물질대사 개념 + 단원 문제"),
   ],
@@ -258,7 +258,7 @@ export const DEMO_PLAN: WeeklyPlanData = {
   summary: { achievement: "", feedback: "" },
 };
 
-/** 요일별 완료/전체 — 줌 컨설팅 화면의 계획 점검에서 쓴다 */
+/** 요일별 완료/전체, 줌 컨설팅 화면의 계획 점검에서 쓴다 */
 export const DEMO_PLAN_RATE = (() => {
   const keys = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
   const perDay = keys.map((k) => ({
@@ -273,7 +273,7 @@ export const DEMO_PLAN_RATE = (() => {
 // ── 카톡 관리방 (재구성 예시) ───────────────────────────────────
 export type ChatSender = "mentor" | "student" | "manager";
 /**
- * 카톡 말풍선. text 안의 ⟦…⟧ 부분은 모자이크(흐림)로 보인다 — 링크·학교명 등.
+ * 카톡 말풍선. text 안의 ⟦…⟧ 부분은 모자이크(흐림)로 보인다, 링크·학교명 등.
  * long: 장문 피드백(접혀 있다가 '전체 보기'), image: 문제·풀이·달성현황 사진 자리.
  */
 export type ChatMessage =
@@ -398,7 +398,7 @@ export const DEMO_MONTHLY: MonthlyReport = {
 export const DEMO_MATCH = {
   room: `🟡${DEMO_STUDENT.mentor}T-${DEMO_STUDENT.name} 코칭방`,
   /** 코칭방 상단에 고정되는 필독 공지 */
-  pinned: "📢 스카이메이트 코칭방 필독 공지 — 코칭 일정 · 가이드라인 · 컨설팅 폼 · 핵심 수칙",
+  pinned: "📢 스카이메이트 코칭방 필독 공지: 코칭 일정 · 가이드라인 · 컨설팅 폼 · 핵심 수칙",
 };
 
 const T_NAME = `${DEMO_STUDENT.mentor.slice(1)}T`; // 다은T

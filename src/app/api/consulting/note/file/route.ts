@@ -6,7 +6,7 @@ import { getServiceClient } from "@/lib/supabase";
 const BUCKET = "coaching-photos";
 const MAX_BYTES = 20 * 1024 * 1024; // 20MB
 
-/** 첨부 허용 확장자 — 브라우저가 hwp 등에 mime 을 안 붙여주는 경우가 많아 확장자로 판단한다 */
+/** 첨부 허용 확장자, 브라우저가 hwp 등에 mime 을 안 붙여주는 경우가 많아 확장자로 판단한다 */
 const ALLOWED_EXT = new Set([
   "pdf",
   "hwp",

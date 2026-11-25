@@ -8,7 +8,7 @@ import {
   TrashNotReadyError,
 } from "@/lib/consulting/store";
 
-// 학생 접근 권한 확인 (admin 또는 담당 멘토) — /api/consulting/note 와 동일한 패턴
+// 학생 접근 권한 확인 (admin 또는 담당 멘토), /api/consulting/note 와 동일한 패턴
 async function ensureCanAccess(studentId: string) {
   const session = await getSession();
   if (!session) return { ok: false as const, error: "권한 없음", status: 401 };

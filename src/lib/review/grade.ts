@@ -29,7 +29,7 @@ export async function gradeQuiz(
         type: q.type,
         question: q.question,
         detail: plainBody(q),
-        studentAnswer: graded.map((g) => g.student || "—").join(" / "),
+        studentAnswer: graded.map((g) => g.student || "(무응답)").join(" / "),
         correctAnswer: graded.map((g) => g.correct).join(" / "),
         isCorrect,
         score,

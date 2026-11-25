@@ -40,9 +40,9 @@ export default async function WeeklyReportPage({
   const [{ data: restarts }, { data: cycleRows }, consultingSub] = await Promise.all([
     // [변경 3] 재시작 앵커
     supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", id),
-    // [변경 2] 월차 오버라이드·메모 — 이후 월차가 이어지도록 전체 월차를 가져온다
+    // [변경 2] 월차 오버라이드·메모, 이후 월차가 이어지도록 전체 월차를 가져온다
     supabase.from("coaching_cycles").select("cycle_number, start_date, end_date, notes").eq("student_id", id),
-    // 5단계 — 이 주차의 주간 성장 코칭 폼 제출(있으면 참고용 표시)
+    // 5단계, 이 주차의 주간 성장 코칭 폼 제출(있으면 참고용 표시)
     listSubmissionsByWeek(id, cumulativeWeek(cycle, week), "weekly").catch(() => [] as ConsultingSubmission[]),
   ]);
   // [수정 6] 재시작 + 월차 시작일 오버라이드를 앵커로 삼아, 수정한 월차 이후가 자동으로 이어지게 한다
@@ -53,7 +53,7 @@ export default async function WeeklyReportPage({
   // [수정 5] 월차 전체가 아닌 "해당 주차" 날짜 범위
   const weekStart = addDays(effectiveStart, (week - 1) * 7);
   const weekEnd = addDays(weekStart, 6);
-  // N개월차(사이클) 전체 기간 — 4주(28일) 또는 오버라이드된 종료일
+  // N개월차(사이클) 전체 기간, 4주(28일) 또는 오버라이드된 종료일
   const cycleEndDate = cycleRow?.end_date || addDays(effectiveStart, 27);
   const notes = (cycleRow?.notes as CycleNote[]) || [];
 
@@ -73,7 +73,7 @@ export default async function WeeklyReportPage({
         <h1 className="text-4xl font-extrabold text-gradient mt-1">
           {student.name} <span className="text-ink/30 font-bold">·</span> {cumulativeWeek(cycle, week)}주차 주간 레포트
         </h1>
-        {/* [수정 5/6] 해당 주차 날짜만 표시, 수정(연필) 불가 — 날짜 수정은 학생 상세 페이지에서 */}
+        {/* [수정 5/6] 해당 주차 날짜만 표시, 수정(연필) 불가, 날짜 수정은 학생 상세 페이지에서 */}
         {/* [수정 1] 코칭 월차·날짜 텍스트 색상 회색 → 검정 */}
         <p className="text-ink mt-2 text-sm">
           코칭 {cycle}개월차 · {weekStart} ~ {weekEnd}

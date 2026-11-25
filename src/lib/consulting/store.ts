@@ -23,9 +23,9 @@ export type ConsultingStudent = {
   phone: string | null;
   mentorName: string | null;
   coachingStartDate: string | null;
-  /** 학년 (고1/고2/고3/N수생/재수생) — 기간 한정 문항(중간고사 결과) 노출 판정에 쓴다 */
+  /** 학년 (고1/고2/고3/N수생/재수생), 기간 한정 문항(중간고사 결과) 노출 판정에 쓴다 */
   grade: string | null;
-  /** 재시작 / 월차 시작일 오버라이드 — 통으로 쉰 주를 반영한 주차 계산에 필요 */
+  /** 재시작 / 월차 시작일 오버라이드, 통으로 쉰 주를 반영한 주차 계산에 필요 */
   cycleAnchors: CycleAnchor[];
 };
 
@@ -174,7 +174,7 @@ async function querySubmissions(opts: SubQuery): Promise<ConsultingSubmission[]>
     trashReady = false;
   }
 
-  // 구 스키마 — 삭제 개념이 없으므로 휴지통은 항상 빈 목록
+  // 구 스키마, 삭제 개념이 없으므로 휴지통은 항상 빈 목록
   if (opts.scope === "trash") return [];
   const { data, error } = await build(SUB_COLS_BASE, "all");
   if (error) throw new Error(error.message);
@@ -216,7 +216,7 @@ export async function listTrashedSubmissions(studentId: string): Promise<Consult
   return querySubmissions({ studentId, scope: "trash" });
 }
 
-/** 제출물 1건 (휴지통 포함) — 권한 확인용. */
+/** 제출물 1건 (휴지통 포함), 권한 확인용. */
 export async function getSubmissionById(id: string): Promise<ConsultingSubmission | null> {
   const rows = await querySubmissions({ id, scope: "all", limit: 1 });
   return rows[0] ?? null;
@@ -278,8 +278,8 @@ export async function setSubmissionDeleted(
 }
 
 /**
- * 영구삭제 — 업로드된 이미지까지 스토리지에서 지우고 행을 제거한다. 복원 불가.
- * (스토리지 삭제가 실패해도 행 삭제는 진행 — 고아 파일이 남는 편이 낫다)
+ * 영구삭제, 업로드된 이미지까지 스토리지에서 지우고 행을 제거한다. 복원 불가.
+ * (스토리지 삭제가 실패해도 행 삭제는 진행, 고아 파일이 남는 편이 낫다)
  */
 export async function purgeSubmission(id: string): Promise<void> {
   const supabase = getServiceClient();
@@ -363,7 +363,7 @@ export async function upsertNote(input: {
  * 학생이 폼을 늦게 내거나 링크를 잘못 눌러 주차가 어긋나는 일이 있어, 멘토/관리자가
  * 화면에서 직접 바로잡을 수 있게 한다.
  *
- * 안전 규칙 — 옮길 곳에 이미 내용이 있으면 아무것도 하지 않고 막는다.
+ * 안전 규칙, 옮길 곳에 이미 내용이 있으면 아무것도 하지 않고 막는다.
  * 덮어쓰기로 남의 기록이 소리 없이 사라지는 것보다, 실패하고 안내하는 편이 낫다.
  */
 export class MoveWeekConflictError extends Error {
@@ -394,7 +394,7 @@ export async function moveConsultingWeek(input: {
     input.moveNote ? getNoteByWeek(studentId, toWeek) : null,
   ]);
 
-  // 먼저 전부 검사한 뒤에 쓴다 — 하나만 옮겨지고 다른 하나가 실패하는 상태를 막는다
+  // 먼저 전부 검사한 뒤에 쓴다, 하나만 옮겨지고 다른 하나가 실패하는 상태를 막는다
   if (input.moveSubmission) {
     if (!fromSub) throw new MoveWeekConflictError(`${fromWeek}주차에 옮길 학생 제출 폼이 없습니다.`);
     if (toSub) throw new MoveWeekConflictError(`${toWeek}주차에 이미 학생 제출 폼이 있습니다.`);

@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { ReviewSet, ReviewAttempt, QuestionType } from "@/types";
 import { plainBody, partAnswerText, circled } from "@/lib/review/cloze";
 
-// 손글씨(필기체) 폰트 — 응원 문구용 (layout.tsx 에서 Google Fonts 로 로드).
+// 손글씨(필기체) 폰트, 응원 문구용 (layout.tsx 에서 Google Fonts 로 로드).
 const handwritingFont = "'Nanum Pen Script', cursive";
 
 const TYPE_LABEL: Record<QuestionType, string> = {

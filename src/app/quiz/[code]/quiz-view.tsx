@@ -122,7 +122,7 @@ function PickSlot({
   part: Extract<PublicClozePart, { kind: "pick" }>;
   value: string;
   onChange: (v: string) => void;
-  /** 지시문에 맞춘 괄호 — "[ ]" 또는 "( )" */
+  /** 지시문에 맞춘 괄호, "[ ]" 또는 "( )" */
   bracket: "[]" | "()";
 }) {
   const isOX = part.options.length === 2 && part.options[0] === "O" && part.options[1] === "X";

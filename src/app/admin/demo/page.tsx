@@ -3,7 +3,7 @@ import { DemoView } from "./demo-view";
 
 export const dynamic = "force-dynamic";
 
-/** 체험 페이지(/demo) 개인 링크 발급 + 방문 집계 — 관리자 전용. */
+/** 체험 페이지(/demo) 개인 링크 발급 + 방문 집계, 관리자 전용. */
 export default async function AdminDemoPage({
   searchParams,
 }: {

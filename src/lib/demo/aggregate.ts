@@ -92,7 +92,7 @@ export type DemoStats = {
 
 const LAST = DEMO_STEPS.length - 1;
 
-/** 기간 내 이벤트 전량 — PostgREST 페이지 제한을 피해 1000건씩 끊어 읽는다. */
+/** 기간 내 이벤트 전량, PostgREST 페이지 제한을 피해 1000건씩 끊어 읽는다. */
 async function fetchEvents(since: string | null): Promise<EventRow[]> {
   const sb = getServiceClient();
   const out: EventRow[] = [];

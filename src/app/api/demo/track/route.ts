@@ -4,7 +4,7 @@ import { getServiceClient } from "@/lib/supabase";
 export const runtime = "nodejs";
 
 /**
- * 체험 페이지(/demo) 방문 기록 수집 — 공개 엔드포인트(쓰기 전용).
+ * 체험 페이지(/demo) 방문 기록 수집, 공개 엔드포인트(쓰기 전용).
  * 조회 기능은 없다. 집계는 관리자 탭(/admin/demo)에서만 본다.
  */
 
@@ -59,7 +59,7 @@ function parseUA(ua: string) {
   return { device, os, browser, inapp };
 }
 
-/** 원본 IP는 저장하지 않는다 — 재방문 교차 확인용 해시 앞부분만 남긴다. */
+/** 원본 IP는 저장하지 않는다, 재방문 교차 확인용 해시 앞부분만 남긴다. */
 function hashIp(ip: string | null) {
   if (!ip) return null;
   return createHash("sha256").update(`skymate-demo:${ip}`).digest("hex").slice(0, 16);

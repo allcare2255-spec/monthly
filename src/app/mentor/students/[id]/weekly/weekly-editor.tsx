@@ -49,7 +49,7 @@ export function WeeklyReportEditor({
   // [수정 4] 학생에게 보내기 → 완성 레포트 미리보기 화면
   const [preview, setPreview] = useState(false);
   const [validationModal, setValidationModal] = useState<string[] | null>(null);
-  // 마지막으로 발행한 저장 요청 번호 — 오래된 응답이 최신 편집을 덮어쓰지 않도록 가드
+  // 마지막으로 발행한 저장 요청 번호, 오래된 응답이 최신 편집을 덮어쓰지 않도록 가드
   const writeSeq = useRef(0);
 
   useEffect(() => {
@@ -205,10 +205,10 @@ export function WeeklyReportEditor({
         </button>
       </div>
 
-      {/* 빠른 입력 표 (인쇄 제외) — 아래 "일별 기록" 카드와 데이터 공유 */}
+      {/* 빠른 입력 표 (인쇄 제외), 아래 "일별 기록" 카드와 데이터 공유 */}
       <WeekQuickGrid days={report.day_data} weekLabel={cumWeek} onCellChange={commitDayByDate} />
 
-      {/* [수정 1] 1. 통계 요약 — 3분할 */}
+      {/* [수정 1] 1. 통계 요약, 3분할 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard label="평균 기상 시간" value={stats?.avgWake || "-"} />
         <StatCard label="평균 순공 시간" value={minutesToHm(stats?.avgStudy)} />
@@ -342,7 +342,7 @@ function StatCard({
   );
 }
 
-// ☁️ 제출 과제 인증 — 요일별 구름 아이콘 스트릭 (제출한 날 = 하늘색 구름)
+// ☁️ 제출 과제 인증, 요일별 구름 아이콘 스트릭 (제출한 날 = 하늘색 구름)
 function CloudIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
@@ -362,7 +362,7 @@ const CLOUD_TONE_STYLE: Record<CloudTone, { bg: string; icon: string; label: str
 function submitTone(status: DayStatus): CloudTone {
   return status === "submitted" ? "full" : status === "incomplete" ? "partial" : "none";
 }
-// 요일 네모 배경 — 구름색(채도 있는 톤)에 좌상단 햇빛 드는 듯한 대각선 그라데이션 (반 단계씩 연하게)
+// 요일 네모 배경, 구름색(채도 있는 톤)에 좌상단 햇빛 드는 듯한 대각선 그라데이션 (반 단계씩 연하게)
 const DAY_RECT_GRADIENT: Record<CloudTone, string> = {
   full: "bg-gradient-to-br from-[#5ac8fa] via-[#23b1f0] to-[#0894d8]",
   partial: "bg-gradient-to-br from-[#9bdcfc] via-[#5ac8fa] to-[#23b1f0]",
@@ -389,7 +389,7 @@ function CertCard({
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white border border-ink/5 p-5 shadow-md">
-      {/* 장식 그라데이션 — 끝 색을 'transparent'(=rgba(0,0,0,0)) 로 두면 일부 PDF 렌더러가
+      {/* 장식 그라데이션, 끝 색을 'transparent'(=rgba(0,0,0,0)) 로 두면 일부 PDF 렌더러가
           투명이 아니라 '검정'으로 보간해 카드 전체가 새까맣게 인쇄된다.
           같은 RGB 의 알파 0 값을 명시해 어떤 렌더러에서도 검정이 섞이지 않게 한다.
           (deco-grad: 인쇄 시에는 아예 숨겨 이중으로 방지) */}
@@ -399,7 +399,7 @@ function CertCard({
         {/* 게이지바 */}
         <SemiGauge value={value} total={total} label={gaugeLabel} />
         {/* 요일별 구름 스트릭 */}
-        {/* 7칸 그리드 + 칸 폭에 맞춰 줄어드는 원 — 인쇄 여백·배율이 PC 마다 달라 카드가 좁아져도
+        {/* 7칸 그리드 + 칸 폭에 맞춰 줄어드는 원, 인쇄 여백·배율이 PC 마다 달라 카드가 좁아져도
             양 끝 요일이 카드 밖으로 잘리지 않는다 */}
         <div className="mt-6 mx-auto grid max-w-[300px] grid-cols-7 items-end gap-1 sm:gap-1.5">
           {days.map((d, i) => {
@@ -428,7 +428,7 @@ function CertCard({
   );
 }
 
-// ⏰ 기상 인증 게이지 (반원형 게이지 차트 — 그라데이션 호 + 둥근 끝점)
+// ⏰ 기상 인증 게이지 (반원형 게이지 차트, 그라데이션 호 + 둥근 끝점)
 function gaugePoint(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = (angleDeg * Math.PI) / 180;
   return { x: cx + r * Math.sin(rad), y: cy - r * Math.cos(rad) };
@@ -440,9 +440,9 @@ function gaugeArc(cx: number, cy: number, r: number, startAngle: number, endAngl
   return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
 }
 
-// 반원(180°) 게이지 — 재사용 (기상 인증 / 제출 과제 인증 공통)
+// 반원(180°) 게이지, 재사용 (기상 인증 / 제출 과제 인증 공통)
 function SemiGauge({ value, total, label }: { value: number; total: number; label: string }) {
-  // 인쇄 시 편집화면/미리보기 간 그라데이션 id 충돌로 색이 사라지는 문제 방지 — 인스턴스별 고유 id
+  // 인쇄 시 편집화면/미리보기 간 그라데이션 id 충돌로 색이 사라지는 문제 방지, 인스턴스별 고유 id
   const gradId = `gaugeGrad-${useId().replace(/:/g, "")}`;
   const pct = total > 0 ? value / total : 0;
   // 왼쪽에서 위로 둥글게 떠서 오른쪽으로
@@ -478,7 +478,7 @@ function SemiGauge({ value, total, label }: { value: number; total: number; labe
             strokeLinecap="round"
           />
         )}
-        {/* 끝점 — 아주 작은 흰 점 */}
+        {/* 끝점, 아주 작은 흰 점 */}
         {pct > 0 && <circle cx={dot.x} cy={dot.y} r="2.5" fill="#ffffff" />}
       </svg>
       {/* 중앙 텍스트 (반원 안쪽) */}
@@ -492,7 +492,7 @@ function SemiGauge({ value, total, label }: { value: number; total: number; labe
 
 export function DonutCharts({ report }: { report: WeeklyReport }) {
   const days = report.day_data;
-  // 제출 과제 인증 — 게이지 '제출 일수'는 제출 완료 + 과제 미흡 (미제출만 제외)
+  // 제출 과제 인증, 게이지 '제출 일수'는 제출 완료 + 과제 미흡 (미제출만 제외)
   const submitTones: CloudTone[] = days.map((d) => submitTone(d.status));
   const submitted = submitTones.filter((t) => t !== "none").length;
   // 기상 인증: 09:00 이내=인증 완료(full), 09:00 초과=지각 인증(partial), 미입력=미인증(none)
@@ -537,7 +537,7 @@ export function DonutCharts({ report }: { report: WeeklyReport }) {
   );
 }
 
-// ── 주간 계획표 (읽기 전용 — 레포트에 표시) ──
+// ── 주간 계획표 (읽기 전용, 레포트에 표시) ──
 const PLAN_WEEKDAYS: { key: WeekdayKey; ko: string }[] = [
   { key: "mon", ko: "월요일" },
   { key: "tue", ko: "화요일" },
@@ -621,7 +621,7 @@ export function WeeklyPlanView({
 
         {/* 요일별 + 주간 계획 달성률(8번째 칸: 목요일 아래·일요일 옆)
             PDF 인쇄 시 줄 중간에서 잘리지 않도록 2줄(월~목 / 금~일+달성률)을
-            각각 별도 그리드로 나눈다 — .plan-grid-row 는 print 에서 break-inside: avoid */}
+            각각 별도 그리드로 나눈다, .plan-grid-row 는 print 에서 break-inside: avoid */}
         {[PLAN_WEEKDAYS.slice(0, 4), PLAN_WEEKDAYS.slice(4)].map((row, rowIdx) => (
           <div key={rowIdx} className="plan-grid-row grid grid-cols-2 gap-3 sm:grid-cols-4">
             {row.map((wd, j) => {
@@ -653,7 +653,7 @@ export function WeeklyPlanView({
               );
             })}
 
-            {/* 주간 계획 달성률 — 마지막(8번째) 칸: 라벨은 좌상단, 숫자는 정중앙 */}
+            {/* 주간 계획 달성률, 마지막(8번째) 칸: 라벨은 좌상단, 숫자는 정중앙 */}
             {rowIdx === 1 && (
               <div className="preview-day-card rounded-2xl border border-ink/10 p-3 flex flex-col">
                 <div className={`${SECTION_LABEL} mb-1`}>주간 계획 달성률</div>
@@ -691,7 +691,7 @@ const STATUS_LABEL: Record<DayStatus, string> = {
 const STATUS_RADIO: DayStatus[] = ["submitted", "incomplete", "missed"];
 
 // ───────────────────────────────────────────────────────────
-// 빠른 입력 표 (인쇄 제외) — 요일별 기상/목표·실제 순공 시간을 한 표에서
+// 빠른 입력 표 (인쇄 제외), 요일별 기상/목표·실제 순공 시간을 한 표에서
 // 빠르게 입력. 아래 "일별 기록" 카드와 동일한 day_data 를 공유해 상호 반영됨.
 // ───────────────────────────────────────────────────────────
 function minsToHmInput(min: number | null | undefined): string {
@@ -805,7 +805,7 @@ function QuickGridCell({
       onCellChange(day.date, { target_study_minutes: parsed });
       return;
     }
-    // 실제 순공 시간 — 일별 카드와 동일한 상태 연동
+    // 실제 순공 시간, 일별 카드와 동일한 상태 연동
     if (parsed === null) {
       onCellChange(day.date, {
         study_minutes: null,
@@ -1060,7 +1060,7 @@ function DayCard({
 
 const MAX_PHOTOS = 4;
 
-// 업로드 전 이미지 다운스케일 — 휴대폰 원본(수 MB)을 줄여 저장/인쇄(PDF) 부담을 낮춘다.
+// 업로드 전 이미지 다운스케일, 휴대폰 원본(수 MB)을 줄여 저장/인쇄(PDF) 부담을 낮춘다.
 // 디코드 불가(HEIC 등)나 실패 시에는 원본을 그대로 사용한다.
 async function downscaleImage(file: File, maxDim = 1200, quality = 0.7): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
@@ -1287,7 +1287,7 @@ function PhotoSection({
   );
 }
 
-// 기상 시간 — 시/분 숫자 직접 입력
+// 기상 시간, 시/분 숫자 직접 입력
 function WakeTimeInput({
   value,
   onChange,
@@ -1418,7 +1418,7 @@ function AutoTextarea({
   );
 }
 
-// 일별 텍스트 입력 — 타이핑 중에는 로컬 상태만 갱신하고, 입력을 멈춘 뒤 0.8초 후
+// 일별 텍스트 입력, 타이핑 중에는 로컬 상태만 갱신하고, 입력을 멈춘 뒤 0.8초 후
 // 자동 저장(+ 포커스를 잃을 때 즉시 저장). 글자마다 PATCH 하지 않아 렉/입력 유실을 방지.
 function BufferedTextarea({
   value,
@@ -1569,7 +1569,7 @@ function ReportPreview({
     { label: "다음 주에 하면 좋을 것", value: report.next_week_actions },
   ].filter((c) => (c.value || "").trim());
 
-  // 표시용 기간 포맷팅 (데이터 변경 아님) — "2026-06-01" → "2026.06.01"
+  // 표시용 기간 포맷팅 (데이터 변경 아님), "2026-06-01" → "2026.06.01"
   const fmtDot = (d: string) => (d || "").replace(/-/g, ".");
   const [periodYear, periodMonth] = (weekStart || "").split("-");
   const periodTitle = periodYear && periodMonth ? `${periodYear}년 ${Number(periodMonth)}월` : "";
@@ -1598,11 +1598,11 @@ function ReportPreview({
       </div>
 
       {/* 완성 문서 */}
-      {/* 배너는 화면에서도 인쇄본처럼 맨 위에 붙인다 — 인쇄 설정을 타지 않는 방식(캡처 도구 등)으로
+      {/* 배너는 화면에서도 인쇄본처럼 맨 위에 붙인다, 인쇄 설정을 타지 않는 방식(캡처 도구 등)으로
           저장해도 배너가 떠 보이지 않게 (위쪽 여백 0 · 아래 모서리만 둥글게) */}
       <div className="preview-doc mx-auto max-w-[860px] px-4 sm:px-6 pt-0 pb-6 sm:pb-8">
         {/* 상단 브랜드 헤더 배너 */}
-        {/* 그라데이션은 인라인 + 단색 폴백 (월간 레포트와 동일) — 어떤 브라우저·인쇄 환경에서도
+        {/* 그라데이션은 인라인 + 단색 폴백 (월간 레포트와 동일), 어떤 브라우저·인쇄 환경에서도
             배너 색이 빠져 흰 바탕에 흰 글씨만 남는 일이 없게 한다. */}
         <header
           className="preview-banner overflow-hidden rounded-b-3xl px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25"
@@ -1634,7 +1634,7 @@ function ReportPreview({
           </div>
         </header>
 
-        {/* 본문 (인쇄 시 좌우/하단 여백 — 배너만 풀블리드) */}
+        {/* 본문 (인쇄 시 좌우/하단 여백, 배너만 풀블리드) */}
         <div className="preview-body">
         {/* 헤더 아래 학생명 영역 */}
         <div className="px-1 pt-7 pb-6 sm:pt-8">
@@ -1647,7 +1647,7 @@ function ReportPreview({
           <p className="mt-2 text-sm text-ink/55">{fmtDot(weekStart)} ~ {fmtDot(weekEnd)}</p>
         </div>
 
-        {/* [수정 1] 1. 통계 요약 — 카드별 파스텔 톤 */}
+        {/* [수정 1] 1. 통계 요약, 카드별 파스텔 톤 */}
         <div className="grid grid-cols-1 gap-4 mb-7 sm:grid-cols-3">
           <PreviewStat label="평균 기상 시간" value={stats?.avgWake || "-"} />
           <PreviewStat label="평균 순공 시간" value={minutesToHm(stats?.avgStudy)} />
@@ -1666,7 +1666,7 @@ function ReportPreview({
           </div>
         )}
 
-        {/* [수정 1] 3. 멘토 총평 — 내용 있는 항목만 */}
+        {/* [수정 1] 3. 멘토 총평, 내용 있는 항목만 */}
         {comments.length > 0 && (
           <div className="mb-8">
             <h2 className="text-base font-bold text-ink mb-3">멘토 총평</h2>

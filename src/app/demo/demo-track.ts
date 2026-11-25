@@ -49,7 +49,7 @@ function put(store: Storage | null, k: string, v: string) {
   try {
     store?.setItem(k, v);
   } catch {
-    /* 사파리 시크릿 모드 등 — 무시 */
+    /* 사파리 시크릿 모드 등, 무시 */
   }
 }
 
@@ -119,7 +119,7 @@ function leave(reason: string) {
   send("leave", { nav: reason });
 }
 
-/** 페이지 진입 — 마운트 시 한 번만 호출한다. */
+/** 페이지 진입, 마운트 시 한 번만 호출한다. */
 export function trackInit(first: { index: number; key: string; label: string }) {
   if (ready || typeof window === "undefined") return;
 

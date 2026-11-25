@@ -1,14 +1,14 @@
 import { Extension, type Editor } from "@tiptap/core";
 
 /**
- * 노션식 "블록 배경색" — 글자 뒤가 아니라 블록 폭 전체에 색 띠를 깐다.
+ * 노션식 "블록 배경색", 글자 뒤가 아니라 블록 폭 전체에 색 띠를 깐다.
  *
  * 글자 배경색(BackgroundColor 마크)은 글자가 짧으면 색도 짧게 끊기지만,
  * 이건 블록 속성이라 제목처럼 짧은 줄도 한 줄 전체가 채워진다.
  * 저장 HTML: <h2 data-block-bg="#e7f3f8" style="background:#e7f3f8">
  */
 
-/** 배경을 입힐 수 있는 블록 — 목록은 항목(listItem/taskItem) 단위로 칠한다 */
+/** 배경을 입힐 수 있는 블록, 목록은 항목(listItem/taskItem) 단위로 칠한다 */
 export const BLOCK_BG_TYPES = [
   "paragraph",
   "heading",
@@ -42,7 +42,7 @@ export const BlockBackground = Extension.create({
 
 /**
  * 선택 영역에 걸친 블록들의 배경색을 바꾼다 (value 가 빈 문자열이면 해제).
- * 바깥 블록이 먼저 걸리면 그 안쪽은 건너뛴다 — 인용문 안 문단까지 이중으로 칠하지 않기 위해.
+ * 바깥 블록이 먼저 걸리면 그 안쪽은 건너뛴다, 인용문 안 문단까지 이중으로 칠하지 않기 위해.
  */
 export function applyBlockBackground(editor: Editor, value: string) {
   const { from, to } = editor.state.selection;

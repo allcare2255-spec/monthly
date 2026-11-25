@@ -18,7 +18,7 @@ export function shareMeta(
   opts?: { index?: boolean },
 ): Metadata {
   return {
-    // 템플릿(" · SKY MATE") 없이 지정한 제목 그대로 쓴다 — 카톡 카드가 짧아야 읽힌다
+    // 템플릿(" · SKY MATE") 없이 지정한 제목 그대로 쓴다, 카톡 카드가 짧아야 읽힌다
     title: { absolute: title },
     description,
     openGraph: {

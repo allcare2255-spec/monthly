@@ -183,7 +183,7 @@ function CycleCard({
   const cycleFirstWeek = (cycle - 1) * 4 + 1;
   const cycleLastWeek = cycle * 4;
   const isCurrent = currentWeek >= cycleFirstWeek && currentWeek <= cycleLastWeek;
-  // 4주가 모두 지난 월차 — 헤더 라벨과 월간 뱃지를 회색으로 (주차 뱃지와 동일한 기준)
+  // 4주가 모두 지난 월차, 헤더 라벨과 월간 뱃지를 회색으로 (주차 뱃지와 동일한 기준)
   const isPast = currentWeek > cycleLastWeek;
 
   // 이미 지나간 주차(누적 주차 < 현재 주차)의 계획표·레포트 뱃지는 회색 처리

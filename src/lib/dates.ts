@@ -140,7 +140,7 @@ export function currentWeekWithAnchors(
   if (!coachingStart) return 0;
   if (daysBetween(coachingStart, today) < 0) return 0;
   const maxAnchorCycle = anchors.reduce((m, a) => Math.max(m, a.cycle), 1);
-  // 앵커 이후 월차는 28일씩 이어지므로 시작일이 단조 증가 — 오늘을 넘어서면 멈춘다
+  // 앵커 이후 월차는 28일씩 이어지므로 시작일이 단조 증가, 오늘을 넘어서면 멈춘다
   let cycle = 1;
   for (let c = 2; c <= maxAnchorCycle + 200; c++) {
     if (daysBetween(resolveCycleStart(coachingStart, c, anchors), today) < 0) break;

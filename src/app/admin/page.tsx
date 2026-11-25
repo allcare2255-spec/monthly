@@ -3,7 +3,7 @@ import { getServiceClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-/** 카운트 조회 — 실패 시 1회 재시도하고, 그래도 실패하면 null(=화면에 "–")을 반환한다.
+/** 카운트 조회, 실패 시 1회 재시도하고, 그래도 실패하면 null(=화면에 ", ")을 반환한다.
  *  실패를 0 으로 뭉개면 "등록 학생 0 / 미배정 -45" 같은 잘못된 숫자가 표시되므로
  *  절대 0 으로 대체하지 않는다. */
 async function countRows(
@@ -101,7 +101,7 @@ function StatCard({
   alert,
 }: {
   label: string;
-  /** null = 조회 실패(0 이 아님) → "–" 로 표시 */
+  /** null = 조회 실패(0 이 아님) → ", " 로 표시 */
   value: number | null;
   href: string;
   gradient: string;
@@ -123,7 +123,7 @@ function StatCard({
           <div className={`text-4xl font-extrabold mt-2 tabular-nums ${
             failed ? "text-ink/25" : alert && value > 0 ? "text-gradient-warm" : "text-gradient"
           }`}>
-            {failed ? "–" : value}
+            {failed ? "-" : value}
           </div>
           {failed && <div className="text-[11px] text-ink/40 mt-1">불러오지 못함 · 새로고침</div>}
         </div>

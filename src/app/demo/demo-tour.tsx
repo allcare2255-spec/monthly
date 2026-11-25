@@ -101,7 +101,7 @@ export function DemoTour() {
 
   const isLast = step === steps.length - 1;
 
-  // 방문 기록 — 결과는 관리자 탭(/admin/demo)에서만 본다.
+  // 방문 기록, 결과는 관리자 탭(/admin/demo)에서만 본다.
   useEffect(() => {
     trackInit({ index: 0, key: steps[0].key, label: steps[0].label });
     return trackStop;
@@ -236,7 +236,7 @@ export function DemoTour() {
 
 
 function ReportBanner({ kind, start, end }: { kind: "주간" | "월간"; start: string; end: string }) {
-  // 월간은 대부분의 날짜가 속한 달(종료일 기준)로 표기 — 7/27~8/23 이면 "8월"
+  // 월간은 대부분의 날짜가 속한 달(종료일 기준)로 표기, 7/27~8/23 이면 "8월"
   const [y, m] = (kind === "월간" ? end : start).split("-");
   return (
     <header

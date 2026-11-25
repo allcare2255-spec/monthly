@@ -18,7 +18,7 @@ export function MentorsView({ initial }: { initial: Mentor[] }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // [수정 11] 정렬 — 기본 이름순
+  // [수정 11] 정렬, 기본 이름순
   const [sortKey, setSortKey] = useState<SortKey>("name");
 
   // [수정 5] 멘토 인라인 수정
@@ -41,7 +41,7 @@ export function MentorsView({ initial }: { initial: Mentor[] }) {
         if (!bv) return -1;
         return av.localeCompare(bv);
       }
-      // unique_number — 값 없는 항목은 뒤로
+      // unique_number, 값 없는 항목은 뒤로
       const an = a.unique_number;
       const bn = b.unique_number;
       if (an == null && bn == null) return a.name.localeCompare(b.name, "ko");

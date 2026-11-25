@@ -36,7 +36,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
     reviewSets,
     consulting,
   ] = await Promise.all([
-    // 사이클 목록 — weekly/monthly reports에 존재하는 모든 cycle_number
+    // 사이클 목록, weekly/monthly reports에 존재하는 모든 cycle_number
     supabase.from("coaching_weekly_reports").select("cycle_number, week_number").eq("student_id", id),
     supabase.from("coaching_monthly_reports").select("cycle_number").eq("student_id", id),
     // [수정 9] 월차별 날짜 오버라이드 / 메모
@@ -47,7 +47,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
     listReviewSetsByStudent(id) as Promise<{
       id: string; code: string; title: string; subject: string | null; created_at: string;
     }[]>,
-    // 컨설팅 폼 — 공개 링크 토큰 + 제출 내역 (마이그레이션 미적용 시에도 페이지가 죽지 않도록 방어)
+    // 컨설팅 폼, 공개 링크 토큰 + 제출 내역 (마이그레이션 미적용 시에도 페이지가 죽지 않도록 방어)
     (async () => {
       try {
         const token = await ensureToken(id);
@@ -133,7 +133,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
         </div>
       </section>
 
-      {/* 복습 — 이 학생용 출제/기록 */}
+      {/* 복습, 이 학생용 출제/기록 */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-ink">복습 테스트</h2>
@@ -167,7 +167,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
         )}
       </section>
 
-      {/* 컨설팅 폼 — 학생 제출 링크 + 줌 컨설팅 prep */}
+      {/* 컨설팅 폼, 학생 제출 링크 + 줌 컨설팅 prep */}
       {consultingReady && consultingToken ? (
         <ConsultingSection
           token={consultingToken}

@@ -16,7 +16,7 @@
   --color-sunset: #FB923C;
 }
 
-/* 구형 브라우저(크롬·엣지 110 이하 등) 호환 — Tailwind v4 의 그라데이션 클래스는
+/* 구형 브라우저(크롬·엣지 110 이하 등) 호환, Tailwind v4 의 그라데이션 클래스는
    "to right in oklab" 처럼 색 보간 방식을 붙여 쓰는데, 이를 모르는 브라우저는 배경 전체를 버린다.
    → 배너가 사라지고 흰 배경에 흰 글씨만 남는 문제. 이런 브라우저에서는 보간 방식을 뺀 값으로 바꾼다. */
 @supports not (background-image: linear-gradient(in oklab, red, red)) {
@@ -141,7 +141,7 @@ html, body {
 }
 
 /* ───────────────────────────────────────
-   컨설팅 화면 — 화면 공유용 넓은 2단
+   컨설팅 화면, 화면 공유용 넓은 2단
    Shell 의 max-w-6xl 은 레포트 가독성 기준이라, 학생 제출 내용과 멘토 메모를
    나란히 놓는 컨설팅 페이지에서만 완화해 좌우 여백을 줄인다.
    (헤더/네비도 같이 넓혀 본문과 좌우 정렬을 맞춘다)
@@ -154,7 +154,7 @@ body.consult-page main {
 }
 
 /* ───────────────────────────────────────
-   컨설팅 내용 정리 — 리치 텍스트(노션식) 본문
+   컨설팅 내용 정리, 리치 텍스트(노션식) 본문
    .rich-content 는 에디터와 PDF 미리보기가 함께 쓴다.
 ─────────────────────────────────────── */
 .rich-content {
@@ -172,7 +172,7 @@ body.consult-page main {
 .rich-content h2 { font-size: 19px; font-weight: 800; margin-top: 16px; line-height: 1.4; }
 .rich-content h3 { font-size: 16px; font-weight: 700; margin-top: 14px; line-height: 1.45; }
 
-/* 목록 — Tailwind preflight 가 마커를 지우므로 명시적으로 되살린다.
+/* 목록, Tailwind preflight 가 마커를 지우므로 명시적으로 되살린다.
    들여쓰기 단계마다 기호가 바뀌고 3단계 주기로 순환한다 (노션과 동일). */
 .rich-content ul,
 .rich-content ol {
@@ -198,7 +198,7 @@ body.consult-page main {
 .rich-content ol ol ol ol ol { list-style-type: lower-alpha; }
 .rich-content ol ol ol ol ol ol { list-style-type: lower-roman; }
 
-/* 할 일 목록 — 단계와 상관없이 항상 같은 체크박스 */
+/* 할 일 목록, 단계와 상관없이 항상 같은 체크박스 */
 .rich-content ul[data-type="taskList"] {
   list-style: none;
   padding-left: 0;
@@ -514,7 +514,7 @@ body.preview-active .editor-drag-handle { display: none !important; }
   color: rgba(11, 16, 32, 0.35);
 }
 
-/* 에디터 본체 — 카드 높이에 맞춰 늘어난다 */
+/* 에디터 본체, 카드 높이에 맞춰 늘어난다 */
 .consult-note-editor {
   flex: 1 1 auto;
   min-height: 480px;
@@ -552,7 +552,7 @@ body.preview-active .editor-drag-handle { display: none !important; }
   cursor: pointer;
 }
 
-/* 저장할 수 없는 주차 — 눌러도 반응이 없으니 아예 잠긴 것으로 보이게 한다 */
+/* 저장할 수 없는 주차, 눌러도 반응이 없으니 아예 잠긴 것으로 보이게 한다 */
 .editor-toolbar.is-disabled {
   opacity: 0.45;
   pointer-events: none;
@@ -634,7 +634,7 @@ body.preview-active .editor-drag-handle { display: none !important; }
   justify-content: center;
 }
 .editor-color-cell:hover { outline: 2px solid rgba(14, 165, 233, 0.5); }
-/* 블록 배경색 칸 — 글자가 없으니 옅은 색도 보이도록 테두리를 준다 */
+/* 블록 배경색 칸, 글자가 없으니 옅은 색도 보이도록 테두리를 준다 */
 .editor-color-cell-block { border: 1px solid rgba(11, 16, 32, 0.12); }
 .editor-color-hint {
   font-weight: 500;
@@ -642,7 +642,7 @@ body.preview-active .editor-drag-handle { display: none !important; }
   color: rgba(11, 16, 32, 0.35);
 }
 
-/* 블록 배경색 — 글자 뒤가 아니라 줄 전체에 색 띠가 깔린다 (노션과 동일) */
+/* 블록 배경색, 글자 뒤가 아니라 줄 전체에 색 띠가 깔린다 (노션과 동일) */
 .rich-content [data-block-bg] {
   border-radius: 6px;
   padding: 3px 8px;
@@ -739,10 +739,10 @@ body.preview-active .editor-drag-handle { display: none !important; }
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  /* 접어둔 토글도 PDF 에는 내용이 남아야 한다 — 기록이 통째로 사라지면 안 되므로 펼쳐서 인쇄 */
+  /* 접어둔 토글도 PDF 에는 내용이 남아야 한다, 기록이 통째로 사라지면 안 되므로 펼쳐서 인쇄 */
   .rich-content details > [data-type="detailsContent"] { display: block !important; }
   .rich-content details > summary::before { content: "▼" !important; }
-  /* html 도 흰색으로 — 내용이 끝난 마지막 장 아래에 화면 배경(연회색)이 찍히지 않게 */
+  /* html 도 흰색으로, 내용이 끝난 마지막 장 아래에 화면 배경(연회색)이 찍히지 않게 */
   html, body { background: #FFFFFF !important; }
   .mesh-bg, .mesh-bg-soft { background: #FFFFFF !important; }
   .glass, .glass-dark {
@@ -750,11 +750,11 @@ body.preview-active .editor-drag-handle { display: none !important; }
     backdrop-filter: none !important;
     border-color: rgba(0, 0, 0, 0.08) !important;
   }
-  /* PDF 여백 — 2페이지부터 상단 여백을 줘 페이지 넘김 시 내용이 맨 위에 붙지 않게 함.
+  /* PDF 여백, 2페이지부터 상단 여백을 줘 페이지 넘김 시 내용이 맨 위에 붙지 않게 함.
      1페이지는 대문 배너 풀블리드를 위해 0.
      (브라우저는 이 여백 자리에 머리글/바닥글을 인쇄하므로, 저장 창에서
-      "머리글/바닥글"을 해제하면 날짜·제목 글자 없이 흰 여백만 남는다 — 크롬이 설정 기억) */
-  /* 좌우 여백 10mm — 0(풀블리드)으로 두면 종이 가장자리를 인쇄하지 못하는 프린터/드라이버에서
+      "머리글/바닥글"을 해제하면 날짜·제목 글자 없이 흰 여백만 남는다, 크롬이 설정 기억) */
+  /* 좌우 여백 10mm, 0(풀블리드)으로 두면 종이 가장자리를 인쇄하지 못하는 프린터/드라이버에서
      브라우저가 "인쇄 가능 영역에 맞추기"로 전체를 축소하고, 그 축소가 좌상단 기준이라
      왼쪽은 붙고 오른쪽만 흰 여백이 남는 '한쪽 쏠림'이 생긴다.
      세로 여백은 기존 값을 그대로 유지한다 (월간 레포트 1페이지 배치 보존). */
@@ -785,7 +785,7 @@ body.preview-active .editor-drag-handle { display: none !important; }
      달력 카드가 통째로 2페이지로 밀려 1페이지 아래가 비었다 → 16mm 로 줄여 여유를 확보. */
   .wake-cell,
   .wake-cell-empty { min-height: 16mm !important; }
-  /* 타일 광택 그라데이션도 인쇄에서는 빼고 단색만 — 어떤 뷰어·프린터에서도 색이 그대로 찍힌다 */
+  /* 타일 광택 그라데이션도 인쇄에서는 빼고 단색만, 어떤 뷰어·프린터에서도 색이 그대로 찍힌다 */
   .wake-cell { background-image: none !important; }
   /* 그래도 1페이지에 안 들어가는 환경이면, 카드를 통째로 넘기지 말고 달력 "줄" 사이에서만 나눈다
      (1페이지 아래가 텅 비는 것 방지). 줄 자체는 잘리지 않게 유지. */
@@ -883,7 +883,7 @@ body.preview-active .editor-drag-handle { display: none !important; }
 
   .preview-photos { page-break-inside: avoid; break-inside: avoid; }
 
-  /* 컨설팅 내용 정리(리치 텍스트) — 항목·이미지가 페이지 경계에서 잘리지 않게 */
+  /* 컨설팅 내용 정리(리치 텍스트), 항목·이미지가 페이지 경계에서 잘리지 않게 */
   .rich-content li,
   .rich-content img,
   .rich-content blockquote,
@@ -923,7 +923,7 @@ body.preview-active .editor-drag-handle { display: none !important; }
        > .recharts-wrapper(화면에서 측정된 고정 px 폭) > svg.recharts-surface(viewBox 보유).
      인쇄 시 inner div 의 width:0 을 100% 로 풀고, 래퍼·SVG 폭을 100% 로 맞추면
      SVG 자체 viewBox 비율대로 페이지 폭에 맞춰 축소된다.
-     ⚠ 높이는 절대 auto/변경하지 않는다 — 건드리면 컨테이너가 0 으로 접혀 차트가 사라짐. */
+     ⚠ 높이는 절대 auto/변경하지 않는다, 건드리면 컨테이너가 0 으로 접혀 차트가 사라짐. */
   .print-target .recharts-responsive-container {
     width: 100% !important;
   }

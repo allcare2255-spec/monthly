@@ -3,7 +3,7 @@ import { getSession } from "@/lib/session";
 import { getServiceClient } from "@/lib/supabase";
 import { moveConsultingWeek, MoveWeekConflictError } from "@/lib/consulting/store";
 
-// 학생 접근 권한 확인 (admin 또는 담당 멘토) — /api/consulting/note 와 동일한 패턴
+// 학생 접근 권한 확인 (admin 또는 담당 멘토), /api/consulting/note 와 동일한 패턴
 async function ensureCanAccess(studentId: string) {
   const session = await getSession();
   if (!session) return { ok: false as const, error: "권한 없음", status: 401 };
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(result);
   } catch (e) {
-    // 옮길 곳에 이미 내용이 있는 경우 — 사용자 잘못이 아니라 안내가 필요한 상황이므로 409
+    // 옮길 곳에 이미 내용이 있는 경우, 사용자 잘못이 아니라 안내가 필요한 상황이므로 409
     if (e instanceof MoveWeekConflictError) {
       return NextResponse.json({ error: e.message }, { status: 409 });
     }

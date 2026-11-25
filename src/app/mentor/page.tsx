@@ -37,7 +37,7 @@ export default async function MentorHomePage({
     viewingMentorName = m?.name ?? null;
   }
 
-  // 업력은 ERP가 원본 — 이름으로 대조해 가져오고, 못 찾으면 표시하지 않는다
+  // 업력은 ERP가 원본, 이름으로 대조해 가져오고, 못 찾으면 표시하지 않는다
   const experienceName = viewingMentorName ?? session.mentorName ?? null;
 
   const [{ data: students }, experience] = await Promise.all([
@@ -112,7 +112,7 @@ export default async function MentorHomePage({
         )}
       </div>
 
-      {/* [수정 7] 코칭 종료 학생 — 활성 학생과 시각적으로 구분 */}
+      {/* [수정 7] 코칭 종료 학생, 활성 학생과 시각적으로 구분 */}
       {ended.length > 0 && (
         <div className="space-y-3 pt-4">
           <div className="flex items-center gap-2">

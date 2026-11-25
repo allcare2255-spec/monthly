@@ -52,7 +52,7 @@ export function MoveWeekButton({
 
   const nothingToMove = !hasSubmission && !hasNote;
 
-  // 고를 수 있는 주차 — 이번 달과 다음 달까지 (1주차부터 이어서 보여준다)
+  // 고를 수 있는 주차, 이번 달과 다음 달까지 (1주차부터 이어서 보여준다)
   const weekOptions: number[] = [];
   for (let w = 1; w <= cycle * 4 + 4; w++) if (w !== cumWeek) weekOptions.push(w);
 

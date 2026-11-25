@@ -162,7 +162,7 @@ export type ClozePart =
   | { kind: "pick"; options: string[]; answer: string }
   | { kind: "order"; tokens: string[]; answer: string; answers?: string[] };
 
-/** 학생에게 내려보내는 칸 — 정답 제거. */
+/** 학생에게 내려보내는 칸, 정답 제거. */
 export type PublicClozePart =
   | { kind: "input"; prefix?: string; size: "s" | "m" | "l" }
   | { kind: "pick"; options: string[] }
@@ -233,7 +233,7 @@ export interface PublicReviewQuiz {
   questions: PublicReviewQuestion[];
 }
 
-/** 학생 답안 — cloze 는 칸별 문자열 배열. */
+/** 학생 답안, cloze 는 칸별 문자열 배열. */
 export type ReviewAnswer = string | string[];
 
 /** 채점 결과 (문제별). */
@@ -261,7 +261,7 @@ export interface GradeResult {
   items: GradedItem[];
 }
 
-/** 응시 기록(DB review_attempts) 요약 — 멘토 조회용. */
+/** 응시 기록(DB review_attempts) 요약, 멘토 조회용. */
 export interface ReviewAttempt {
   id: string;
   review_set_id: string;

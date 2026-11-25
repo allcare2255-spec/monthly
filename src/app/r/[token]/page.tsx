@@ -12,7 +12,7 @@ import { PrintButton } from "./print-button";
 export const dynamic = "force-dynamic";
 
 // 카톡 미리보기에 몇 주차 레포트인지 보이게 한다. (학생 이름은 넣지 않는다)
-// 학생 기록이므로 검색엔진에 절대 노출되지 않게 robots 도 함께 막는다 — shareMeta 기본값.
+// 학생 기록이므로 검색엔진에 절대 노출되지 않게 robots 도 함께 막는다, shareMeta 기본값.
 export async function generateMetadata({
   params,
 }: {

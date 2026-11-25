@@ -11,10 +11,10 @@ const SECTION_LABEL = "text-[12px] font-bold uppercase tracking-[0.12em] text-in
 // 표시용 날짜 포맷 "2026-06-01" → "2026.06.01"
 const fmtDot = (d: string) => (d || "").replace(/-/g, ".");
 
-// 카드 배경 그라데이션 — blur 오버레이 대신 배경 자체에 얹는다.
+// 카드 배경 그라데이션, blur 오버레이 대신 배경 자체에 얹는다.
 // (blur 는 일부 인쇄 환경에서 검정 박스로 깨져 PDF 에서 숨겨왔고, 그래서 카드가 흰색으로 보였음.
 //  단색 폴백 + 부드러운 linear-gradient 는 화면·PDF 모두 동일하게 안전하게 렌더된다.)
-// 기상 시간 기록 타일 — 칸 색(파랑/빨강) 위에 얹는 은은한 광택 그라데이션.
+// 기상 시간 기록 타일, 칸 색(파랑/빨강) 위에 얹는 은은한 광택 그라데이션.
 // 반투명(rgba) 그라데이션은 일부 PC 의 PDF 뷰어·프린터 드라이버에서 검정/진한 박스로
 // 깨지므로, 칸 색에 흰색·검정을 미리 섞은 "불투명" 색으로만 그라데이션을 만든다.
 function wakeCellSheen(color: string): string {
@@ -29,7 +29,7 @@ export const CARD_BG: CSSProperties = {
   backgroundImage: "linear-gradient(135deg, #F3FAFF 0%, #FBFDFF 40%, #FFFFFF 100%)",
 };
 
-// 일별 공부 시간 카드 — 꺾은선(#6366f1) 톤에 맞춘 인디고 계열 그라데이션.
+// 일별 공부 시간 카드, 꺾은선(#6366f1) 톤에 맞춘 인디고 계열 그라데이션.
 // 위 CARD_BG 와 같은 밝기라 나란히 놓아도 어색하지 않다.
 export const CARD_BG_INDIGO: CSSProperties = {
   backgroundColor: "#FFFFFF",
@@ -83,7 +83,7 @@ export function MonthlyReportView({
     });
   }
 
-  // PDF 저장 — 파일명 자동 설정:
+  // PDF 저장, 파일명 자동 설정:
   // "SKY MATE 월간 학습코칭 레포트_홍길동(김멘토T)_2개월차"
   // (멘토명이 비어 있으면 괄호 부분은 생략)
   function handleSavePdf() {
@@ -166,7 +166,7 @@ export function MonthlyReportView({
     });
   }, [weeklies]);
 
-  // 일별 공부 시간 — 평균 대비 분류(평균 이상/이하/미제출)와 함께
+  // 일별 공부 시간, 평균 대비 분류(평균 이상/이하/미제출)와 함께
   const studyTrend = useMemo(
     () =>
       allDays.map((d) => ({
@@ -195,7 +195,7 @@ export function MonthlyReportView({
 
       <div data-preview-root>
         <div className="preview-doc mx-auto max-w-[860px]">
-          {/* 상단 브랜드 헤더 배너 (로고 좌 · 기간 우) — 컴팩트.
+          {/* 상단 브랜드 헤더 배너 (로고 좌 · 기간 우), 컴팩트.
               그라데이션은 인라인 명시 + 단색 폴백으로 → 모든 인쇄 환경에서 검정 깨짐 방지 */}
           <header
             className="preview-banner overflow-hidden rounded-3xl px-6 py-6 sm:px-9 sm:py-8 text-white shadow-lg shadow-[#0ea5e9]/25"
@@ -227,9 +227,9 @@ export function MonthlyReportView({
             </div>
           </header>
 
-          {/* 본문 (인쇄 시 좌우/하단 여백 — 배너만 풀블리드) */}
+          {/* 본문 (인쇄 시 좌우/하단 여백, 배너만 풀블리드) */}
           <div className="preview-body">
-            {/* 배너 아래 제목 영역 (검정) — 코칭 N개월차 · 이름 N개월차 월간 레포트 */}
+            {/* 배너 아래 제목 영역 (검정), 코칭 N개월차 · 이름 N개월차 월간 레포트 */}
             <div className="monthly-lead px-1 pt-7 pb-6 sm:pt-8">
               <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#0284c7]">
                 코칭 {cycle}개월차 · Monthly
@@ -243,14 +243,14 @@ export function MonthlyReportView({
             </div>
 
             {/* ===== 1페이지: 통계 · 주차별 완료율 · 기상 시간 기록 ===== */}
-            {/* 통계 요약 — 파스텔 스탯 카드 */}
+            {/* 통계 요약, 파스텔 스탯 카드 */}
             <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-3 print-avoid-break">
               <PreviewStat label="월 평균 기상 시간" value={stats.avgWake} />
               <PreviewStat label="월 평균 순공 시간" value={<StudyTimeValue minutes={stats.avgStudy} />} />
               <PreviewStat label="과제 완료율" value={`${stats.taskRate}%`} />
             </div>
 
-            {/* 주차별 과제 완료율 — 가로 그라데이션 진행바 (제목은 카드 안에) */}
+            {/* 주차별 과제 완료율, 가로 그라데이션 진행바 (제목은 카드 안에) */}
             <div className="mb-8 print-avoid-break">
               <div className="week-rate-card preview-day-card border border-ink/[0.05] rounded-2xl p-5 sm:p-6" style={CARD_BG}>
                 <SectionTitle>주차별 과제 완료율</SectionTitle>
@@ -258,7 +258,7 @@ export function MonthlyReportView({
               </div>
             </div>
 
-            {/* 기상 시간 기록 — 요일 정렬 달력 (제목은 카드 안에) */}
+            {/* 기상 시간 기록, 요일 정렬 달력 (제목은 카드 안에) */}
             <div className="mb-8">
               <div className="wake-card preview-day-card border border-ink/[0.05] rounded-2xl p-5 sm:p-6" style={CARD_BG}>
                 <SectionTitle>기상 시간 기록</SectionTitle>
@@ -276,7 +276,7 @@ export function MonthlyReportView({
               </div>
             </div>
 
-            {/* 멘토 총평 · 다음 달 코칭 방향 — 각 카드가 제목을 가지므로 바깥 h2 는 두지 않는다 */}
+            {/* 멘토 총평 · 다음 달 코칭 방향, 각 카드가 제목을 가지므로 바깥 h2 는 두지 않는다 */}
             <div className="mb-2">
               {monthly ? (
                 <div className="space-y-4">
@@ -345,9 +345,9 @@ function wakeTimeColor(min: number): string {
   return mixRgb(WAKE_FAST, WAKE_LATE, t);
 }
 
-// 주차별 과제 완료율 — 가로 진행바(트랙 위 그라데이션 채움 + 우측 퍼센트).
+// 주차별 과제 완료율, 가로 진행바(트랙 위 그라데이션 채움 + 우측 퍼센트).
 // recharts 막대차트 대신 순수 CSS 진행바로 그려 인쇄(PDF) 잘림/사라짐 없이 안정적으로 표시.
-// 섹션 제목 — 카드 바깥이 아니라 카드 "안" 맨 위에 놓는다 (멘토 총평 카드와 동일한 배치).
+// 섹션 제목, 카드 바깥이 아니라 카드 "안" 맨 위에 놓는다 (멘토 총평 카드와 동일한 배치).
 export function SectionTitle({ children }: { children: ReactNode }) {
   // 검정에 가까운 --color-ink 를 그대로 쓰면 너무 무거워서, 살짝 투명도를 줘 톤을 낮춘다.
   return <h2 className="mb-3 text-[15px] font-bold text-ink/70">{children}</h2>;
@@ -384,12 +384,12 @@ export function WeekRateBars({
   );
 }
 
-// 일별 공부 시간 — 평균 대비 분류.
+// 일별 공부 시간, 평균 대비 분류.
 type StudyCat = "above" | "below" | "missed";
 const STUDY_CAT_COLOR: Record<StudyCat, string> = {
-  above: "#0284c7", // 평균 이상 — 배너 톤의 진한 하늘색
-  below: "#7dd3fc", // 평균 이하 — 연한 하늘색
-  missed: "#f47272", // 미제출 — 부드러운 빨강
+  above: "#0284c7", // 평균 이상, 배너 톤의 진한 하늘색
+  below: "#7dd3fc", // 평균 이하, 연한 하늘색
+  missed: "#f47272", // 미제출, 부드러운 빨강
 };
 export function studyCategory(d: DayData, avgMin: number): StudyCat {
   if (d.status === "paused") return "below";
@@ -403,7 +403,7 @@ function hmShort(min: number): string {
   return `${h}H ${m}M`;
 }
 
-// 순수 SVG 라인 차트 — recharts(ResponsiveContainer)가 인쇄(PDF)·초기 렌더에서
+// 순수 SVG 라인 차트, recharts(ResponsiveContainer)가 인쇄(PDF)·초기 렌더에서
 // 폭 0으로 측정돼 차트가 깨지던 문제를 방지하기 위해 고정 viewBox SVG 로 직접 그린다.
 export function StudyTrendChart({
   data,
@@ -441,9 +441,9 @@ export function StudyTrendChart({
       ? `${line} L${pts[n - 1].x.toFixed(1)} ${plotB} L${pts[0].x.toFixed(1)} ${plotB} Z`
       : "";
 
-  // Y 눈금 (0 ~ yMax, 4등분) — H/M 표기
+  // Y 눈금 (0 ~ yMax, 4등분), H/M 표기
   const yTicks = Array.from({ length: 5 }, (_, i) => (yMax * i) / 4);
-  // X 라벨 — 과밀 방지: 최대 14개 정도만 표기
+  // X 라벨, 과밀 방지: 최대 14개 정도만 표기
   const step = Math.max(1, Math.ceil(n / 14));
   const avgY = yOf(avgMin);
   const showAvg = avgMin > 0 && avgMin <= yMax;
@@ -539,7 +539,7 @@ function StudyTimeValue({ minutes }: { minutes: number }) {
   );
 }
 
-// 주간 레포트(완성 미리보기)의 PreviewStat과 동일 — 흰 카드 + 그라데이션 블러 + 하늘색 그라데이션 숫자
+// 주간 레포트(완성 미리보기)의 PreviewStat과 동일, 흰 카드 + 그라데이션 블러 + 하늘색 그라데이션 숫자
 export function PreviewStat({
   label,
   value,
@@ -580,7 +580,7 @@ function mdLabel(dateStr: string): string {
   return `${m}/${d}`;
 }
 
-// 기상 시간 기록 — 실제 요일(일~토)에 맞춰 정렬된 달력. 각 칸에 날짜(M/D) + 기상 시각,
+// 기상 시간 기록, 실제 요일(일~토)에 맞춰 정렬된 달력. 각 칸에 날짜(M/D) + 기상 시각,
 // 미제출은 "미제출", 미입력은 날짜만 옅게 표시. (색상 의미는 기존과 동일)
 export function WakeCalendar({ days }: { days: DayData[] }) {
   if (!days.length) return null;
@@ -670,7 +670,7 @@ const COMMENT_TONE = {
 
 // 멘토가 입력한 줄글을 PDF용 구조로 해석한다.
 // - 빈 줄       → 문단(블록) 구분
-// - "[국어]"    → 소제목 (대괄호로 감싼 줄, 점 없이 굵게 — 대괄호는 그대로 노출)
+// - "[국어]"    → 소제목 (대괄호로 감싼 줄, 점 없이 굵게, 대괄호는 그대로 노출)
 // - "국어 :"    → 소제목 (콜론으로 끝나는 줄, 점 없이 굵게)
 // - "* 내용"    → 점(•) 대신 "*" 를 마커로 표시 (글자 시작 위치는 점 항목과 동일)
 // - 그 외       → 일반 점(•) 항목 ("-" 등 머리기호는 중복이라 벗겨낸다)
@@ -685,7 +685,7 @@ function parseBlocks(raw: string): CommentLine[][] {
         .map((l) => l.trim())
         .filter(Boolean)
         .map<CommentLine>((line) => {
-          // 줄 전체가 [ ] 로 감싸여 있으면 소제목 — 점을 붙이지 않는다.
+          // 줄 전체가 [ ] 로 감싸여 있으면 소제목, 점을 붙이지 않는다.
           if (/^\[[^\]]*\]$/.test(line)) {
             return { kind: "heading", text: line };
           }

@@ -215,7 +215,7 @@ function DeletedBadge({ sub }: { sub: ConsultingSubmission }) {
   );
 }
 
-/** 삭제(휴지통 이동) / 복원 / 영구삭제 — 멘토·관리자 모두 사용 가능. */
+/** 삭제(휴지통 이동) / 복원 / 영구삭제, 멘토·관리자 모두 사용 가능. */
 function TrashActions({ sub, inTrash }: { sub: ConsultingSubmission; inTrash: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();

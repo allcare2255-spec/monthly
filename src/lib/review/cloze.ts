@@ -33,7 +33,7 @@ export function partAnswerText(p: ClozePart): string {
   return p.answer;
 }
 
-/** 학생용 — 정답을 지우고 입력칸 너비 힌트만 남긴다. */
+/** 학생용, 정답을 지우고 입력칸 너비 힌트만 남긴다. */
 export function toPublicParts(parts: ClozePart[] | undefined): PublicClozePart[] | undefined {
   if (!parts) return undefined;
   return parts.map((p) => {

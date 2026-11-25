@@ -46,14 +46,14 @@ export function ConsultWorkspace({
   const [errorMsg, setErrorMsg] = useState("");
   const [preview, setPreview] = useState(false);
 
-  // 저장한 마지막 값 — 이 값과 같으면 자동 저장을 건너뛴다
+  // 저장한 마지막 값, 이 값과 같으면 자동 저장을 건너뛴다
   const savedRef = useRef(initialHtml);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const save = useCallback(
     async (raw: string) => {
       if (!noteSavable) return;
-      // 빈 문단만 남은 상태("<p></p>")는 빈 값으로 취급 — 빈 행이 쌓이지 않게 한다
+      // 빈 문단만 남은 상태("<p></p>")는 빈 값으로 취급, 빈 행이 쌓이지 않게 한다
       const value = isEmptyNoteHtml(raw) ? "" : raw;
       if (value === savedRef.current) return;
       setSaveState("saving");
@@ -116,7 +116,7 @@ export function ConsultWorkspace({
 
   return (
     <>
-      {/* 좌: 학생 제출 폼 / 우: 멘토 메모 — 화면 공유용 2단.
+      {/* 좌: 학생 제출 폼 / 우: 멘토 메모, 화면 공유용 2단.
           items-stretch(기본) + flex 로 양쪽 카드 높이를 같게 맞춘다. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 no-print">
         <SubmissionPanel
@@ -189,7 +189,7 @@ export function ConsultWorkspace({
   );
 }
 
-/** 공개 링크 만들기 / 끄기 — 그 주차의 "학생 제출 + 멘토 메모"만 열리는 주소 */
+/** 공개 링크 만들기 / 끄기, 그 주차의 "학생 제출 + 멘토 메모"만 열리는 주소 */
 function ShareMenu({ studentId, cumWeek }: { studentId: string; cumWeek: number }) {
   const [open, setOpen] = useState(false);
   const [share, setShare] = useState<{ token: string | null; enabled: boolean } | null>(null);
@@ -386,7 +386,7 @@ function SubmissionPanel({
         </span>
       </div>
 
-      {/* 같은 주차에 두 번 이상 제출된 경우 — 이전 제출도 그대로 열어볼 수 있게 탭으로 둔다 */}
+      {/* 같은 주차에 두 번 이상 제출된 경우, 이전 제출도 그대로 열어볼 수 있게 탭으로 둔다 */}
       {submissions.length > 1 && (
         <div className="flex flex-wrap items-center gap-1.5 border-b border-ink/5 bg-ink/[0.015] px-5 py-2.5">
           <span className="text-[11px] font-semibold text-ink/45">제출 {submissions.length}건</span>
@@ -466,7 +466,7 @@ function Block({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-/** PDF 저장용 미리보기 — 주간/월간 레포트와 동일한 인쇄 패턴 (window.print) */
+/** PDF 저장용 미리보기, 주간/월간 레포트와 동일한 인쇄 패턴 (window.print) */
 function ConsultPreview({
   studentName,
   mentorName,

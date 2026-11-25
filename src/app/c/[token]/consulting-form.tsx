@@ -28,7 +28,7 @@ export default function ConsultingFormPage({ params }: { params: Promise<{ token
 
   useEffect(() => {
     let alive = true;
-    // ?form=pre|weekly|monthly 직접 링크 — 서버에도 그대로 넘겨야 지정한 폼이 나온다.
+    // ?form=pre|weekly|monthly 직접 링크, 서버에도 그대로 넘겨야 지정한 폼이 나온다.
     // (안 넘기면 주차로 계산한 폼이 떠서, 사전 질문지 링크가 주간/월간 폼으로 보였다)
     const forced = new URLSearchParams(window.location.search).get("form");
     const qs =
@@ -304,7 +304,7 @@ function FieldCard({
   );
 }
 
-/** 예/아니오 같은 보기 중 하나 고르기 — 고른 보기에 안내문이 걸려 있으면 아래에 띄운다 */
+/** 예/아니오 같은 보기 중 하나 고르기, 고른 보기에 안내문이 걸려 있으면 아래에 띄운다 */
 function ChoiceField({
   field,
   value,

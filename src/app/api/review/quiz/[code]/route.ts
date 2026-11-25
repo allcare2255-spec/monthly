@@ -3,7 +3,7 @@ import { getReviewSetByCode, getStudentNameForSet, toPublicReviewQuiz } from "@/
 
 export const runtime = "nodejs";
 
-/** 학생용 — 정답이 제거된 퀴즈. 공개(로그인 불필요). */
+/** 학생용, 정답이 제거된 퀴즈. 공개(로그인 불필요). */
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ code: string }> }

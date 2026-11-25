@@ -1,6 +1,6 @@
 "use client";
 
-// 체험(/demo) 단계들이 함께 쓰는 화면 부품 — 단계 머리말, 카톡방, 줌 화면 등.
+// 체험(/demo) 단계들이 함께 쓰는 화면 부품, 단계 머리말, 카톡방, 줌 화면 등.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DEMO_STUDENT, type ChatMessage, type ChatSender } from "./demo-data";
 import { Reveal, useInView, usePrefersReducedMotion } from "./demo-motion";
@@ -72,7 +72,7 @@ export function ReplayButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-// 가운데 연결선 설명 — 앞 단계와 이어지는 흐름을 한 줄로 보여준다
+// 가운데 연결선 설명, 앞 단계와 이어지는 흐름을 한 줄로 보여준다
 export function FlowNote({ children }: { children: ReactNode }) {
   return (
     <Reveal>
@@ -86,7 +86,7 @@ export function FlowNote({ children }: { children: ReactNode }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 카톡방 — 메시지가 하나씩 도착한다
+// 카톡방, 메시지가 하나씩 도착한다
 // ─────────────────────────────────────────────────────────────
 
 /** ⟦…⟧ 로 감싼 부분(링크·학교명)은 모자이크처럼 흐리게 */
@@ -179,7 +179,7 @@ export function KakaoRoom({
   const visible = reduced ? messages.length : shown;
   const done = visible >= messages.length;
 
-  // 새 메시지가 오면 채팅창을 내린다 — 장문은 첫머리부터 읽히게 윗부분에 맞춘다
+  // 새 메시지가 오면 채팅창을 내린다, 장문은 첫머리부터 읽히게 윗부분에 맞춘다
   useEffect(() => {
     const box = scrollRef.current;
     if (!box) return;
@@ -419,7 +419,7 @@ function ProgressPhoto() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 줌 화면 — 타이머 · 말하는 사람 · 실시간 자막, 가운데는 화면 공유
+// 줌 화면, 타이머 · 말하는 사람 · 실시간 자막, 가운데는 화면 공유
 // ─────────────────────────────────────────────────────────────
 
 export function ZoomMock({

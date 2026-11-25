@@ -193,7 +193,7 @@ export function WeeklyPlanEditor({
     // wordBreak 는 전역(globals.css)에도 있지만, PNG 캡처는 DOM 을 복제해서 그리므로
     // 캡처 루트에 직접 박아 한글이 글자 중간에서 잘리지 않도록 보장한다
     <div className="space-y-4" id="plan-capture-root" style={{ wordBreak: "keep-all", overflowWrap: "break-word" }}>
-      {/* PNG 전용 헤더 — 웹에서는 숨김, PNG 캡처 시에만 표시 */}
+      {/* PNG 전용 헤더, 웹에서는 숨김, PNG 캡처 시에만 표시 */}
       <div className="png-only" style={{ display: "none", padding: "12px 4px 8px" }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.25em", marginBottom: 4 }}>
           Weekly Plan · {weekLabel}주차
@@ -519,7 +519,7 @@ function ChecklistItem({
   );
 }
 
-/* ── Notes / 할 일 항목 — 높이 자동 확장 textarea ── */
+/* ── Notes / 할 일 항목, 높이 자동 확장 textarea ── */
 const AutoResizeTextarea = forwardRef<
   HTMLTextAreaElement,
   {

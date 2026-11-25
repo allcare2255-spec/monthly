@@ -1,4 +1,4 @@
-// 컨설팅 폼 정의 — 공개 폼(렌더)과 멘토 prep 뷰(라벨 조회)가 공유한다.
+// 컨설팅 폼 정의, 공개 폼(렌더)과 멘토 prep 뷰(라벨 조회)가 공유한다.
 // (server-only 아님: 클라이언트 컴포넌트에서도 import)
 import type { ConsultingFormType } from "@/types";
 import { todaySeoul } from "@/lib/dates";
@@ -13,7 +13,7 @@ export type ConsultingField = {
   required: boolean;
   /** type === "choice" 일 때 고르는 보기 */
   choices?: string[];
-  /** 특정 보기를 고르면 그 아래에 뜨는 안내문 — { 보기: 안내문 } */
+  /** 특정 보기를 고르면 그 아래에 뜨는 안내문, { 보기: 안내문 } */
   revealOn?: Record<string, string>;
 };
 
@@ -39,7 +39,7 @@ export const MIDTERM_FIELD: ConsultingField = {
 };
 
 /**
- * 중간고사 결과를 새로 적을 수 있는 기간 (KST, 양끝 포함) — 10/17~18 컨설팅 주말.
+ * 중간고사 결과를 새로 적을 수 있는 기간 (KST, 양끝 포함), 10/17~18 컨설팅 주말.
  *
  * 이 기간이 지나면 빈 칸은 어느 주차에도 뜨지 않는다.
  * 이미 적어둔 내용은 기간과 무관하게 그 주차에 계속 남는다(consult/page.tsx 참고).
@@ -47,14 +47,14 @@ export const MIDTERM_FIELD: ConsultingField = {
  */
 export const MIDTERM_WINDOW = { from: "2026-10-13", to: "2026-10-20" } as const;
 
-/** 내신 중간고사를 치는 재학생만 — N수생·재수생 폼에는 띄우지 않는다. */
+/** 내신 중간고사를 치는 재학생만, N수생·재수생 폼에는 띄우지 않는다. */
 export const MIDTERM_GRADES = ["고1", "고2"] as const;
 
-/** 중간고사 식별자 — 저장 키의 앞부분. 기말고사를 받을 땐 이 값을 바꾼다. */
+/** 중간고사 식별자, 저장 키의 앞부분. 기말고사를 받을 땐 이 값을 바꾼다. */
 export const MIDTERM_EXAM_KEY = "2026-2-midterm";
 
 /**
- * 중간고사 결과 저장 키 — 시험 + 누적 주차.
+ * 중간고사 결과 저장 키, 시험 + 누적 주차.
  *
  * 멘토 메모와 같이 '적은 그 주차에서만' 보이게 하기 위해 주차를 키에 넣는다.
  * (처음에는 시험 단위로만 저장해 모든 주차에 같은 내용이 떴다)
@@ -103,7 +103,7 @@ export const MONTHLY_FIELDS: ConsultingField[] = [
   { key: "memo", label: "메모", type: "longtext", required: false },
 ];
 
-// 사전 질문지 (pre) — 1주차 사전 컨설팅용. 전부 장문, 파일/동의 없음.
+// 사전 질문지 (pre), 1주차 사전 컨설팅용. 전부 장문, 파일/동의 없음.
 const STUDY_HINT = "인강명, 학원, 과외 등 + 현재 문제점";
 export const PRE_FIELDS: ConsultingField[] = [
   { key: "target_univ", label: "목표 대학 & 학과 3가지", type: "longtext", required: true },
@@ -119,7 +119,7 @@ export const PRE_FIELDS: ConsultingField[] = [
 ];
 
 /**
- * 폼 종류별 전체 항목 — 저장된 제출물의 라벨 조회와 제출 검증에 쓴다.
+ * 폼 종류별 전체 항목, 저장된 제출물의 라벨 조회와 제출 검증에 쓴다.
  * 기간 한정 항목(중간고사 결과)도 항상 포함한다. 멘토 화면은 값이 빈 항목을 건너뛰므로
  * 기간 밖 제출물에 빈칸이 생기지 않고, 받아둔 답은 기간이 지나도 계속 보인다.
  */
@@ -130,7 +130,7 @@ export function fieldsFor(formType: ConsultingFormType): ConsultingField[] {
 }
 
 /**
- * 학생에게 실제로 보여줄 항목 — 기간/학년 조건을 만족할 때만 중간고사 결과를 맨 앞에 끼운다.
+ * 학생에게 실제로 보여줄 항목, 기간/학년 조건을 만족할 때만 중간고사 결과를 맨 앞에 끼운다.
  * (제출 검증은 fieldsFor 를 쓰므로, 작성 중에 기간이 지나도 적어둔 답이 버려지지 않는다)
  */
 export function studentFormFields(

@@ -301,7 +301,7 @@ export function ReviewEditor({
         ))}
 
         <div className="rounded-2xl bg-amber-50 border border-amber-200 p-5">
-          <label className="text-xs font-semibold text-amber-800">🔒 멘토 메모 — 테스트 전체 (학생 비공개)</label>
+          <label className="text-xs font-semibold text-amber-800">🔒 멘토 메모: 테스트 전체 (학생 비공개)</label>
           <textarea
             className="mt-1 w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200"
             rows={3}

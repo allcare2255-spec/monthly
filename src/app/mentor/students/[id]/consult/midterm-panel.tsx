@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 /**
- * 컨설팅 화면 상단 고정 섹션 — 중간고사 결과.
+ * 컨설팅 화면 상단 고정 섹션, 중간고사 결과.
  *
  * 멘토가 줌 화면공유 중에 학생과 함께 정리하는 칸이다. 멘토 메모와 같이 주차별로
  * 저장하므로, 적은 그 주차 화면에서만 그 내용이 보인다.
@@ -99,7 +99,7 @@ export function MidtermPanel({
           disabled={!savable}
           rows={6}
           className="w-full resize-y rounded-xl border border-ink/10 bg-white px-3.5 py-3 text-sm leading-relaxed text-ink outline-none transition focus:border-fuchsia focus:ring-2 focus:ring-fuchsia/15 disabled:bg-ink/[0.03]"
-          placeholder={"국어 — 점수 / 등급 (직전 대비)\n수학 —\n영어 —\n탐구 —\n\n잘된 점 :\n아쉬운 점과 원인 :\n다음 시험까지 할 것 :"}
+          placeholder={"국어 : 점수 / 등급 (직전 대비)\n수학 :\n영어 :\n탐구 :\n\n잘된 점 :\n아쉬운 점과 원인 :\n다음 시험까지 할 것 :"}
         />
         <p className="mt-2 text-[11px] text-ink/45">
           이 주차 화면에만 저장됩니다. 성적표 사진은 단톡방에서 확인하세요.

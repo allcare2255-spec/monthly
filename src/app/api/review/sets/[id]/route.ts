@@ -4,7 +4,7 @@ import { getReviewSetById, listAttemptsBySet } from "@/lib/review/store";
 
 export const runtime = "nodejs";
 
-/** 세트 상세(문제 전체 포함) + 응시 기록 — 멘토/관리자. */
+/** 세트 상세(문제 전체 포함) + 응시 기록, 멘토/관리자. */
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }

@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
   const state = weekStateForStudent(student.coachingStartDate, student.cycleAnchors);
 
-  // 폼 종류 결정 — 주차는 항상 서버가 계산한다 (클라이언트 값 신뢰 안 함).
+  // 폼 종류 결정, 주차는 항상 서버가 계산한다 (클라이언트 값 신뢰 안 함).
   // 폼 종류는 ?form=... 직접 링크로 지정할 수 있어야 한다. 학생이 실제로 작성한 폼과
   // 서버가 검증하는 항목이 어긋나면 제출 자체가 막히기 때문.
   const forced =
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   const filePaths: Record<string, ConsultingFile[]> = {};
   for (const f of fields) {
     if (f.type === "choice") {
-      // 보기 중 하나만 허용 — 임의 문자열이 들어오면 버린다
+      // 보기 중 하나만 허용, 임의 문자열이 들어오면 버린다
       const v = (rawAnswers[f.key] ?? "").toString().trim();
       const ok = v && (f.choices || []).includes(v);
       if (f.required && !ok) {
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // 동의 항목 — weekly/monthly 만 전부 필수 체크 (pre 는 동의 없음)
+  // 동의 항목, weekly/monthly 만 전부 필수 체크 (pre 는 동의 없음)
   const agreements: Record<string, boolean> = {};
   if (formType !== "pre") {
     for (const a of AGREEMENTS) {

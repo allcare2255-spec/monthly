@@ -1,7 +1,7 @@
 import { TEAM, TESTIMONIALS } from "./demo-data";
 
 /**
- * 체험 페이지 단계 목록 — 화면(demo-tour)과 집계(/admin/demo)가 같은 정의를 쓴다.
+ * 체험 페이지 단계 목록, 화면(demo-tour)과 집계(/admin/demo)가 같은 정의를 쓴다.
  * 순서를 바꾸면 집계 퍼널 순서도 함께 바뀐다.
  */
 export type DemoStepDef = { key: string; label: string };

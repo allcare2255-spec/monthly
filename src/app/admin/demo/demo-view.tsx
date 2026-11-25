@@ -12,7 +12,7 @@ const RANGES: { label: string; value: string }[] = [
 ];
 
 function ms(v: number) {
-  if (!v) return "–";
+  if (!v) return "-";
   const s = Math.round(v / 1000);
   if (s < 60) return `${s}초`;
   const m = Math.floor(s / 60);
@@ -262,7 +262,7 @@ export function DemoView({
                       <div className="font-bold text-ink/85">{l.label}</div>
                       <div className="text-[11.5px] text-ink/45">
                         {[l.grade, l.channel, l.contact].filter(Boolean).join(" · ")}
-                        {l.memo ? ` — ${l.memo}` : ""}
+                        {l.memo ? ` · ${l.memo}` : ""}
                       </div>
                     </td>
                     <td className="py-2.5 text-ink/55">{when(l.created_at)}</td>
@@ -283,9 +283,9 @@ export function DemoView({
                     </td>
                     <td className="py-2.5 text-center text-ink/60">{ms(total)}</td>
                     <td className="py-2.5 text-center">
-                      {consulted ? <span className="text-[15px]">✅</span> : <span className="text-ink/25">–</span>}
+                      {consulted ? <span className="text-[15px]">✅</span> : <span className="text-ink/25">-</span>}
                     </td>
-                    <td className="py-2.5 text-ink/55">{last ? when(last.lastAt) : "–"}</td>
+                    <td className="py-2.5 text-ink/55">{last ? when(last.lastAt) : "-"}</td>
                     <td className="py-2.5 text-right">
                       <button
                         onClick={() => copy(l.code)}
@@ -356,7 +356,7 @@ export function DemoView({
                       {s.completed && <span className="ml-1.5 text-[11px] font-bold text-emerald-600">완주</span>}
                     </td>
                     <td className="py-2.5 text-center text-ink/60">{ms(s.activeMs)}</td>
-                    <td className="py-2.5 text-center">{s.consult ? "✅" : <span className="text-ink/25">–</span>}</td>
+                    <td className="py-2.5 text-center">{s.consult ? "✅" : <span className="text-ink/25">-</span>}</td>
                     <td className="py-2.5 text-[12px] text-ink/50">
                       {[s.device, s.os, s.inapp ? `${s.inapp} 인앱` : null, s.city].filter(Boolean).join(" · ")}
                     </td>

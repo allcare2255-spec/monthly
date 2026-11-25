@@ -1,6 +1,6 @@
 "use client";
 
-// 체험(/demo) 추가 단계 — 매칭, 사전 질문지·첫 컨설팅, 질의응답, 맞춤 테스트지, 3인 관리, 비교
+// 체험(/demo) 추가 단계, 매칭, 사전 질문지·첫 컨설팅, 질의응답, 맞춤 테스트지, 3인 관리, 비교
 import { useMemo, useRef, useState } from "react";
 import {
   COMPARE_COLUMNS,
@@ -209,7 +209,7 @@ export function QnaStep({ n }: { n: number }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 약점 맞춤 테스트지 — 직접 풀어보고 채점
+// 약점 맞춤 테스트지, 직접 풀어보고 채점
 // ─────────────────────────────────────────────────────────────
 
 export function TestStep({ n }: { n: number }) {
@@ -233,7 +233,7 @@ export function TestStep({ n }: { n: number }) {
           { icon: "🔁", title: "[오답] 테스트", text: "틀린 유형만 모아 다시 풀고, 해설지도 함께 받아요" },
         ]}
       />
-      <Frame label="실제 테스트지 형식 그대로 — 직접 풀어보세요 (누르면 바로 채점)">
+      <Frame label="실제 테스트지 형식 그대로, 직접 풀어보세요 (누르면 바로 채점)">
         {/* 시험지 머리 */}
         <div className="rounded-2xl border border-ink/10 bg-white px-4 pb-3 pt-4">
           <div className="flex items-start justify-between gap-3">
@@ -504,7 +504,7 @@ export function CompareStep({ n }: { n: number }) {
       </Reveal>
       <Reveal delay={300}>
         <div className="mt-3 rounded-2xl bg-sky-50 px-4 py-3.5 text-center text-[14px] font-bold text-sky-700">
-          {COMPARE_ROWS.length}개 항목 모두 ✓ — 학원·과외와 함께 병행할 수 있어요
+          {COMPARE_ROWS.length}개 항목 모두 ✓, 학원·과외와 함께 병행할 수 있어요
         </div>
       </Reveal>
       <p className="mt-2 text-center text-[11px] text-ink/40">※ 일반적인 학습 방식을 기준으로 비교했으며, 학원·과외마다 다를 수 있어요.</p>
@@ -528,7 +528,7 @@ function Mark({ m, highlight }: { m: CompareMark; highlight: boolean }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 실제 성적 향상 사례 — 등급 막대 위에서 점이 올라간다
+// 실제 성적 향상 사례, 등급 막대 위에서 점이 올라간다
 // ─────────────────────────────────────────────────────────────
 
 export function ResultsStep({ n }: { n: number }) {
@@ -634,7 +634,7 @@ function ResultCard({ c }: { c: ResultCase }) {
           )}
           <div className="mt-4 border-l-[3px] border-sky-300 pl-3 text-[13.5px] leading-relaxed text-ink/70">
             “{c.quote}”
-            <div className="mt-1 text-[11px] text-ink/40">— {c.quoteBy ?? "학생이 코칭방에 남긴 회고"}</div>
+            <div className="mt-1 text-[11px] text-ink/40">· {c.quoteBy ?? "학생이 코칭방에 남긴 회고"}</div>
           </div>
         </div>
       </div>
@@ -642,7 +642,7 @@ function ResultCard({ c }: { c: ResultCase }) {
   );
 }
 
-// 점수 막대 — 이전 점수(회색)에서 지금 점수(파랑)까지 늘어난다
+// 점수 막대, 이전 점수(회색)에서 지금 점수(파랑)까지 늘어난다
 function ScoreBar({ r, p, beforeLabel, afterLabel }: { r: ResultRow; p: number; beforeLabel: string; afterLabel: string }) {
   const max = r.max ?? 100;
   const from = r.scoreFrom ?? 0;

@@ -49,9 +49,9 @@ export default async function MonthlyReportPage({
     supabase.from("coaching_monthly_reports").select("*").eq("student_id", id).eq("cycle_number", cycle).maybeSingle(),
     // [변경 3] 재시작 앵커
     supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", id),
-    // [변경 2] 월차 오버라이드·메모 — 이후 월차가 이어지도록 전체 월차를 가져온다
+    // [변경 2] 월차 오버라이드·메모, 이후 월차가 이어지도록 전체 월차를 가져온다
     supabase.from("coaching_cycles").select("cycle_number, start_date, end_date, notes").eq("student_id", id),
-    // 5단계 — 이 사이클 첫 주(=월간 주차)의 월간 비전 컨설팅 폼 제출(있으면 참고용 표시)
+    // 5단계, 이 사이클 첫 주(=월간 주차)의 월간 비전 컨설팅 폼 제출(있으면 참고용 표시)
     listSubmissionsByWeek(id, cumulativeWeek(cycle, 1), "monthly").catch(() => [] as ConsultingSubmission[]),
   ]);
 

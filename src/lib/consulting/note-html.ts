@@ -27,7 +27,7 @@ export function noteToHtml(value: string | null | undefined): string {
     .join("");
 }
 
-/** 글자가 없어도 그 자체로 '내용'인 블록 — 이미지·표·구분선·토글·콜아웃 */
+/** 글자가 없어도 그 자체로 '내용'인 블록, 이미지·표·구분선·토글·콜아웃 */
 const CONTENT_BLOCK = /<(img|table|hr|details|aside)\b/i;
 
 /** HTML 이 실질적으로 비어 있는지 (빈 문단만 있는 경우 포함). */
