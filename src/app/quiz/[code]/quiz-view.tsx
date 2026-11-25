@@ -36,7 +36,7 @@ function isFilled(q: PublicReviewQuestion, a: Answer | undefined): boolean {
 
 /** **굵게**, __밑줄__ 만 지원하는 아주 작은 마크업. 줄바꿈은 그대로. */
 function Rich({ text }: { text: string }) {
-  const tokens = text.split(/(\*\*.+?\*\*|__.+?__)/g);
+  const tokens = text.split(/(\*\*.+?\*\*|__.+?__|\^\{.+?\})/g);
   return (
     <>
       {tokens.map((t, i) => {
@@ -46,6 +46,12 @@ function Rich({ text }: { text: string }) {
             <span key={i} className="underline decoration-2 underline-offset-4 font-bold">
               {t.slice(2, -2)}
             </span>
+          );
+        if (t.startsWith("^{") && t.endsWith("}"))
+          return (
+            <sup key={i} className="text-[0.72em] font-medium">
+              {t.slice(2, -1)}
+            </sup>
           );
         return <Fragment key={i}>{t}</Fragment>;
       })}

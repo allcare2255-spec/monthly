@@ -14,6 +14,18 @@ export function normalizeAnswer(s: string): string {
     .replace(/[.,!?;:'"`‘’“”()[\]{}<>·・~\-\u2013\u2014_/⁄]/g, "");
 }
 
+/** 수학 답 비교용: 띄어쓰기·대소문자만 무시. 음수 부호와 곱셈 기호는 한 가지로 통일. */
+const MINUS_RE = new RegExp("[" + String.fromCharCode(0x2212, 0x2013, 0x2014) + "]", "g");
+export function normalizeMath(s: string): string {
+  return (s ?? "")
+    .toString()
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(MINUS_RE, "-")
+    .replace(/[×·]/g, "*");
+}
+
 const CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮";
 export const circled = (i: number) => CIRCLED[i] ?? `(${i + 1})`;
 
@@ -23,6 +35,7 @@ export function plainBody(q: Pick<ReviewQuestion, "body">): string {
     .replace(/\{\{(\d+)\}\}/g, (_, n) => `( ${circled(Number(n))} )`)
     .replace(/\*\*(.+?)\*\*/g, "$1")
     .replace(/__(.+?)__/g, "$1")
+    .replace(/\^\{(.+?)\}/g, "^($1)")
     .replace(/\s*\n\s*/g, " ")
     .trim();
 }
@@ -46,6 +59,10 @@ export function toPublicParts(parts: ClozePart[] | undefined): PublicClozePart[]
 }
 
 function inputMatches(p: Extract<ClozePart, { kind: "input" }>, student: string): boolean {
+  if (p.math) {
+    const m = normalizeMath(student);
+    return !!m && p.answers.some((a) => normalizeMath(a) === m);
+  }
   const s = normalizeAnswer(student);
   if (!s) return false;
   const pre = p.prefix ? normalizeAnswer(p.prefix) : "";

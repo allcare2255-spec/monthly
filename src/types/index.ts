@@ -158,7 +158,7 @@ export type QuestionType = "multiple_choice" | "ox" | "short_answer" | "essay" |
  * - order: 단어 카드를 터치 순서대로 배열.
  */
 export type ClozePart =
-  | { kind: "input"; answers: string[]; prefix?: string; group?: string }
+  | { kind: "input"; answers: string[]; prefix?: string; group?: string; math?: boolean }
   | { kind: "pick"; options: string[]; answer: string }
   | { kind: "order"; tokens: string[]; answer: string; answers?: string[] };
 
