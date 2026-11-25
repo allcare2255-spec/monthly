@@ -230,7 +230,7 @@ export function WeeklyPlanEditor({
       </div>
 
       {/* 상단: Weekly goals | Main Test */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-export-cols="2">
         <SectionCard title="Weekly Goals" accent="indigo" subtitle="이번 주 목표">
           <Checklist
             numbered
@@ -249,7 +249,7 @@ export function WeeklyPlanEditor({
       </div>
 
       {/* 중단: 월~목 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-export-cols="4">
         {WEEKDAY_LABEL.slice(0, 4).map((wd, i) => (
           <DayColumn
             key={wd.key}
@@ -263,7 +263,7 @@ export function WeeklyPlanEditor({
       </div>
 
       {/* 하단: 금/토/일 + Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-export-cols="4">
         {WEEKDAY_LABEL.slice(4).map((wd, i) => (
           <DayColumn
             key={wd.key}

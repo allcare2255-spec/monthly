@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+/** PC 화면에서 계획표가 그려지는 폭 (max-w-6xl 1152px − 좌우 여백 48px) */
+const EXPORT_WIDTH = 1104;
+
 export function SendButton({
   studentName,
   weekLabel,
@@ -60,6 +63,23 @@ export function SendButton({
       });
     });
 
+    // 어느 기기에서 저장하든 PC 화면과 같은 배치로: 폭을 PC 기준으로 고정하고 칸 수를 맞춘다
+    const prevWidth = root.style.width;
+    const prevMaxWidth = root.style.maxWidth;
+    root.style.width = `${EXPORT_WIDTH}px`;
+    root.style.maxWidth = "none";
+    const grids = Array.from(root.querySelectorAll<HTMLElement>("[data-export-cols]"));
+    const prevGridCols = grids.map((g) => g.style.gridTemplateColumns);
+    grids.forEach((g) => {
+      g.style.gridTemplateColumns = `repeat(${g.dataset.exportCols}, minmax(0, 1fr))`;
+    });
+    // 폭이 바뀌었으니 글상자 높이를 다시 맞춘다 (글이 잘리거나 빈 줄이 남지 않게)
+    const areas = Array.from(root.querySelectorAll<HTMLTextAreaElement>("textarea"));
+    const prevHeights = areas.map((t) => t.style.height);
+    areas.forEach((t) => { t.style.height = "auto"; });
+    areas.forEach((t) => { t.style.height = `${t.scrollHeight}px`; });
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+
     try {
       const dataUrl = await domtoimage.default.toPng(root, { scale: 2, bgcolor: "#ffffff" });
       const link = document.createElement("a");
@@ -67,6 +87,10 @@ export function SendButton({
       link.href = dataUrl;
       link.click();
     } finally {
+      root.style.width = prevWidth;
+      root.style.maxWidth = prevMaxWidth;
+      grids.forEach((g, i) => { g.style.gridTemplateColumns = prevGridCols[i]; });
+      areas.forEach((t, i) => { t.style.height = prevHeights[i]; });
       noPrintEls.forEach((el, i) => { el.style.display = prevDisplays[i]; });
       pngOnlyEls.forEach((el, i) => { el.style.display = pngOnlyPrevDisplays[i]; });
       textFields.forEach((el) => el.removeAttribute("spellcheck"));
