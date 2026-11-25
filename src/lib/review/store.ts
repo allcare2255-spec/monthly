@@ -88,6 +88,48 @@ export async function getReviewSetById(id: string): Promise<ReviewSet | undefine
   return data ? rowToReviewSet(data) : undefined;
 }
 
+/** 복습 테스트 진행상황 */
+export type ReviewStatus = "링크 공유 전" | "문제 풀이 중" | "진행 완료";
+
+/**
+ * 목록에 진행상황을 붙인다.
+ * - 학생이 한 번이라도 제출(review_attempts) → 진행 완료
+ * - 멘토가 링크 복사를 누름(shared_at) → 문제 풀이 중
+ * - 그 외 → 링크 공유 전
+ * shared_at 칸이 아직 없는 DB(마이그레이션 전)에서도 깨지지 않게 실패는 무시한다.
+ */
+async function attachStatus<T extends { id: string }>(rows: T[]): Promise<(T & { status: ReviewStatus })[]> {
+  if (rows.length === 0) return [];
+  const supabase = getServiceClient();
+  const ids = rows.map((r) => r.id);
+  const [shared, attempts] = await Promise.all([
+    supabase.from("review_sets").select("id, shared_at").in("id", ids),
+    supabase.from("review_attempts").select("review_set_id").in("review_set_id", ids),
+  ]);
+  const sharedIds = new Set(
+    shared.error ? [] : (shared.data || []).filter((r: any) => r.shared_at).map((r: any) => r.id as string)
+  );
+  const doneIds = new Set((attempts.data || []).map((r: any) => r.review_set_id as string));
+  return rows.map((r) => ({
+    ...r,
+    status: doneIds.has(r.id) ? "진행 완료" : sharedIds.has(r.id) ? "문제 풀이 중" : "링크 공유 전",
+  }));
+}
+
+/** 링크 복사 시 공유 시각 기록 (처음 한 번만). 칸이 없으면 false. */
+export async function markReviewSetShared(id: string): Promise<boolean> {
+  const { error } = await getServiceClient()
+    .from("review_sets")
+    .update({ shared_at: new Date().toISOString() })
+    .eq("id", id)
+    .is("shared_at", null);
+  if (error) {
+    console.error("[복습] 공유 시각 기록 실패:", error.message);
+    return false;
+  }
+  return true;
+}
+
 /** 멘토가 출제한 세트 목록(문항 제외 요약). */
 export async function listReviewSetsByMentor(mentorId: string) {
   const supabase = getServiceClient();
@@ -97,7 +139,7 @@ export async function listReviewSetsByMentor(mentorId: string) {
     .eq("mentor_id", mentorId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return data || [];
+  return attachStatus((data || []) as any[]);
 }
 
 /** 특정 학생에게 연결된 세트 목록. */
@@ -109,7 +151,7 @@ export async function listReviewSetsByStudent(studentId: string) {
     .eq("student_id", studentId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return data || [];
+  return attachStatus((data || []) as any[]);
 }
 
 /** 세트의 응시 기록 목록. */

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { listReviewSetsByMentor } from "@/lib/review/store";
+import { ReviewStatusBadge } from "./status-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -45,9 +46,7 @@ export default async function ReviewListPage() {
           >
             <div className="text-lg font-extrabold text-ink line-clamp-2">{s.title}</div>
             <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
-              <span className="font-mono font-bold bg-indigo/10 text-indigo rounded-full px-2.5 py-1">
-                {s.code}
-              </span>
+              <ReviewStatusBadge status={s.status} />
               {s.student?.name && (
                 <span className="bg-fuchsia/10 text-fuchsia rounded-full px-2.5 py-1 font-semibold">
                   {s.student.name}

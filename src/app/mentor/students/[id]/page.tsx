@@ -5,7 +5,8 @@ import { getServiceClient } from "@/lib/supabase";
 import { addDays, buildCycleAnchors, currentWeekWithAnchors, resolveCycleStart, todaySeoul } from "@/lib/dates";
 import { NewCycleButton } from "./new-cycle-button";
 import { CycleCards, type CycleInfo } from "./cycle-cards";
-import { listReviewSetsByStudent } from "@/lib/review/store";
+import { listReviewSetsByStudent, type ReviewStatus } from "@/lib/review/store";
+import { ReviewStatusBadge } from "@/app/mentor/review/status-badge";
 import { ensureToken, listSubmissionsByStudent, listTrashedSubmissions } from "@/lib/consulting/store";
 import { weekStateForStudent } from "@/lib/consulting/week";
 import { ConsultingSection } from "./consulting-section";
@@ -45,7 +46,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
     supabase.from("coaching_restarts").select("cycle_number, start_date").eq("student_id", id),
     // 이 학생에게 연결된 복습 세트
     listReviewSetsByStudent(id) as Promise<{
-      id: string; code: string; title: string; subject: string | null; created_at: string;
+      id: string; code: string; title: string; subject: string | null; created_at: string; status: ReviewStatus;
     }[]>,
     // 컨설팅 폼, 공개 링크 토큰 + 제출 내역 (마이그레이션 미적용 시에도 페이지가 죽지 않도록 방어)
     (async () => {
@@ -158,7 +159,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
               >
                 <div className="font-bold text-ink line-clamp-1">{r.title}</div>
                 <div className="mt-2 flex items-center gap-1.5 text-[11px]">
-                  <span className="font-mono font-bold bg-indigo/10 text-indigo rounded-full px-2.5 py-1">{r.code}</span>
+                  <ReviewStatusBadge status={r.status} />
                   {r.subject && <span className="bg-ink/5 text-ink/60 rounded-full px-2.5 py-1">{r.subject}</span>}
                 </div>
               </Link>

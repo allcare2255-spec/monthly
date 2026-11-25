@@ -26,6 +26,8 @@ export function ReviewDetail({ set, attempts }: { set: ReviewSet; attempts: Revi
   const copyLink = async () => {
     await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
+    // 진행상황 '문제 풀이 중' 으로 (처음 복사할 때만 기록됨)
+    fetch(`/api/review/sets/${set.id}/shared`, { method: "POST" }).catch(() => {});
     setTimeout(() => setCopied(false), 1500);
   };
 
