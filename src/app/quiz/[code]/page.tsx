@@ -17,7 +17,10 @@ export async function generateMetadata({
   // "복습 테스트" 같은 말도 덧붙이지 않는다
   const name = (set?.title || "").replace(/\s*\(\d{1,2}\/\d{1,2}(\s*~\s*\d{1,2}\/\d{1,2})?\)\s*$/, "").trim();
   const subject = (set?.subject || "").trim();
-  const title = name || subject || "SKY MATE";
+  // 과목명과 단원명 사이는 "_" 로: "화법과 언어_표준 발음으로 국어 생활하기"
+  const joined =
+    subject && name.startsWith(subject + " ") ? `${subject}_${name.slice(subject.length).trim()}` : name;
+  const title = joined || subject || "SKY MATE";
   return shareMeta(
     title,
     "SKY MATE 맞춤 복습 테스트입니다. 눌러서 문제를 풀고 바로 채점받아 보세요.",
