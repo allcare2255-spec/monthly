@@ -11,7 +11,7 @@ export function normalizeAnswer(s: string): string {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, "")
-    .replace(/[.,!?;:'"`‘’“”()[\]{}<>·・~\-–—_/⁄]/g, "");
+    .replace(/[.,!?;:'"`‘’“”()[\]{}<>·・~\-\u2013\u2014_/⁄]/g, "");
 }
 
 const CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮";

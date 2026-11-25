@@ -17,4 +17,4 @@ if (error) {
   console.log("   supabase/migrations/20260810_consulting_submission_trash.sql 을 SQL Editor 에서 RUN 하세요.");
   process.exit(1);
 }
-console.log("✅ deleted_at / deleted_by 컬럼 적용 완료 — 휴지통 기능 사용 가능");
+console.log("✅ deleted_at / deleted_by 컬럼 적용 완료, 휴지통 기능 사용 가능");

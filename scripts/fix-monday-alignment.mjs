@@ -67,7 +67,7 @@ const log = (...a) => console.log(...a);
 let changes = 0;
 
 async function main() {
-  log(APPLY ? "▶ APPLY 모드 — 실제로 DB를 수정합니다\n" : "▶ DRY-RUN 모드 — 변경 미리보기만 (반영하려면 --apply)\n");
+  log(APPLY ? "▶ APPLY 모드, 실제로 DB를 수정합니다\n" : "▶ DRY-RUN 모드, 변경 미리보기만 (반영하려면 --apply)\n");
 
   const { data: students, error } = await supabase
     .from("coaching_students")

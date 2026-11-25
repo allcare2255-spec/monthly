@@ -690,7 +690,7 @@ function parseBlocks(raw: string): CommentLine[][] {
             return { kind: "heading", text: line };
           }
           const starred = /^\*\s*/.test(line);
-          const body = line.replace(/^[-–—•·*]\s*/, "").trim();
+          const body = line.replace(/^[-\u2013\u2014•·*]\s*/, "").trim();
           // 콜론으로 끝나면 소제목. 단 "* 화법과 작문 : ..." 처럼 뒤에 내용이 있으면 항목이다.
           if (!starred && /[:：]\s*$/.test(body)) {
             return { kind: "heading", text: body.replace(/\s*[:：]\s*$/, "") };

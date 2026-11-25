@@ -20,7 +20,7 @@ if (e1) {
   console.log("❌ coaching_students.consulting_token 조회 실패:", e1.message);
 } else {
   const missing = students.filter((s) => !s.consulting_token).length;
-  console.log(`✅ consulting_token 컬럼 OK — 표본 ${students.length}명 중 토큰 없는 학생 ${missing}명`);
+  console.log(`✅ consulting_token 컬럼 OK, 표본 ${students.length}명 중 토큰 없는 학생 ${missing}명`);
   for (const s of students) {
     console.log(`   - ${s.name} | token=${s.consulting_token?.slice(0, 8)}… | start=${s.coaching_start_date}`);
   }
@@ -31,4 +31,4 @@ const { error: e2, count } = await sb
   .from("consulting_submissions")
   .select("id", { count: "exact", head: true });
 if (e2) console.log("❌ consulting_submissions 테이블 조회 실패:", e2.message);
-else console.log(`✅ consulting_submissions 테이블 OK — 현재 제출 ${count ?? 0}건`);
+else console.log(`✅ consulting_submissions 테이블 OK, 현재 제출 ${count ?? 0}건`);
