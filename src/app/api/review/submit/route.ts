@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getReviewSetByCode, saveAttempt } from "@/lib/review/store";
 import { gradeQuiz } from "@/lib/review/grade";
+import type { ReviewAnswer } from "@/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const code: string = body.code;
-    const answers: string[] = body.answers ?? [];
+    const answers: ReviewAnswer[] = Array.isArray(body.answers) ? body.answers : [];
     const name: string = (body.name ?? "").toString();
 
     const set = await getReviewSetByCode(code);

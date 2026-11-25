@@ -148,7 +148,25 @@ export type Session = {
 };
 
 // ── 복습(Review) 기능 ───────────────────────────────────────────
-export type QuestionType = "multiple_choice" | "ox" | "short_answer" | "essay";
+export type QuestionType = "multiple_choice" | "ox" | "short_answer" | "essay" | "cloze";
+
+/**
+ * 복합형(cloze) 문항의 한 칸.
+ * - input: 직접 입력. answers 중 하나와 같으면 정답. prefix(첫 글자 힌트)는 붙여 써도/빼고 써도 정답.
+ *          group 이 같은 칸끼리는 "순서 무관"으로 채점한다.
+ * - pick : [ A / B ] 중 하나를 터치해서 고르기 (OX 포함).
+ * - order: 단어 카드를 터치 순서대로 배열.
+ */
+export type ClozePart =
+  | { kind: "input"; answers: string[]; prefix?: string; group?: string }
+  | { kind: "pick"; options: string[]; answer: string }
+  | { kind: "order"; tokens: string[]; answer: string; answers?: string[] };
+
+/** 학생에게 내려보내는 칸 — 정답 제거. */
+export type PublicClozePart =
+  | { kind: "input"; prefix?: string; size: "s" | "m" | "l" }
+  | { kind: "pick"; options: string[] }
+  | { kind: "order"; tokens: string[] };
 
 export interface ReviewQuestion {
   type: QuestionType;
@@ -164,6 +182,16 @@ export interface ReviewQuestion {
   difficulty: "easy" | "medium" | "hard";
   /** 멘토 비공개 메모 (문제별). 학생에게 노출 금지. */
   mentorNote?: string;
+  // ── cloze 전용 ──
+  /** 소단원 등 작은 꼬리표 (예: "받침의 발음"). */
+  tag?: string;
+  /** 우리말 해석·자료 설명 등 회색 안내문. */
+  context?: string;
+  /** 표 자료 (첫 행 = 머리글). */
+  table?: string[][];
+  /** 본문. {{0}}, {{1}} … 자리에 parts[n] 칸이 들어간다. **굵게**, __밑줄__ 지원. */
+  body?: string;
+  parts?: ClozePart[];
 }
 
 export interface ReviewQuiz {
@@ -189,13 +217,24 @@ export interface PublicReviewQuestion {
   question: string;
   options: string[];
   difficulty: ReviewQuestion["difficulty"];
+  tag?: string;
+  context?: string;
+  table?: string[][];
+  body?: string;
+  parts?: PublicClozePart[];
 }
 
 export interface PublicReviewQuiz {
   code: string;
   title: string;
+  subject?: string | null;
+  /** 연결된 학생 이름 (이름 칸 미리 채우기용). */
+  studentName?: string | null;
   questions: PublicReviewQuestion[];
 }
+
+/** 학생 답안 — cloze 는 칸별 문자열 배열. */
+export type ReviewAnswer = string | string[];
 
 /** 채점 결과 (문제별). */
 export interface GradedItem {
@@ -209,6 +248,10 @@ export interface GradedItem {
   score: number;
   explanation: string;
   feedback: string;
+  /** cloze: 본문을 한 줄로 (칸은 ①②…). */
+  detail?: string;
+  /** cloze: 칸별 채점. */
+  parts?: { student: string; correct: string; ok: boolean }[];
 }
 
 export interface GradeResult {

@@ -1,30 +1,51 @@
 import "server-only";
-import type { ReviewSet, GradeResult, GradedItem } from "@/types";
+import type { ReviewSet, GradeResult, GradedItem, ReviewAnswer } from "@/types";
 import { gradeOpenEnded, type AiGradeInput } from "./anthropic";
-
-/** 채점용 문자열 정규화 (공백/대소문자/문장부호 차이 흡수). */
-function normalize(s: string): string {
-  return s
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "")
-    .replace(/[.,!?;:'"()[\]{}·・]/g, "");
-}
+import { normalizeAnswer as normalize, gradeClozeParts, coerceClozeAnswer, plainBody } from "./cloze";
 
 /**
  * 학생 답안을 채점한다.
  * - 객관식/OX/단답: 결정적 비교
+ * - 복합형(cloze): 칸별 채점, 맞힌 칸 비율만큼 부분 점수
  * - 서술형: AI 채점
  */
 export async function gradeQuiz(
   quiz: ReviewSet,
-  answers: string[]
+  answers: ReviewAnswer[]
 ): Promise<GradeResult> {
   const items: GradedItem[] = new Array(quiz.questions.length);
   const aiQueue: AiGradeInput[] = [];
 
   quiz.questions.forEach((q, i) => {
-    const studentAnswer = (answers[i] ?? "").toString();
+    if (q.type === "cloze") {
+      const parts = q.parts ?? [];
+      const studentParts = coerceClozeAnswer(answers[i], parts.length);
+      const graded = gradeClozeParts(parts, studentParts);
+      const okCount = graded.filter((g) => g.ok).length;
+      const score = parts.length === 0 ? 0 : okCount / parts.length;
+      const isCorrect = parts.length > 0 && okCount === parts.length;
+      items[i] = {
+        index: i,
+        type: q.type,
+        question: q.question,
+        detail: plainBody(q),
+        studentAnswer: graded.map((g) => g.student || "—").join(" / "),
+        correctAnswer: graded.map((g) => g.correct).join(" / "),
+        isCorrect,
+        score,
+        explanation: q.explanation,
+        feedback: isCorrect
+          ? "정답입니다."
+          : okCount > 0
+            ? `${parts.length}칸 중 ${okCount}칸 맞았어요.`
+            : "다시 한 번 해설을 확인해 보세요.",
+        parts: graded,
+      };
+      return;
+    }
+
+    const raw = answers[i];
+    const studentAnswer = (Array.isArray(raw) ? raw.join(" ") : raw ?? "").toString();
 
     if (q.type === "essay") {
       aiQueue.push({
@@ -49,7 +70,7 @@ export async function gradeQuiz(
 
     let isCorrect = false;
     if (q.type === "short_answer") {
-      const candidates = [q.answer, ...q.acceptedAnswers].map(normalize);
+      const candidates = [q.answer, ...(q.acceptedAnswers ?? [])].map(normalize);
       isCorrect = candidates.includes(normalize(studentAnswer));
     } else {
       isCorrect = normalize(studentAnswer) === normalize(q.answer);

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getReviewSetByCode, toPublicReviewQuiz } from "@/lib/review/store";
+import { getReviewSetByCode, getStudentNameForSet, toPublicReviewQuiz } from "@/lib/review/store";
 
 export const runtime = "nodejs";
 
@@ -17,7 +17,8 @@ export async function GET(
         { status: 404 }
       );
     }
-    return NextResponse.json({ quiz: toPublicReviewQuiz(set) });
+    const studentName = await getStudentNameForSet(set);
+    return NextResponse.json({ quiz: toPublicReviewQuiz(set, studentName) });
   } catch (e: any) {
     return NextResponse.json(
       { error: e?.message || "불러오기 실패" },

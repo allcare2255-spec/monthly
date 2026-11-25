@@ -18,6 +18,7 @@ const TYPE_LABEL: Record<QuestionType, string> = {
   ox: "OX",
   short_answer: "단답",
   essay: "서술형",
+  cloze: "빈칸·선택·배열",
 };
 
 /** JSON 이 아닌 응답(타임아웃·서버 에러 페이지)도 사람이 읽을 수 있는 메시지로 바꿔준다. */

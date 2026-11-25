@@ -9,6 +9,7 @@ import type {
   GradeResult,
   ReviewAttempt,
 } from "@/types";
+import { toPublicParts } from "./cloze";
 
 const SET_COLS =
   "id, code, mentor_id, student_id, subject, title, questions, mentor_note, created_at";
@@ -123,16 +124,38 @@ export async function listAttemptsBySet(setId: string): Promise<ReviewAttempt[]>
   return (data || []) as ReviewAttempt[];
 }
 
+/** 세트에 연결된 학생 이름 (이름 칸 미리 채우기용). 실패해도 null. */
+export async function getStudentNameForSet(set: ReviewSet): Promise<string | null> {
+  if (!set.studentId) return null;
+  try {
+    const { data } = await getServiceClient()
+      .from("coaching_students")
+      .select("name")
+      .eq("id", set.studentId)
+      .maybeSingle();
+    return (data?.name as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** 정답을 제거한, 학생에게 안전하게 내려보낼 버전. */
-export function toPublicReviewQuiz(set: ReviewSet): PublicReviewQuiz {
+export function toPublicReviewQuiz(set: ReviewSet, studentName?: string | null): PublicReviewQuiz {
   return {
     code: set.code,
     title: set.title,
+    subject: set.subject ?? null,
+    studentName: studentName ?? null,
     questions: set.questions.map((q) => ({
       type: q.type,
       question: q.question,
-      options: q.options,
+      options: q.options ?? [],
       difficulty: q.difficulty,
+      tag: q.tag,
+      context: q.context,
+      table: q.table,
+      body: q.body,
+      parts: toPublicParts(q.parts),
     })),
   };
 }

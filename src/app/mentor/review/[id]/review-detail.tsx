@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import type { ReviewSet, ReviewAttempt, QuestionType } from "@/types";
+import { plainBody, partAnswerText, circled } from "@/lib/review/cloze";
 
 // 손글씨(필기체) 폰트 — 응원 문구용 (layout.tsx 에서 Google Fonts 로 로드).
 const handwritingFont = "'Nanum Pen Script', cursive";
@@ -12,6 +13,7 @@ const TYPE_LABEL: Record<QuestionType, string> = {
   ox: "OX",
   short_answer: "단답",
   essay: "서술형",
+  cloze: "빈칸·선택·배열",
 };
 
 export function ReviewDetail({ set, attempts }: { set: ReviewSet; attempts: ReviewAttempt[] }) {
@@ -147,11 +149,27 @@ export function ReviewDetail({ set, attempts }: { set: ReviewSet; attempts: Revi
                           <div className="flex items-center justify-between gap-2">
                             <div className="font-semibold text-ink">{it.index + 1}. {it.question}</div>
                             <span className={`shrink-0 text-xs font-bold ${it.isCorrect ? "text-emerald-600" : "text-rose"}`}>
-                              {it.isCorrect ? "○ 정답" : "✕ 오답"}
+                              {it.isCorrect ? "○ 정답" : it.score > 0 ? `△ ${Math.round(it.score * 100)}%` : "✕ 오답"}
                             </span>
                           </div>
-                          <div className="text-ink/60 mt-1">학생 답: {it.studentAnswer || "(무응답)"}</div>
-                          {!it.isCorrect && <div className="text-emerald-700">정답: {it.correctAnswer}</div>}
+                          {it.detail && <div className="text-ink/50 mt-1 text-xs leading-relaxed">{it.detail}</div>}
+                          {it.parts && it.parts.length > 0 ? (
+                            <div className="mt-1 space-y-0.5">
+                              {it.parts.map((p, pi) => (
+                                <div key={pi} className={p.ok ? "text-emerald-700" : "text-ink/70"}>
+                                  {it.parts!.length > 1 ? `${circled(pi)} ` : ""}
+                                  {p.ok ? "✓ " : "✗ "}
+                                  {p.student || "(무응답)"}
+                                  {!p.ok && <span className="text-emerald-700 font-semibold"> → {p.correct}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <>
+                              <div className="text-ink/60 mt-1">학생 답: {it.studentAnswer || "(무응답)"}</div>
+                              {!it.isCorrect && <div className="text-emerald-700">정답: {it.correctAnswer}</div>}
+                            </>
+                          )}
                           {!it.isCorrect && it.explanation && (
                             <div className="text-ink/55 mt-1 rounded-lg bg-ink/[0.03] p-2">📘 해설: {it.explanation}</div>
                           )}
@@ -188,14 +206,28 @@ export function ReviewDetail({ set, attempts }: { set: ReviewSet; attempts: Revi
               {i + 1}. {TYPE_LABEL[q.type]} · {q.difficulty}
             </span>
             <p className="text-sm font-medium">{q.question}</p>
-            {q.options.length > 0 && (
+            {q.type === "cloze" && (
+              <>
+                {q.context && <p className="text-sm text-ink/50">{q.context}</p>}
+                <p className="text-sm text-ink/80 leading-relaxed">{plainBody(q)}</p>
+                <p className="text-sm text-emerald-700">
+                  정답:{" "}
+                  {(q.parts ?? [])
+                    .map((p, pi) => `${(q.parts ?? []).length > 1 ? circled(pi) + " " : ""}${partAnswerText(p)}${
+                      p.kind === "input" && p.answers.length > 1 ? ` (${p.answers.slice(1).join(", ")}도 정답)` : ""
+                    }`)
+                    .join("  ")}
+                </p>
+              </>
+            )}
+            {(q.options ?? []).length > 0 && (
               <ul className="text-sm text-ink/60 list-disc pl-5">
                 {q.options.map((o, oi) => (
                   <li key={oi} className={o === q.answer ? "text-emerald-700 font-semibold" : ""}>{o}</li>
                 ))}
               </ul>
             )}
-            <p className="text-sm text-emerald-700">정답: {q.answer}</p>
+            {q.type !== "cloze" && <p className="text-sm text-emerald-700">정답: {q.answer}</p>}
             {q.explanation && <p className="text-sm text-ink/55 rounded-lg bg-ink/[0.03] p-2">📘 {q.explanation}</p>}
             {q.mentorNote && (
               <p className="text-sm text-amber-900 rounded-lg bg-amber-50 ring-1 ring-amber-100 p-2">🔒 {q.mentorNote}</p>
