@@ -117,14 +117,21 @@ function PickSlot({
   part,
   value,
   onChange,
+  bracket,
 }: {
   part: Extract<PublicClozePart, { kind: "pick" }>;
   value: string;
   onChange: (v: string) => void;
+  /** 지시문에 맞춘 괄호 — "[ ]" 또는 "( )" */
+  bracket: "[]" | "()";
 }) {
   const isOX = part.options.length === 2 && part.options[0] === "O" && part.options[1] === "X";
+  // 고르기 묶음은 지시문과 같은 괄호로 감싸서 어떤 버튼끼리 한 묶음인지 보이게 한다 (OX 는 제외)
+  const open = isOX ? null : bracket[0];
+  const close = isOX ? null : bracket[1];
   return (
-    <span className="inline-flex flex-wrap items-center gap-1 mx-0.5 align-middle">
+    <span className="inline-flex flex-wrap items-center gap-1 mx-0.5 my-1 align-middle leading-6">
+      {open && <span className="text-xl font-light text-ink/45 select-none">{open}</span>}
       {part.options.map((opt) => {
         const on = value === opt;
         return (
@@ -133,7 +140,7 @@ function PickSlot({
             type="button"
             onClick={() => onChange(on ? "" : opt)}
             className={`rounded-lg border-2 font-semibold transition select-none ${
-              isOX ? "min-w-[3.25rem] px-3 py-1.5 text-lg" : "px-2.5 py-1 text-[15px]"
+              isOX ? "min-w-[3.25rem] px-3 py-1.5 text-lg leading-6" : "px-2.5 py-1 text-[15px] leading-6"
             } ${
               on
                 ? "border-indigo bg-indigo text-white shadow-sm"
@@ -144,7 +151,10 @@ function PickSlot({
             {opt}
           </button>
         );
-      })}
+      }).flatMap((btn, oi) =>
+        oi === 0 || isOX ? [btn] : [<span key={`sep-${oi}`} className="text-ink/35 select-none">/</span>, btn]
+      )}
+      {close && <span className="text-xl font-light text-ink/45 select-none">{close}</span>}
     </span>
   );
 }
@@ -153,21 +163,22 @@ function OrderSlot({
   part,
   sel,
   onChange,
+  arrows,
 }: {
   part: Extract<PublicClozePart, { kind: "order" }>;
   sel: number[];
   onChange: (sel: number[]) => void;
+  /** 사건 순서 문제: 고른 카드 사이에 → 표시 */
+  arrows: boolean;
 }) {
   const used = new Set(sel);
   return (
-    <span className="block my-2 rounded-xl border-2 border-indigo/15 bg-indigo/[0.03] p-2.5 space-y-2.5">
+    <span className="block my-2 rounded-xl border-2 border-indigo/15 bg-indigo/[0.03] p-2.5 space-y-2.5 leading-6">
       <span className="flex flex-wrap gap-1.5 min-h-[44px] rounded-lg border-2 border-dashed border-ink/20 bg-white p-1.5">
-        {sel.length === 0 && (
-          <span className="text-sm text-ink/35 self-center px-1">아래 단어를 순서대로 눌러 주세요</span>
-        )}
         {sel.map((ti, k) => (
+          <Fragment key={`${ti}-${k}`}>
+          {arrows && k > 0 && <span className="self-center text-ink/45 font-bold select-none">→</span>}
           <button
-            key={`${ti}-${k}`}
             type="button"
             onClick={() => onChange(sel.filter((_, j) => j !== k))}
             className="rounded-lg bg-indigo text-white px-2.5 py-1.5 text-[15px] font-medium select-none active:opacity-80"
@@ -175,6 +186,7 @@ function OrderSlot({
           >
             {part.tokens[ti]}
           </button>
+          </Fragment>
         ))}
       </span>
       <span className={`flex flex-wrap gap-1.5 ${sel.length === part.tokens.length ? "hidden" : ""}`}>
@@ -201,13 +213,6 @@ function OrderSlot({
       </span>
       {sel.length > 0 && (
         <span className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => onChange(sel.slice(0, -1))}
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-ink/60 bg-white border border-ink/10"
-          >
-            ↶ 하나 빼기
-          </button>
           <button
             type="button"
             onClick={() => onChange([])}
@@ -247,7 +252,7 @@ function ClozeBody({
     return acc;
   }, []);
   return (
-    <div className="text-[15px] sm:text-base leading-[2.6] text-ink whitespace-pre-wrap break-words">
+    <div className="text-[15px] sm:text-base leading-[2.4] text-ink whitespace-pre-wrap break-words">
       {segs.map((s, i) => {
         const m = /^\{\{(\d+)\}\}$/.exec(s);
         if (!m) return <Rich key={i} text={s} />;
@@ -267,13 +272,22 @@ function ClozeBody({
           );
         }
         if (p.kind === "pick")
-          return <PickSlot key={i} part={p} value={value[pi] ?? ""} onChange={(v) => setPart(pi, v)} />;
+          return (
+            <PickSlot
+              key={i}
+              part={p}
+              value={value[pi] ?? ""}
+              onChange={(v) => setPart(pi, v)}
+              bracket={q.question.includes("[ ]") ? "[]" : "()"}
+            />
+          );
         return (
           <OrderSlot
             key={i}
             part={p}
             sel={orderSel[`${qi}-${pi}`] ?? []}
             onChange={(sel) => setOrder(pi, sel)}
+            arrows={q.question.includes("순서대로 기호")}
           />
         );
       })}
@@ -391,7 +405,7 @@ function QuestionCard({
         <input
           data-quiz-input
           className="w-full rounded-xl border-2 border-ink/10 px-3 py-2.5 text-base focus:border-indigo focus:ring-2 focus:ring-indigo/20 outline-none"
-          placeholder="답을 입력하세요"
+          placeholder="답을 입력하십시오"
           value={typeof answer === "string" ? answer : ""}
           onChange={(e) => onAnswer(e.target.value)}
           onKeyDown={(e) => {
@@ -412,7 +426,7 @@ function QuestionCard({
         <textarea
           className="w-full rounded-xl border-2 border-ink/10 px-3 py-2.5 text-base focus:border-indigo focus:ring-2 focus:ring-indigo/20 outline-none"
           rows={4}
-          placeholder="답을 작성하세요"
+          placeholder="답을 작성하십시오"
           value={typeof answer === "string" ? answer : ""}
           onChange={(e) => onAnswer(e.target.value)}
         />
@@ -488,9 +502,8 @@ export default function StudentQuizPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<GradeResult | null>(null);
-  const [wrongOnly, setWrongOnly] = useState(false);
-  const [savingImg, setSavingImg] = useState(false);
-  const resultRef = useRef<HTMLDivElement>(null);
+  // 오답 재시험: 이번 회차에 푸는 문항 번호(0부터). null = 전체
+  const [only, setOnly] = useState<number[] | null>(null);
   const restored = useRef(false);
 
   useEffect(() => {
@@ -518,6 +531,8 @@ export default function StudentQuizPage() {
                     : ""
               );
               if (d.orderSel && typeof d.orderSel === "object") sel = d.orderSel;
+              if (Array.isArray(d.only) && d.only.every((n: unknown) => typeof n === "number" && n < ans.length))
+                setOnly(d.only);
             }
             if (typeof d.name === "string" && d.name.trim()) nm = d.name;
           }
@@ -538,16 +553,20 @@ export default function StudentQuizPage() {
   useEffect(() => {
     if (!restored.current || result) return;
     try {
-      localStorage.setItem(draftKey(code), JSON.stringify({ name, answers, orderSel }));
+      localStorage.setItem(draftKey(code), JSON.stringify({ name, answers, orderSel, only }));
     } catch {}
-  }, [code, name, answers, orderSel, result]);
+  }, [code, name, answers, orderSel, only, result]);
 
   const filledFlags = useMemo(
     () => (quiz ? quiz.questions.map((q, i) => isFilled(q, answers[i])) : []),
     [quiz, answers]
   );
-  const filledCount = filledFlags.filter(Boolean).length;
-  const total = quiz?.questions.length ?? 0;
+  const visible = useMemo(
+    () => only ?? (quiz ? quiz.questions.map((_, i) => i) : []),
+    [only, quiz]
+  );
+  const filledCount = visible.filter((i) => filledFlags[i]).length;
+  const total = visible.length;
 
   const setAnswer = (i: number, val: Answer) =>
     setAnswers((prev) => prev.map((a, idx) => (idx === i ? val : a)));
@@ -572,15 +591,15 @@ export default function StudentQuizPage() {
 
   const submit = async () => {
     if (!name.trim()) {
-      setError("이름을 입력해주세요.");
+      setError("이름을 입력하십시오.");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    const empty = filledFlags.map((f, i) => (f ? -1 : i + 1)).filter((n) => n > 0);
+    const empty = visible.filter((i) => !filledFlags[i]).map((i) => i + 1);
     if (
       empty.length > 0 &&
       !window.confirm(
-        `아직 다 못 푼 문제가 있어요: ${empty.slice(0, 12).join(", ")}${empty.length > 12 ? " …" : ""}번\n그래도 제출할까요?`
+        `아직 다 못 푼 문제가 있습니다. (${empty.slice(0, 12).join(", ")}${empty.length > 12 ? " …" : ""}번)\n그래도 제출하시겠습니까?`
       )
     ) {
       goTo(empty[0] - 1);
@@ -592,7 +611,7 @@ export default function StudentQuizPage() {
       const res = await fetch("/api/review/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, answers, name: name.trim() }),
+        body: JSON.stringify({ code, answers, name: name.trim(), only }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "채점 실패");
@@ -608,37 +627,29 @@ export default function StudentQuizPage() {
     }
   };
 
-  const retry = () => {
+  // 처음부터 다시 풀기
+  const restartAll = () => {
     if (!quiz) return;
     setAnswers(emptyAnswers(quiz));
     setOrderSel({});
+    setOnly(null);
     setResult(null);
-    setWrongOnly(false);
     window.scrollTo({ top: 0 });
   };
 
-  const saveImage = async () => {
-    if (!resultRef.current) return;
-    setSavingImg(true);
-    try {
-      const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(resultRef.current, {
-        backgroundColor: "#ffffff",
-        pixelRatio: 2,
-      });
-      const a = document.createElement("a");
-      a.download = `복습결과_${name.trim() || "결과"}_${code}.png`;
-      a.href = dataUrl;
-      a.click();
-    } catch (e) {
-      console.error(e);
-      setError("이미지 저장에 실패했습니다. 스크린샷으로 저장해주세요.");
-    } finally {
-      setSavingImg(false);
-    }
+  // 틀린 문항(부분 정답 포함)만 다시 응시
+  const wrongIdx = result ? result.items.filter((it) => !it.isCorrect).map((it) => it.index) : [];
+  const restartWrong = () => {
+    if (!quiz || wrongIdx.length === 0) return;
+    const fresh = emptyAnswers(quiz);
+    setAnswers((prev) => prev.map((a, i) => (wrongIdx.includes(i) ? fresh[i] : a)));
+    setOrderSel((prev) =>
+      Object.fromEntries(Object.entries(prev).filter(([k]) => !wrongIdx.includes(Number(k.split("-")[0]))))
+    );
+    setOnly(wrongIdx);
+    setResult(null);
+    window.scrollTo({ top: 0 });
   };
-
-  const shownItems = result ? result.items.filter((it) => !wrongOnly || !it.isCorrect) : [];
 
   return (
     <div className="min-h-screen mesh-bg-soft">
@@ -655,59 +666,49 @@ export default function StudentQuizPage() {
         {!loading && error && !quiz && (
           <div className="glass rounded-2xl p-8 text-center">
             <p className="text-rose font-semibold">{error}</p>
-            <p className="text-ink/50 text-sm mt-2">코드를 다시 확인해주세요.</p>
+            <p className="text-ink/50 text-sm mt-2">코드를 다시 확인하십시오.</p>
           </div>
         )}
 
         {/* ── 채점 결과 ── */}
         {result && (
           <div className="space-y-4">
-            <div ref={resultRef} className="space-y-4 bg-white rounded-2xl p-1">
+            <div className="space-y-4">
               <div className="rounded-2xl bg-gradient-to-br from-indigo/10 via-violet/5 to-fuchsia/10 border border-indigo/15 p-6 text-center">
-                <div className="text-5xl">
-                  {result.scorePercent >= 80 ? "🎉" : result.scorePercent >= 50 ? "👍" : "💪"}
-                </div>
-                <h1 className="mt-2 text-3xl font-extrabold text-gradient">{result.scorePercent}점</h1>
+                {only && (
+                  <span className="inline-block rounded-full bg-rose/10 text-rose text-xs font-bold px-2.5 py-1 mb-2">
+                    오답 다시 풀기
+                  </span>
+                )}
+                <h1 className="text-3xl font-extrabold text-gradient">{result.scorePercent}점</h1>
                 <p className="text-ink/60 mt-1">
                   {name && <span className="font-semibold text-ink/80">{name}</span>} · {quiz?.title}
                 </p>
                 <p className="text-ink/50 text-sm mt-0.5">
-                  {result.total}문제 중 {result.correct}개 완전 정답
+                  {result.total}문제 중 {result.correct}문제 정답
                 </p>
               </div>
 
-              {shownItems.map((it) => (
+              {result.items.map((it) => (
                 <ResultItem key={it.index} it={it} />
               ))}
-              {wrongOnly && shownItems.length === 0 && (
-                <p className="text-center text-sm text-ink/50 py-6">틀린 문제가 없어요! 🎉</p>
-              )}
             </div>
 
             <div className="flex gap-2">
               <button
-                onClick={() => setWrongOnly((v) => !v)}
-                className="flex-1 rounded-xl border-2 border-indigo/20 bg-white py-3 text-sm font-semibold text-indigo"
-              >
-                {wrongOnly ? "전체 보기" : "틀린 문제만 보기"}
-              </button>
-              <button
-                onClick={retry}
+                onClick={restartAll}
                 className="flex-1 rounded-xl border-2 border-ink/10 bg-white py-3 text-sm font-semibold text-ink/70"
               >
-                다시 풀기
+                처음부터 다시 풀기
+              </button>
+              <button
+                onClick={restartWrong}
+                disabled={wrongIdx.length === 0}
+                className="flex-1 btn-gradient rounded-xl py-3 text-sm font-semibold disabled:opacity-40"
+              >
+                {wrongIdx.length === 0 ? "틀린 문제 없음" : `오답만 다시 풀기 (${wrongIdx.length}문제)`}
               </button>
             </div>
-            <button
-              onClick={saveImage}
-              disabled={savingImg}
-              className="btn-gradient w-full rounded-xl py-3 font-semibold"
-            >
-              {savingImg ? "저장 중…" : "📸 결과 이미지로 저장 (멘토님께 전송)"}
-            </button>
-            <p className="text-center text-xs text-ink/45">
-              저장한 이미지를 멘토 선생님께 카카오톡으로 보내주세요.
-            </p>
           </div>
         )}
 
@@ -720,9 +721,14 @@ export default function StudentQuizPage() {
                   {quiz.subject}
                 </span>
               )}
+              {only && (
+                <span className="inline-block rounded-full bg-rose/10 text-rose text-xs font-bold px-2.5 py-1 mb-2 ml-1">
+                  오답 다시 풀기
+                </span>
+              )}
               <h1 className="text-xl font-extrabold text-ink leading-snug">{quiz.title}</h1>
               <p className="text-xs text-ink/40 mt-1">
-                총 {total}문제 · 코드 {quiz.code} · 풀던 답은 자동 저장돼요
+                총 {total}문제 · 코드 {quiz.code}
               </p>
               <div className="mt-4">
                 <label className="text-[11px] font-semibold text-ink/55 uppercase tracking-[0.12em]">
@@ -730,21 +736,15 @@ export default function StudentQuizPage() {
                 </label>
                 <input
                   className="mt-1.5 w-full rounded-xl border-2 border-ink/10 px-3 py-2.5 text-base focus:border-indigo focus:ring-2 focus:ring-indigo/20 outline-none bg-white"
-                  placeholder="이름을 입력하세요 (결과에 기록됩니다)"
+                  placeholder="이름을 입력하십시오"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
                 />
               </div>
-              <ul className="mt-3 text-xs text-ink/50 space-y-0.5 leading-relaxed">
-                <li>• 빈칸은 눌러서 입력하고, 키보드의 ‘다음’으로 다음 칸으로 넘어가요.</li>
-                <li>• [ A / B ] 고르기와 O·X는 버튼을 눌러 선택해요.</li>
-                <li>• 단어 배열은 단어 카드를 순서대로 누르면 돼요. 잘못 누르면 위 카드를 눌러 빼요.</li>
-                <li>• 띄어쓰기·대소문자·괄호는 채점에 영향을 주지 않아요.</li>
-              </ul>
             </div>
 
-            {quiz.questions.map((q, i) => (
+            {quiz.questions.map((q, i) => visible.includes(i) && (
               <QuestionCard
                 key={i}
                 q={q}
@@ -766,7 +766,7 @@ export default function StudentQuizPage() {
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
           <div className="max-w-2xl mx-auto px-3 sm:px-4 py-2.5 space-y-2">
             <div className="flex gap-1 overflow-x-auto [scrollbar-width:none]">
-              {filledFlags.map((f, i) => (
+              {visible.map((i) => ({ f: filledFlags[i], i })).map(({ f, i }) => (
                 <button
                   key={i}
                   type="button"

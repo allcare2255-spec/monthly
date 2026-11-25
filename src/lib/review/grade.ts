@@ -37,8 +37,8 @@ export async function gradeQuiz(
         feedback: isCorrect
           ? "정답입니다."
           : okCount > 0
-            ? `${parts.length}칸 중 ${okCount}칸 맞았어요.`
-            : "다시 한 번 해설을 확인해 보세요.",
+            ? `${parts.length}칸 중 ${okCount}칸을 맞혔습니다.`
+            : "해설을 확인하십시오.",
         parts: graded,
       };
       return;
@@ -85,7 +85,7 @@ export async function gradeQuiz(
       isCorrect,
       score: isCorrect ? 1 : 0,
       explanation: q.explanation,
-      feedback: isCorrect ? "정답입니다." : "다시 한 번 해설을 확인해 보세요.",
+      feedback: isCorrect ? "정답입니다." : "해설을 확인하십시오.",
     };
   });
 
@@ -105,7 +105,7 @@ export async function gradeQuiz(
       console.error("[복습] 서술형 채점 실패:", e);
       for (const q of aiQueue) {
         const item = items[q.index];
-        if (item) item.feedback = "자동 채점에 실패했습니다. 선생님께 확인하세요.";
+        if (item) item.feedback = "자동 채점에 실패했습니다. 선생님께 확인하십시오.";
       }
     }
   }

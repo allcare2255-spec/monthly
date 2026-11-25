@@ -22,11 +22,28 @@ export async function POST(req: Request) {
       );
     }
 
-    const result = await gradeQuiz(set, answers);
+    // 오답 재시험: 고른 문항만 채점하고, 결과 번호는 원래 문항 번호로 되돌린다
+    const only: number[] | null =
+      Array.isArray(body.only) &&
+      body.only.length > 0 &&
+      body.only.every((n: unknown) => Number.isInteger(n) && (n as number) >= 0 && (n as number) < set.questions.length)
+        ? Array.from(new Set<number>(body.only)).sort((a, b) => a - b)
+        : null;
+
+    let result;
+    if (only) {
+      result = await gradeQuiz(
+        { ...set, questions: only.map((i) => set.questions[i]) },
+        only.map((i) => answers[i] ?? "")
+      );
+      result.items = result.items.map((it, k) => ({ ...it, index: only[k] }));
+    } else {
+      result = await gradeQuiz(set, answers);
+    }
 
     // 응시 기록 저장 실패가 채점 결과 반환을 막지 않도록 한다.
     try {
-      await saveAttempt(set, name, result);
+      await saveAttempt(only ? { ...set, title: `${set.title} (오답 다시 풀기)` } : set, name, result);
     } catch (e) {
       console.error("[/api/review/submit] 응시 기록 저장 실패:", e);
     }
