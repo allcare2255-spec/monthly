@@ -208,6 +208,10 @@ export function ReviewDetail({ set, attempts }: { set: ReviewSet; attempts: Revi
               {i + 1}. {TYPE_LABEL[q.type]} · {q.difficulty}
             </span>
             <p className="text-sm font-medium">{q.question}</p>
+            {q.type !== "cloze" && q.context && <p className="text-sm text-ink/50 whitespace-pre-wrap">{q.context}</p>}
+            {q.type !== "cloze" && q.body && (
+              <p className="text-sm text-ink/70 whitespace-pre-wrap rounded-lg border border-ink/10 p-2">{q.body}</p>
+            )}
             {q.type === "cloze" && (
               <>
                 {q.context && <p className="text-sm text-ink/50">{q.context}</p>}

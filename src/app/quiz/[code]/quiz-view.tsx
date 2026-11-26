@@ -371,6 +371,13 @@ function QuestionCard({
         </div>
       )}
 
+      {/* 객관식의 <보기> 등 본문 (표 아래, 선택지 위에 보인다) */}
+      {q.type !== "cloze" && q.body && (
+        <div className="rounded-xl border border-ink/15 px-3.5 py-3 text-[15px] leading-relaxed text-ink/85 whitespace-pre-wrap">
+          <Rich text={q.body} />
+        </div>
+      )}
+
       {q.type === "cloze" && (
         <ClozeBody
           q={q}
