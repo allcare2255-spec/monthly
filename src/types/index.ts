@@ -274,4 +274,6 @@ export interface ReviewAttempt {
   correct: number;
   result: GradedItem[];
   completed_at: string;
+  /** 첫 답 입력부터 제출까지 걸린 시간(초). 기록 전 응시는 null. */
+  duration_sec?: number | null;
 }

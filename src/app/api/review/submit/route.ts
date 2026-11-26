@@ -13,6 +13,9 @@ export async function POST(req: Request) {
     const code: string = body.code;
     const answers: ReviewAnswer[] = Array.isArray(body.answers) ? body.answers : [];
     const name: string = (body.name ?? "").toString();
+    // 풀이 시간(초): 첫 답 입력부터 제출까지. 이상한 값(음수, 하루 초과)은 버린다.
+    const rawDur = Number(body.durationSec);
+    const durationSec = Number.isFinite(rawDur) && rawDur >= 0 && rawDur <= 86400 ? Math.round(rawDur) : null;
 
     const set = await getReviewSetByCode(code);
     if (!set) {
@@ -43,7 +46,7 @@ export async function POST(req: Request) {
 
     // 응시 기록 저장 실패가 채점 결과 반환을 막지 않도록 한다.
     try {
-      await saveAttempt(only ? { ...set, title: `${set.title} (오답 다시 풀기)` } : set, name, result);
+      await saveAttempt(only ? { ...set, title: `${set.title} (오답 다시 풀기)` } : set, name, result, durationSec);
     } catch (e) {
       console.error("[/api/review/submit] 응시 기록 저장 실패:", e);
     }

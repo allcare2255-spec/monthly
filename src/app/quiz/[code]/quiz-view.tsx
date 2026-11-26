@@ -517,6 +517,8 @@ export default function StudentQuizPage() {
   const [result, setResult] = useState<GradeResult | null>(null);
   // 오답 재시험: 이번 회차에 푸는 문항 번호(0부터). null = 전체
   const [only, setOnly] = useState<number[] | null>(null);
+  // 풀이 시간: 이번 회차에서 첫 답을 입력한 시각(ms). 제출 때 걸린 시간을 계산한다.
+  const [startedAt, setStartedAt] = useState<number | null>(null);
   const restored = useRef(false);
 
   useEffect(() => {
@@ -546,6 +548,7 @@ export default function StudentQuizPage() {
               if (d.orderSel && typeof d.orderSel === "object") sel = d.orderSel;
               if (Array.isArray(d.only) && d.only.every((n: unknown) => typeof n === "number" && n < ans.length))
                 setOnly(d.only);
+              if (typeof d.startedAt === "number" && d.startedAt > 0 && d.startedAt <= Date.now()) setStartedAt(d.startedAt);
             }
             if (typeof d.name === "string" && d.name.trim()) nm = d.name;
           }
@@ -566,9 +569,12 @@ export default function StudentQuizPage() {
   useEffect(() => {
     if (!restored.current || result) return;
     try {
-      localStorage.setItem(draftKey(code), JSON.stringify({ name, answers, orderSel, only }));
+      localStorage.setItem(draftKey(code), JSON.stringify({ name, answers, orderSel, only, startedAt }));
     } catch {}
-  }, [code, name, answers, orderSel, only, result]);
+  }, [code, name, answers, orderSel, only, startedAt, result]);
+
+  // 첫 답 입력 시 시작 시각 기록 (이미 있으면 그대로)
+  const markStart = () => setStartedAt((t) => t ?? Date.now());
 
   const filledFlags = useMemo(
     () => (quiz ? quiz.questions.map((q, i) => isFilled(q, answers[i])) : []),
@@ -581,13 +587,16 @@ export default function StudentQuizPage() {
   const filledCount = visible.filter((i) => filledFlags[i]).length;
   const total = visible.length;
 
-  const setAnswer = (i: number, val: Answer) =>
+  const setAnswer = (i: number, val: Answer) => {
+    markStart();
     setAnswers((prev) => prev.map((a, idx) => (idx === i ? val : a)));
+  };
 
   const setOrder = (qi: number, pi: number, sel: number[]) => {
     const q = quiz?.questions[qi];
     const p = q?.parts?.[pi];
     if (!p || p.kind !== "order") return;
+    markStart();
     setOrderSel((prev) => ({ ...prev, [`${qi}-${pi}`]: sel }));
     setAnswers((prev) =>
       prev.map((a, idx) => {
@@ -624,7 +633,13 @@ export default function StudentQuizPage() {
       const res = await fetch("/api/review/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, answers, name: name.trim(), only }),
+        body: JSON.stringify({
+          code,
+          answers,
+          name: name.trim(),
+          only,
+          durationSec: startedAt ? Math.round((Date.now() - startedAt) / 1000) : null,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "채점 실패");
@@ -646,6 +661,7 @@ export default function StudentQuizPage() {
     setAnswers(emptyAnswers(quiz));
     setOrderSel({});
     setOnly(null);
+    setStartedAt(null);
     setResult(null);
     window.scrollTo({ top: 0 });
   };
@@ -660,6 +676,7 @@ export default function StudentQuizPage() {
       Object.fromEntries(Object.entries(prev).filter(([k]) => !wrongIdx.includes(Number(k.split("-")[0]))))
     );
     setOnly(wrongIdx);
+    setStartedAt(null);
     setResult(null);
     window.scrollTo({ top: 0 });
   };

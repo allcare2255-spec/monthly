@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import type { ReviewSet, ReviewAttempt, QuestionType } from "@/types";
 import { plainBody, partAnswerText, circled } from "@/lib/review/cloze";
+import { fmtDuration, isRetryAttempt } from "@/lib/review/format";
 
 // 손글씨(필기체) 폰트, 응원 문구용 (layout.tsx 에서 Google Fonts 로 로드).
 const handwritingFont = "'Nanum Pen Script', cursive";
@@ -103,8 +104,16 @@ export function ReviewDetail({ set, attempts }: { set: ReviewSet; attempts: Revi
                   className="w-full flex items-center justify-between p-4 text-left hover:bg-ink/[0.02]"
                 >
                   <div>
-                    <div className="font-bold text-ink">{a.student_name || "(이름 없음)"}</div>
-                    <div className="text-xs text-ink/45 mt-0.5">{new Date(a.completed_at).toLocaleString("ko-KR")}</div>
+                    <div className="font-bold text-ink">
+                      {a.student_name || "(이름 없음)"}
+                      {isRetryAttempt(a.title) && (
+                        <span className="ml-1.5 align-middle text-[11px] font-semibold text-rose bg-rose/10 rounded-full px-2 py-0.5">오답 다시 풀기</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-ink/45 mt-0.5">
+                      {new Date(a.completed_at).toLocaleString("ko-KR")}
+                      {fmtDuration(a.duration_sec) && <span> · 풀이 {fmtDuration(a.duration_sec)}</span>}
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xl font-extrabold text-gradient">{a.score_percent}점</span>

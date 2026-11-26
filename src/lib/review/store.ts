@@ -206,10 +206,11 @@ export function toPublicReviewQuiz(set: ReviewSet, studentName?: string | null):
 export async function saveAttempt(
   set: ReviewSet,
   studentName: string,
-  result: GradeResult
+  result: GradeResult,
+  durationSec?: number | null
 ): Promise<void> {
   const supabase = getServiceClient();
-  const { error } = await supabase.from("review_attempts").insert({
+  const row: Record<string, unknown> = {
     review_set_id: set.id,
     student_id: set.studentId ?? null,
     student_name: studentName.trim() || null,
@@ -219,6 +220,13 @@ export async function saveAttempt(
     total: result.total,
     correct: result.correct,
     result: result.items,
-  });
+  };
+  let { error } = await supabase
+    .from("review_attempts")
+    .insert(durationSec != null ? { ...row, duration_sec: durationSec } : row);
+  // duration_sec 칸이 아직 없는 DB(마이그레이션 전)면 시간 없이 다시 저장
+  if (error && durationSec != null && /duration_sec/.test(error.message)) {
+    ({ error } = await supabase.from("review_attempts").insert(row));
+  }
   if (error) throw new Error(error.message);
 }
